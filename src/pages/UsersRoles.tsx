@@ -16,8 +16,8 @@ import { useTranslation } from "@/i18n/use-translation";
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Client = { id: string; name: string };
 
-const roleLabels: Record<string, string> = {
-  super_admin: "Super Admin", client_admin: "Client Admin", venue_manager: "Venue Manager", event_manager: "Event Manager", event_organizer: "Event Organizer", staff: "Staff", waiter: "Waiter", cashier: "Cashier", consumer: "Consumer",
+const roleKeys: Record<string, string> = {
+  super_admin: "role_super_admin", client_admin: "role_client_admin", venue_manager: "role_venue_manager", event_manager: "role_event_manager", event_organizer: "role_event_organizer", staff: "role_staff", waiter: "role_waiter", cashier: "role_cashier", consumer: "role_consumer",
 };
 
 export default function UsersRoles() {
@@ -93,7 +93,7 @@ export default function UsersRoles() {
               {filtered.map((ur) => (
                 <TableRow key={ur.id}>
                   <TableCell className="font-mono text-xs">{ur.user_id.slice(0, 12)}…</TableCell>
-                  <TableCell><Badge variant="outline" className="capitalize">{roleLabels[ur.role] || ur.role}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="capitalize">{roleKeys[ur.role] ? t(roleKeys[ur.role] as any) : ur.role}</Badge></TableCell>
                   <TableCell className="text-muted-foreground text-xs font-mono">{ur.client_id ? `client: ${ur.client_id.slice(0, 8)}` : t("global")}</TableCell>
                   {isSuperAdmin && (
                     <TableCell>
@@ -123,15 +123,15 @@ export default function UsersRoles() {
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="client_admin">Client Admin</SelectItem>
-                  <SelectItem value="venue_manager">Venue Manager</SelectItem>
-                  <SelectItem value="event_manager">Event Manager</SelectItem>
-                  <SelectItem value="event_organizer">Event Organizer</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="waiter">Waiter</SelectItem>
-                  <SelectItem value="cashier">Cashier</SelectItem>
-                  <SelectItem value="consumer">Consumer</SelectItem>
+                  <SelectItem value="super_admin">{t("role_super_admin")}</SelectItem>
+                  <SelectItem value="client_admin">{t("role_client_admin")}</SelectItem>
+                  <SelectItem value="venue_manager">{t("role_venue_manager")}</SelectItem>
+                  <SelectItem value="event_manager">{t("role_event_manager")}</SelectItem>
+                  <SelectItem value="event_organizer">{t("role_event_organizer")}</SelectItem>
+                  <SelectItem value="staff">{t("role_staff")}</SelectItem>
+                  <SelectItem value="waiter">{t("role_waiter")}</SelectItem>
+                  <SelectItem value="cashier">{t("role_cashier")}</SelectItem>
+                  <SelectItem value="consumer">{t("role_consumer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
