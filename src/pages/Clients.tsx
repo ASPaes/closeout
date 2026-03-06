@@ -20,7 +20,8 @@ type Client = {
 };
 
 export default function Clients() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, hasRole } = useAuth();
+  const canManage = isSuperAdmin || hasRole("client_admin");
   const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
