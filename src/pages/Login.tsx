@@ -111,7 +111,7 @@ export default function Login() {
             <Shield className="h-7 w-7 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            CLOSE<span className="text-primary">OUT</span>
+            CLOSE<span className="text-primary"> OUT</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">Operations platform for bars, clubs & events</p>
         </div>
