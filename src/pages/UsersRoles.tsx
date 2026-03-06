@@ -17,7 +17,7 @@ type UserRole = { id: string; user_id: string; role: string; client_id: string |
 type Client = { id: string; name: string };
 
 const roleLabels: Record<string, string> = {
-  super_admin: "Super Admin", client_admin: "Client Admin", venue_manager: "Venue Manager", event_manager: "Event Manager", staff: "Staff",
+  super_admin: "Super Admin", client_admin: "Client Admin", venue_manager: "Venue Manager", event_manager: "Event Manager", event_organizer: "Event Organizer", staff: "Staff", waiter: "Waiter", cashier: "Cashier", consumer: "Consumer",
 };
 
 export default function UsersRoles() {
@@ -127,7 +127,11 @@ export default function UsersRoles() {
                   <SelectItem value="client_admin">Client Admin</SelectItem>
                   <SelectItem value="venue_manager">Venue Manager</SelectItem>
                   <SelectItem value="event_manager">Event Manager</SelectItem>
+                  <SelectItem value="event_organizer">Event Organizer</SelectItem>
                   <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="waiter">Waiter</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                  <SelectItem value="consumer">Consumer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
