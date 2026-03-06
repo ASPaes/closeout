@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Search, Pencil } from "lucide-react";
@@ -66,8 +66,11 @@ export default function Clients() {
     fetchClients();
   };
 
-  const toggleActive = async (client: Client) => {
-    await supabase.from("clients").update({ status: client.status === "active" ? "inactive" : "active" }).eq("id", client.id);
+  const toggleStatus = async (client: Client) => {
+    const newStatus = client.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Client ${newStatus === "active" ? "activated" : "deactivated"}`);
     fetchClients();
   };
 
@@ -81,23 +84,7 @@ export default function Clients() {
           <p className="text-sm text-muted-foreground">Manage business owners</p>
         </div>
         {isSuperAdmin && (
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Add Client</Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-md">
-              <SheetHeader><SheetTitle>{editing ? "Edit Client" : "New Client"}</SheetTitle></SheetHeader>
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-                <div className="space-y-2"><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="unique-identifier" /></div>
-                <div className="space-y-2"><Label>Document</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
-              </form>
-            </SheetContent>
-          </Sheet>
+          <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Add Client</Button>
         )}
       </div>
 
@@ -115,7 +102,7 @@ export default function Clients() {
                 <TableHead>Slug</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
-                {isSuperAdmin && <TableHead className="w-20">Actions</TableHead>}
+                {isSuperAdmin && <TableHead className="w-24">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -125,7 +112,11 @@ export default function Clients() {
                   <TableCell className="font-mono text-xs text-muted-foreground">{client.slug}</TableCell>
                   <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={client.status === "active" ? "default" : "secondary"} className="cursor-pointer" onClick={() => isSuperAdmin && toggleActive(client)}>
+                    <Badge
+                      variant={client.status === "active" ? "default" : "secondary"}
+                      className={`cursor-pointer ${client.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
+                      onClick={() => isSuperAdmin && toggleStatus(client)}
+                    >
                       {client.status === "active" ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
@@ -143,6 +134,21 @@ export default function Clients() {
           </Table>
         </CardContent>
       </Card>
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader><SheetTitle>{editing ? "Edit Client" : "New Client"}</SheetTitle></SheetHeader>
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="space-y-2"><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="unique-identifier" /></div>
+            <div className="space-y-2"><Label>Document</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ or ID" /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

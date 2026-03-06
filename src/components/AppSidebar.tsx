@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,32 +33,41 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, isSuperAdmin } = useAuth();
 
-  const primaryRole = roles[0]?.role?.replace("_", " ") ?? "no role";
+  const primaryRole = roles[0]?.role?.replace(/_/g, " ") ?? "no role";
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight text-sidebar-foreground">
-              CLOSE<span className="text-primary">OUT</span>
-            </span>
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
+        {!collapsed ? (
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <Shield className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div>
+              <span className="text-base font-bold tracking-tight text-sidebar-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                CLOSE<span className="text-primary">OUT</span>
+              </span>
+              <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Admin Panel</p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
+            <Shield className="h-4 w-4 text-primary-foreground" />
           </div>
         )}
-        {collapsed && <span className="text-lg font-bold text-primary mx-auto">C</span>}
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
                       <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
@@ -69,39 +78,45 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>System</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {systemItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">System</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {systemItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                      <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        {!collapsed && (
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.name || "User"}</p>
-              <Badge variant="secondary" className="mt-0.5 text-[10px] capitalize">{primaryRole}</Badge>
+        {!collapsed ? (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary">
+                {profile?.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.name || "User"}</p>
+                <Badge variant="secondary" className="mt-0.5 text-[9px] capitalize px-1.5 py-0 h-4">{primaryRole}</Badge>
+              </div>
             </div>
-            <button onClick={signOut} className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+            <button onClick={signOut} className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Sign out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
-        )}
-        {collapsed && (
-          <button onClick={signOut} className="mx-auto rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+        ) : (
+          <button onClick={signOut} className="mx-auto rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Sign out">
             <LogOut className="h-4 w-4" />
           </button>
         )}

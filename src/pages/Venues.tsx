@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -63,17 +63,24 @@ export default function Venues() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form };
     if (editing) {
-      const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("venues").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Venue updated");
     } else {
-      const { error } = await supabase.from("venues").insert(payload);
+      const { error } = await supabase.from("venues").insert(form);
       if (error) { toast.error(error.message); return; }
       toast.success("Venue created");
     }
     setSheetOpen(false);
+    fetchData();
+  };
+
+  const toggleStatus = async (venue: Venue) => {
+    const newStatus = venue.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Venue ${newStatus === "active" ? "activated" : "deactivated"}`);
     fetchData();
   };
 
@@ -89,30 +96,7 @@ export default function Venues() {
           <p className="text-sm text-muted-foreground">Manage physical locations</p>
         </div>
         {canManage && (
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger asChild>
-              <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Add Venue</Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-md">
-              <SheetHeader><SheetTitle>{editing ? "Edit Venue" : "New Venue"}</SheetTitle></SheetHeader>
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Client</Label>
-                  <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-                <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
-                </div>
-                <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
-              </form>
-            </SheetContent>
-          </Sheet>
+          <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Add Venue</Button>
         )}
       </div>
 
@@ -138,31 +122,59 @@ export default function Venues() {
                 <TableHead>Name</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>City</TableHead>
-                <TableHead>City</TableHead>
                 <TableHead>Status</TableHead>
-                {canManage && <TableHead className="w-20">Actions</TableHead>}
+                {canManage && <TableHead className="w-24">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((venue) => (
                 <TableRow key={venue.id}>
                   <TableCell className="font-medium">{venue.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{(venue as any).clients?.name || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{venue.clients?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{venue.city || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{venue.state || "—"}</TableCell>
-                  <TableCell><Badge variant={venue.status === "active" ? "default" : "secondary"}>{venue.status === "active" ? "Active" : "Inactive"}</Badge></TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={venue.status === "active" ? "default" : "secondary"}
+                      className={`cursor-pointer ${venue.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
+                      onClick={() => canManage && toggleStatus(venue)}
+                    >
+                      {venue.status === "active" ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
                   {canManage && (
                     <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(venue)}><Pencil className="h-4 w-4" /></Button></TableCell>
                   )}
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No venues found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No venues found</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader><SheetTitle>{editing ? "Edit Venue" : "New Venue"}</SheetTitle></SheetHeader>
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Client</Label>
+              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+              <div className="space-y-2"><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+            </div>
+            <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
