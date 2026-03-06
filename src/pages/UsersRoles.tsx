@@ -20,7 +20,7 @@ type UserRole = {
   venue_id: string | null;
   event_id: string | null;
   created_at: string;
-  profiles?: { full_name: string | null };
+  profiles?: { name: string | null };
 };
 
 type Client = { id: string; name: string };
@@ -71,7 +71,7 @@ export default function UsersRoles() {
   };
 
   const filtered = userRoles.filter((ur) => {
-    const name = (ur as any).profiles?.full_name || "";
+    const name = (ur as any).profiles?.name || "";
     return name.toLowerCase().includes(search.toLowerCase()) || ur.role.includes(search.toLowerCase());
   });
 
@@ -108,7 +108,7 @@ export default function UsersRoles() {
             <TableBody>
               {filtered.map((ur) => (
                 <TableRow key={ur.id}>
-                  <TableCell className="font-medium">{(ur as any).profiles?.full_name || ur.user_id.slice(0, 8)}</TableCell>
+                  <TableCell className="font-medium">{(ur as any).profiles?.name || ur.user_id.slice(0, 8)}</TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{roleLabels[ur.role] || ur.role}</Badge></TableCell>
                   <TableCell className="text-muted-foreground text-xs font-mono">
                     {ur.client_id ? `client: ${ur.client_id.slice(0, 8)}` : "global"}
