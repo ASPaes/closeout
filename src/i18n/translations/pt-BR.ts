@@ -100,6 +100,10 @@ const ptBR = {
   select_client: "Selecionar cliente",
   all_clients: "Todos os Clientes",
 
+  // Venues (extra)
+  latitude: "Latitude",
+  longitude: "Longitude",
+
   // Events
   events: "Eventos",
   manage_events: "Gerenciar eventos nos locais",
@@ -119,6 +123,11 @@ const ptBR = {
   all_venues: "Todos os Locais",
   draft: "Rascunho",
   closed: "Encerrado",
+  geo_radius_meters: "Raio de geolocalização (metros)",
+  max_order_value: "Valor máximo do pedido",
+  unretrieved_order_alert: "Alerta de pedido não retirado (min)",
+  stock_control: "Controle de estoque",
+  select_client_first: "Selecione um cliente primeiro",
 
   // Users & Roles
   users_roles: "Usuários e Papéis",
