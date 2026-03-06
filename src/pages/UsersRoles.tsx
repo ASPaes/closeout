@@ -16,8 +16,8 @@ import { useTranslation } from "@/i18n/use-translation";
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Client = { id: string; name: string };
 
-const roleLabels: Record<string, string> = {
-  super_admin: "Super Admin", client_admin: "Client Admin", venue_manager: "Venue Manager", event_manager: "Event Manager", event_organizer: "Event Organizer", staff: "Staff", waiter: "Waiter", cashier: "Cashier", consumer: "Consumer",
+const roleKeys: Record<string, string> = {
+  super_admin: "role_super_admin", client_admin: "role_client_admin", venue_manager: "role_venue_manager", event_manager: "role_event_manager", event_organizer: "role_event_organizer", staff: "role_staff", waiter: "role_waiter", cashier: "role_cashier", consumer: "role_consumer",
 };
 
 export default function UsersRoles() {
