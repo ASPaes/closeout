@@ -11,24 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/i18n/use-translation";
 
-type Venue = {
-  id: string;
-  client_id: string;
-  name: string;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  status: string;
-  clients?: { name: string };
-};
-
+type Venue = { id: string; client_id: string; name: string; address: string | null; city: string | null; state: string | null; latitude: number | null; longitude: number | null; status: string; clients?: { name: string } };
 type Client = { id: string; name: string };
 
 export default function Venues() {
   const { isSuperAdmin, hasRole } = useAuth();
+  const { t } = useTranslation();
   const canManage = isSuperAdmin || hasRole("client_admin");
   const [venues, setVenues] = useState<Venue[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -49,66 +39,52 @@ export default function Venues() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "" });
-    setSheetOpen(true);
-  };
-
-  const openEdit = (venue: Venue) => {
-    setEditing(venue);
-    setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "" });
-    setSheetOpen(true);
-  };
+  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "" }); setSheetOpen(true); };
+  const openEdit = (venue: Venue) => { setEditing(venue); setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "" }); setSheetOpen(true); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editing) {
       const { error } = await supabase.from("venues").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
-      toast.success("Venue updated");
+      toast.success(t("venue_updated"));
     } else {
       const { error } = await supabase.from("venues").insert(form);
       if (error) { toast.error(error.message); return; }
-      toast.success("Venue created");
+      toast.success(t("venue_created"));
     }
-    setSheetOpen(false);
-    fetchData();
+    setSheetOpen(false); fetchData();
   };
 
   const toggleStatus = async (venue: Venue) => {
     const newStatus = venue.status === "active" ? "inactive" : "active";
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(`Venue ${newStatus === "active" ? "activated" : "deactivated"}`);
+    toast.success(newStatus === "active" ? t("venue_activated") : t("venue_deactivated"));
     fetchData();
   };
 
-  const filtered = venues
-    .filter((v) => filterClient === "all" || v.client_id === filterClient)
-    .filter((v) => v.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = venues.filter((v) => filterClient === "all" || v.client_id === filterClient).filter((v) => v.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Venues</h1>
-          <p className="text-sm text-muted-foreground">Manage physical locations</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("venues")}</h1>
+          <p className="text-sm text-muted-foreground">{t("manage_venues")}</p>
         </div>
-        {canManage && (
-          <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Add Venue</Button>
-        )}
+        {canManage && <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />{t("add_venue")}</Button>}
       </div>
 
       <div className="flex gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search venues..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("search_venues")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterClient} onValueChange={setFilterClient}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Clients</SelectItem>
+            <SelectItem value="all">{t("all_clients")}</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -119,11 +95,11 @@ export default function Venues() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Status</TableHead>
-                {canManage && <TableHead className="w-24">Actions</TableHead>}
+                <TableHead>{t("name")}</TableHead>
+                <TableHead>{t("client")}</TableHead>
+                <TableHead>{t("city")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                {canManage && <TableHead className="w-24">{t("actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -133,22 +109,16 @@ export default function Venues() {
                   <TableCell className="text-muted-foreground">{venue.clients?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{venue.city || "—"}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={venue.status === "active" ? "default" : "secondary"}
+                    <Badge variant={venue.status === "active" ? "default" : "secondary"}
                       className={`cursor-pointer ${venue.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
-                      onClick={() => canManage && toggleStatus(venue)}
-                    >
-                      {venue.status === "active" ? "Active" : "Inactive"}
+                      onClick={() => canManage && toggleStatus(venue)}>
+                      {venue.status === "active" ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
-                  {canManage && (
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(venue)}><Pencil className="h-4 w-4" /></Button></TableCell>
-                  )}
+                  {canManage && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(venue)}><Pencil className="h-4 w-4" /></Button></TableCell>}
                 </TableRow>
               ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No venues found</TableCell></TableRow>
-              )}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t("no_venues_found")}</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
@@ -156,22 +126,22 @@ export default function Venues() {
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="sm:max-w-md">
-          <SheetHeader><SheetTitle>{editing ? "Edit Venue" : "New Venue"}</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle>{editing ? t("edit_venue") : t("new_venue")}</SheetTitle></SheetHeader>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label>Client</Label>
+              <Label>{t("client")}</Label>
               <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("select_client")} /></SelectTrigger>
                 <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="space-y-2"><Label>{t("address")}</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-              <div className="space-y-2"><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+              <div className="space-y-2"><Label>{t("city")}</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+              <div className="space-y-2"><Label>{t("state")}</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
             </div>
-            <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
+            <Button type="submit" className="w-full">{editing ? t("update") : t("create")}</Button>
           </form>
         </SheetContent>
       </Sheet>

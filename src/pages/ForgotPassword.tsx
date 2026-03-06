@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/i18n/use-translation";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -16,14 +18,8 @@ export default function ForgotPassword() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      setSent(true);
-    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+    if (error) { toast.error(error.message); } else { setSent(true); }
     setLoading(false);
   };
 
@@ -32,11 +28,11 @@ export default function ForgotPassword() {
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <Card className="w-full max-w-md border-border bg-card">
           <CardHeader>
-            <CardTitle>Check your email</CardTitle>
-            <CardDescription>We sent a password reset link to <strong>{email}</strong></CardDescription>
+            <CardTitle>{t("check_your_email")}</CardTitle>
+            <CardDescription>{t("reset_link_sent")} <strong>{email}</strong></CardDescription>
           </CardHeader>
           <CardContent>
-            <Link to="/login"><Button variant="outline" className="w-full">Back to login</Button></Link>
+            <Link to="/login"><Button variant="outline" className="w-full">{t("back_to_login")}</Button></Link>
           </CardContent>
         </Card>
       </div>
@@ -51,21 +47,18 @@ export default function ForgotPassword() {
         </div>
         <Card className="border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-xl">Forgot password</CardTitle>
-            <CardDescription>Enter your email to receive a reset link</CardDescription>
+            <CardTitle className="text-xl">{t("forgot_password")}</CardTitle>
+            <CardDescription>{t("enter_new_password")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@closeout.com" required />
-              </div>
+              <div className="space-y-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@closeout.com" required /></div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send reset link
+                {t("send_reset_link")}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
-                <Link to="/login" className="text-primary hover:underline">Back to login</Link>
+                <Link to="/login" className="text-primary hover:underline">{t("back_to_login")}</Link>
               </p>
             </form>
           </CardContent>
