@@ -304,38 +304,41 @@ export type Database = {
       venues: {
         Row: {
           address: string | null
-          capacity: number | null
           city: string | null
           client_id: string
           created_at: string
           id: string
-          is_active: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           state: string | null
+          status: string
           updated_at: string
         }
         Insert: {
           address?: string | null
-          capacity?: number | null
           city?: string | null
           client_id: string
           created_at?: string
           id?: string
-          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
-          capacity?: number | null
           city?: string | null
           client_id?: string
           created_at?: string
           id?: string
-          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           state?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
