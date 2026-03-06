@@ -40,7 +40,7 @@ export default function Venues() {
   const fetchData = async () => {
     const [v, c] = await Promise.all([
       supabase.from("venues").select("*, clients(name)").order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, name").eq("is_active", true),
+      supabase.from("clients").select("id, name").eq("status", "active"),
     ]);
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
