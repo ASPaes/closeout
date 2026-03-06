@@ -137,10 +137,10 @@ export default function UsersRoles() {
             </div>
             <div className="space-y-2">
               <Label>{t("client_optional_scope")}</Label>
-              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+              <Select value={form.client_id || "__global__"} onValueChange={(v) => setForm({ ...form, client_id: v === "__global__" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder={t("global_no_scope")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("global")}</SelectItem>
+                  <SelectItem value="__global__">{t("global")}</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
