@@ -94,42 +94,61 @@ export type Database = {
       }
       events: {
         Row: {
+          client_id: string | null
           created_at: string
-          date: string
           description: string | null
-          end_time: string | null
+          end_at: string | null
+          geo_radius_meters: number | null
           id: string
+          max_order_value: number | null
           name: string
-          start_time: string | null
-          status: Database["public"]["Enums"]["event_status"]
+          start_at: string | null
+          status: string
+          stock_control_enabled: boolean
+          unretrieved_order_alert_minutes: number | null
           updated_at: string
           venue_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
-          date: string
           description?: string | null
-          end_time?: string | null
+          end_at?: string | null
+          geo_radius_meters?: number | null
           id?: string
+          max_order_value?: number | null
           name: string
-          start_time?: string | null
-          status?: Database["public"]["Enums"]["event_status"]
+          start_at?: string | null
+          status?: string
+          stock_control_enabled?: boolean
+          unretrieved_order_alert_minutes?: number | null
           updated_at?: string
           venue_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
-          date?: string
           description?: string | null
-          end_time?: string | null
+          end_at?: string | null
+          geo_radius_meters?: number | null
           id?: string
+          max_order_value?: number | null
           name?: string
-          start_time?: string | null
-          status?: Database["public"]["Enums"]["event_status"]
+          start_at?: string | null
+          status?: string
+          stock_control_enabled?: boolean
+          unretrieved_order_alert_minutes?: number | null
           updated_at?: string
           venue_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "events_venue_id_fkey"
             columns: ["venue_id"]
