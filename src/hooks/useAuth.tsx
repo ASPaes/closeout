@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { LanguageContext } from "@/i18n/language-provider";
 
 type UserRole = {
   id: string;
@@ -17,6 +18,7 @@ type Profile = {
   phone: string | null;
   cpf: string | null;
   status: string;
+  language: string | null;
 };
 
 type AuthContextType = {
@@ -38,13 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const { setLanguage } = useContext(LanguageContext);
 
   const fetchUserData = async (userId: string) => {
     const [profileRes, rolesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).single(),
       supabase.from("user_roles").select("id, role, client_id, venue_id, event_id").eq("user_id", userId),
     ]);
-    if (profileRes.data) setProfile(profileRes.data as Profile);
+    if (profileRes.data) {
+      const p = profileRes.data as Profile;
+      setProfile(p);
+      const lang = p.language as "pt-BR" | "en-US" | null;
+      setLanguage(lang === "en-US" ? "en-US" : "pt-BR");
+    }
     if (rolesRes.data) setRoles(rolesRes.data as UserRole[]);
   };
 
