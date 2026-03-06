@@ -11,10 +11,9 @@ type AuditLog = {
   id: string;
   user_id: string | null;
   action: string;
-  table_name: string | null;
-  record_id: string | null;
-  old_data: any;
-  new_data: any;
+  entity_type: string | null;
+  entity_id: string | null;
+  metadata: any;
   ip_address: string | null;
   created_at: string;
 };
