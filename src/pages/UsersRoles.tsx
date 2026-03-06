@@ -43,7 +43,7 @@ export default function UsersRoles() {
 
   const fetchData = async () => {
     const [ur, c] = await Promise.all([
-      supabase.from("user_roles").select("*, profiles:user_id(full_name)").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
       supabase.from("clients").select("id, name"),
     ]);
     if (ur.data) setUserRoles(ur.data as UserRole[]);

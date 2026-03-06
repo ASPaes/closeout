@@ -43,7 +43,7 @@ export default function Events() {
   const [filterVenue, setFilterVenue] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
-  const [form, setForm] = useState({ name: "", venue_id: "", description: "", date: "", start_time: "", end_time: "", status: "draft" });
+  const [form, setForm] = useState({ name: "", venue_id: "", description: "", date: "", start_time: "", end_time: "", status: "draft" as "draft" | "active" | "completed" | "cancelled" });
 
   const fetchData = async () => {
     const [e, v] = await Promise.all([
