@@ -145,6 +145,10 @@ const ptBR = {
   role_removed: "Papel removido",
   no_roles_assigned: "Nenhum papel atribuído",
   search_users_roles: "Buscar usuários ou papéis...",
+  role_event_organizer: "Organizador de Evento",
+  role_waiter: "Garçom",
+  role_cashier: "Operador de Caixa",
+  role_consumer: "Consumidor",
 
   // Audit Logs
   audit_logs: "Logs de Auditoria",

@@ -147,6 +147,10 @@ const enUS: Record<TranslationKey, string> = {
   role_removed: "Role removed",
   no_roles_assigned: "No roles assigned",
   search_users_roles: "Search users or roles...",
+  role_event_organizer: "Event Organizer",
+  role_waiter: "Waiter",
+  role_cashier: "Cashier",
+  role_consumer: "Consumer",
 
   // Audit Logs
   audit_logs: "Audit Logs",
