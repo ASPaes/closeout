@@ -52,36 +52,42 @@ export type Database = {
       }
       clients: {
         Row: {
-          contact_email: string | null
-          contact_phone: string | null
+          address: string | null
           created_at: string
+          document: string | null
+          email: string | null
           id: string
-          is_active: boolean
           logo_url: string | null
           name: string
+          phone: string | null
           slug: string
+          status: string
           updated_at: string
         }
         Insert: {
-          contact_email?: string | null
-          contact_phone?: string | null
+          address?: string | null
           created_at?: string
+          document?: string | null
+          email?: string | null
           id?: string
-          is_active?: boolean
           logo_url?: string | null
           name: string
+          phone?: string | null
           slug: string
+          status?: string
           updated_at?: string
         }
         Update: {
-          contact_email?: string | null
-          contact_phone?: string | null
+          address?: string | null
           created_at?: string
+          document?: string | null
+          email?: string | null
           id?: string
-          is_active?: boolean
           logo_url?: string | null
           name?: string
+          phone?: string | null
           slug?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []

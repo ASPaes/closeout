@@ -16,9 +16,11 @@ type Client = {
   name: string;
   slug: string;
   logo_url: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
-  is_active: boolean;
+  email: string | null;
+  phone: string | null;
+  document: string | null;
+  address: string | null;
+  status: string;
   created_at: string;
 };
 
@@ -28,7 +30,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", contact_email: "", contact_phone: "" });
+  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "" });
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
@@ -39,13 +41,13 @@ export default function Clients() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", contact_email: "", contact_phone: "" });
+    setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "" });
     setSheetOpen(true);
   };
 
   const openEdit = (client: Client) => {
     setEditing(client);
-    setForm({ name: client.name, slug: client.slug, contact_email: client.contact_email || "", contact_phone: client.contact_phone || "" });
+    setForm({ name: client.name, slug: client.slug, email: client.email || "", phone: client.phone || "", document: client.document || "", address: client.address || "" });
     setSheetOpen(true);
   };
 
@@ -65,7 +67,7 @@ export default function Clients() {
   };
 
   const toggleActive = async (client: Client) => {
-    await supabase.from("clients").update({ is_active: !client.is_active }).eq("id", client.id);
+    await supabase.from("clients").update({ status: client.status === "active" ? "inactive" : "active" }).eq("id", client.id);
     fetchClients();
   };
 
@@ -88,8 +90,10 @@ export default function Clients() {
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div className="space-y-2"><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
                 <div className="space-y-2"><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="unique-identifier" /></div>
-                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Phone</Label><Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Document</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
                 <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
               </form>
             </SheetContent>
@@ -119,10 +123,10 @@ export default function Clients() {
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{client.slug}</TableCell>
-                  <TableCell className="text-muted-foreground">{client.contact_email || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={client.is_active ? "default" : "secondary"} className="cursor-pointer" onClick={() => isSuperAdmin && toggleActive(client)}>
-                      {client.is_active ? "Active" : "Inactive"}
+                    <Badge variant={client.status === "active" ? "default" : "secondary"} className="cursor-pointer" onClick={() => isSuperAdmin && toggleActive(client)}>
+                      {client.status === "active" ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   {isSuperAdmin && (
