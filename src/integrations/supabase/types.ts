@@ -23,7 +23,10 @@ export type Database = {
           id: string
           ip_address: string | null
           metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
           user_id: string | null
+          user_role: string | null
         }
         Insert: {
           action: string
@@ -33,7 +36,10 @@ export type Database = {
           id?: string
           ip_address?: string | null
           metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
           user_id?: string | null
+          user_role?: string | null
         }
         Update: {
           action?: string
@@ -43,7 +49,10 @@ export type Database = {
           id?: string
           ip_address?: string | null
           metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
           user_id?: string | null
+          user_role?: string | null
         }
         Relationships: []
       }
@@ -317,6 +326,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_entity_id: string
+          p_entity_type: string
+          p_metadata?: Json
+          p_new_data?: Json
+          p_old_data?: Json
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
@@ -329,7 +350,31 @@ export type Database = {
         | "cashier"
         | "consumer"
         | "event_organizer"
+      campaign_status: "scheduled" | "active" | "paused" | "ended"
+      cash_register_status: "open" | "closed"
       event_status: "draft" | "active" | "completed" | "cancelled"
+      order_origin: "consumer_app" | "waiter_app" | "cashier"
+      order_status:
+        | "pending"
+        | "paid"
+        | "preparing"
+        | "ready"
+        | "delivered"
+        | "cancelled"
+      payment_status:
+        | "created"
+        | "processing"
+        | "approved"
+        | "failed"
+        | "cancelled"
+      qr_status: "valid" | "used" | "cancelled" | "invalid"
+      stock_movement_type:
+        | "entry"
+        | "reservation"
+        | "release"
+        | "sale"
+        | "adjustment"
+      waiter_session_status: "active" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -468,7 +513,34 @@ export const Constants = {
         "consumer",
         "event_organizer",
       ],
+      campaign_status: ["scheduled", "active", "paused", "ended"],
+      cash_register_status: ["open", "closed"],
       event_status: ["draft", "active", "completed", "cancelled"],
+      order_origin: ["consumer_app", "waiter_app", "cashier"],
+      order_status: [
+        "pending",
+        "paid",
+        "preparing",
+        "ready",
+        "delivered",
+        "cancelled",
+      ],
+      payment_status: [
+        "created",
+        "processing",
+        "approved",
+        "failed",
+        "cancelled",
+      ],
+      qr_status: ["valid", "used", "cancelled", "invalid"],
+      stock_movement_type: [
+        "entry",
+        "reservation",
+        "release",
+        "sale",
+        "adjustment",
+      ],
+      waiter_session_status: ["active", "closed"],
     },
   },
 } as const

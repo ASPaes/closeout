@@ -62,3 +62,60 @@ Example for `clients` table:
 - `cl_all_super`: super_admin can do everything
 - `cl_select_client_admin`: client_admin can SELECT their own clients
 - `cl_update_client_admin`: client_admin can UPDATE their own clients
+
+---
+
+## Auditoria
+
+### Tabela `audit_logs`
+
+Registra todas as ações relevantes do sistema para fins de compliance e debugging.
+
+```
+audit_logs (
+  id uuid PK,
+  user_id uuid NULL,
+  action text NOT NULL,
+  entity_type text NULL,
+  entity_id uuid NULL,
+  old_data jsonb NULL,
+  new_data jsonb NULL,
+  metadata jsonb NULL,
+  user_role text NULL,
+  ip_address text NULL,
+  created_at timestamptz NOT NULL
+)
+```
+
+### Função `log_audit`
+
+Função `SECURITY DEFINER` para inserir audit logs de forma segura a partir de Edge Functions e triggers, sem depender de RLS.
+
+```sql
+log_audit(p_user_id, p_action, p_entity_type, p_entity_id, p_old_data, p_new_data, p_metadata)
+```
+
+### Indexes
+
+| Index | Colunas |
+|---|---|
+| `idx_audit_logs_user_id` | `user_id` |
+| `idx_audit_logs_entity` | `entity_type, entity_id` |
+| `idx_audit_logs_created_at` | `created_at DESC` |
+
+---
+
+## Enums de Status
+
+| Enum | Valores |
+|---|---|
+| `app_role` | super_admin, client_admin, venue_manager, event_manager, event_organizer, staff, waiter, cashier, consumer |
+| `event_status` | draft, active, completed, cancelled |
+| `order_status` | pending, paid, preparing, ready, delivered, cancelled |
+| `payment_status` | created, processing, approved, failed, cancelled |
+| `qr_status` | valid, used, cancelled, invalid |
+| `stock_movement_type` | entry, reservation, release, sale, adjustment |
+| `campaign_status` | scheduled, active, paused, ended |
+| `cash_register_status` | open, closed |
+| `waiter_session_status` | active, closed |
+| `order_origin` | consumer_app, waiter_app, cashier |

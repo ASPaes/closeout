@@ -9,7 +9,7 @@ import { Search } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
 
-type AuditLog = { id: string; user_id: string | null; action: string; entity_type: string | null; entity_id: string | null; metadata: any; ip_address: string | null; created_at: string };
+type AuditLog = { id: string; user_id: string | null; action: string; entity_type: string | null; entity_id: string | null; metadata: any; ip_address: string | null; created_at: string; old_data: any; new_data: any; user_role: string | null };
 
 const actionColors: Record<string, string> = {
   user_login: "bg-primary/15 text-primary", user_login_failed: "bg-destructive/15 text-destructive",
