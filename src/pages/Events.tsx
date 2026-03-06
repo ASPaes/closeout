@@ -64,7 +64,7 @@ export default function Events() {
 
   const openEdit = (event: Event) => {
     setEditing(event);
-    setForm({ name: event.name, venue_id: event.venue_id, description: event.description || "", date: event.date, start_time: event.start_time || "", end_time: event.end_time || "", status: event.status });
+    setForm({ name: event.name, venue_id: event.venue_id, description: event.description || "", date: event.date, start_time: event.start_time || "", end_time: event.end_time || "", status: event.status as "draft" | "active" | "completed" | "cancelled" });
     setSheetOpen(true);
   };
 
@@ -123,7 +123,7 @@ export default function Events() {
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as "draft" | "active" | "completed" | "cancelled" })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
