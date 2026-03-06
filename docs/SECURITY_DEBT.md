@@ -2,6 +2,15 @@
 
 ## Resolved
 
+### 2026-03-06 — Fase 1.2: RLS Geral, Audit Logs e Enums
+
+- ✅ `FORCE ROW LEVEL SECURITY` applied on all tables: `audit_logs`, `clients`, `venues`, `events`, `profiles`
+- ✅ All RLS policies recreated as **PERMISSIVE** (fixed bug from Phase 1.1 where policies were RESTRICTIVE)
+- ✅ `audit_logs` expanded with `old_data`, `new_data`, `user_role` columns
+- ✅ Indexes created on `audit_logs` for `user_id`, `entity_type+entity_id`, `created_at`
+- ✅ `log_audit()` SECURITY DEFINER function created
+- ✅ 8 status enums created: `order_status`, `payment_status`, `qr_status`, `stock_movement_type`, `campaign_status`, `cash_register_status`, `waiter_session_status`, `order_origin`
+
 ### 2026-03-06 — RBAC Consolidation (Phase 1.1)
 
 - ✅ `FORCE ROW LEVEL SECURITY` applied on `user_roles`
