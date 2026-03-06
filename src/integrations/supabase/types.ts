@@ -373,13 +373,20 @@ export type Database = {
     }
     Functions: {
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_client_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_event_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_venue_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_role_name: {
+        Args: { _role_name: string; _user_id: string }
         Returns: boolean
       }
     }
