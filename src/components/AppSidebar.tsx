@@ -92,7 +92,7 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.full_name || "User"}</p>
+              <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.name || "User"}</p>
               <Badge variant="secondary" className="mt-0.5 text-[10px] capitalize">{primaryRole}</Badge>
             </div>
             <button onClick={signOut} className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">

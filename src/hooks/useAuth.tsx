@@ -12,9 +12,11 @@ type UserRole = {
 
 type Profile = {
   id: string;
-  full_name: string | null;
+  name: string;
   avatar_url: string | null;
   phone: string | null;
+  cpf: string | null;
+  status: string;
 };
 
 type AuthContextType = {
