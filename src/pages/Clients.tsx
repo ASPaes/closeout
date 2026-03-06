@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Search, Pencil } from "lucide-react";
@@ -25,7 +26,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "" });
+  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: "active" });
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
@@ -34,10 +35,10 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "" }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: "active" }); setSheetOpen(true); };
   const openEdit = (client: Client) => {
     setEditing(client);
-    setForm({ name: client.name, slug: client.slug, email: client.email || "", phone: client.phone || "", document: client.document || "", address: client.address || "" });
+    setForm({ name: client.name, slug: client.slug, email: client.email || "", phone: client.phone || "", document: client.document || "", address: client.address || "", status: client.status });
     setSheetOpen(true);
   };
 
@@ -53,14 +54,6 @@ export default function Clients() {
       toast.success(t("client_created"));
     }
     setSheetOpen(false); fetchClients();
-  };
-
-  const toggleStatus = async (client: Client) => {
-    const newStatus = client.status === "active" ? "inactive" : "active";
-    const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(newStatus === "active" ? t("client_activated") : t("client_deactivated"));
-    fetchClients();
   };
 
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
@@ -100,8 +93,7 @@ export default function Clients() {
                   <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
                   <TableCell>
                     <Badge variant={client.status === "active" ? "default" : "secondary"}
-                      className={`cursor-pointer ${client.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
-                      onClick={() => isSuperAdmin && toggleStatus(client)}>
+                      className={client.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}>
                       {client.status === "active" ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
@@ -115,7 +107,7 @@ export default function Clients() {
       </Card>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="sm:max-w-md">
+        <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader><SheetTitle>{editing ? t("edit_client") : t("new_client")}</SheetTitle></SheetHeader>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
@@ -124,6 +116,16 @@ export default function Clients() {
             <div className="space-y-2"><Label>{t("email")}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("phone")}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("address")}</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div className="space-y-2">
+              <Label>{t("status")}</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">{t("active")}</SelectItem>
+                  <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button type="submit" className="w-full">{editing ? t("update") : t("create")}</Button>
           </form>
         </SheetContent>

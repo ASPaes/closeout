@@ -26,7 +26,7 @@ export default function Venues() {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Venue | null>(null);
-  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "" });
+  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", latitude: "", longitude: "", status: "active" });
 
   const fetchData = async () => {
     const [v, c] = await Promise.all([
@@ -39,17 +39,28 @@ export default function Venues() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "" }); setSheetOpen(true); };
-  const openEdit = (venue: Venue) => { setEditing(venue); setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "" }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", latitude: "", longitude: "", status: "active" }); setSheetOpen(true); };
+  const openEdit = (venue: Venue) => {
+    setEditing(venue);
+    setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "", latitude: venue.latitude?.toString() || "", longitude: venue.longitude?.toString() || "", status: venue.status });
+    setSheetOpen(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      name: form.name, client_id: form.client_id, address: form.address || null,
+      city: form.city || null, state: form.state || null,
+      latitude: form.latitude ? parseFloat(form.latitude) : null,
+      longitude: form.longitude ? parseFloat(form.longitude) : null,
+      status: form.status,
+    };
     if (editing) {
-      const { error } = await supabase.from("venues").update(form).eq("id", editing.id);
+      const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
       toast.success(t("venue_updated"));
     } else {
-      const { error } = await supabase.from("venues").insert(form);
+      const { error } = await supabase.from("venues").insert(payload);
       if (error) { toast.error(error.message); return; }
       toast.success(t("venue_created"));
     }
@@ -125,7 +136,7 @@ export default function Venues() {
       </Card>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="sm:max-w-md">
+        <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader><SheetTitle>{editing ? t("edit_venue") : t("new_venue")}</SheetTitle></SheetHeader>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
@@ -140,6 +151,20 @@ export default function Venues() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>{t("city")}</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
               <div className="space-y-2"><Label>{t("state")}</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>{t("latitude")}</Label><Input type="number" step="any" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} placeholder="-23.5505" /></div>
+              <div className="space-y-2"><Label>{t("longitude")}</Label><Input type="number" step="any" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} placeholder="-46.6333" /></div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("status")}</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">{t("active")}</SelectItem>
+                  <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" className="w-full">{editing ? t("update") : t("create")}</Button>
           </form>

@@ -102,6 +102,10 @@ const enUS: Record<TranslationKey, string> = {
   select_client: "Select client",
   all_clients: "All Clients",
 
+  // Venues (extra)
+  latitude: "Latitude",
+  longitude: "Longitude",
+
   // Events
   events: "Events",
   manage_events: "Manage events across venues",
@@ -121,6 +125,11 @@ const enUS: Record<TranslationKey, string> = {
   all_venues: "All Venues",
   draft: "Draft",
   closed: "Closed",
+  geo_radius_meters: "Geo radius (meters)",
+  max_order_value: "Max order value",
+  unretrieved_order_alert: "Unretrieved order alert (min)",
+  stock_control: "Stock control",
+  select_client_first: "Select a client first",
 
   // Users & Roles
   users_roles: "Users & Roles",
