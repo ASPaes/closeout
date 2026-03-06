@@ -191,27 +191,6 @@ export type Database = {
         }
         Relationships: []
       }
-      roles: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           client_id: string | null
@@ -257,62 +236,6 @@ export type Database = {
           },
           {
             foreignKeyName: "user_roles_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles_new: {
-        Row: {
-          created_at: string
-          event_id: string | null
-          id: string
-          role_id: string
-          user_id: string
-          venue_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          event_id?: string | null
-          id?: string
-          role_id: string
-          user_id: string
-          venue_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          event_id?: string | null
-          id?: string
-          role_id?: string
-          user_id?: string
-          venue_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_roles_new_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_new_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_new_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_new_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
@@ -375,21 +298,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_roles: {
+        Args: never
+        Returns: {
+          client_id: string
+          event_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          venue_id: string
+        }[]
+      }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
-      get_user_client_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
-      get_user_event_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
-      get_user_venue_ids_v2: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
-        Returns: boolean
-      }
-      has_role_name: {
-        Args: { _role_name: string; _user_id: string }
         Returns: boolean
       }
     }
@@ -400,6 +325,10 @@ export type Database = {
         | "venue_manager"
         | "event_manager"
         | "staff"
+        | "waiter"
+        | "cashier"
+        | "consumer"
+        | "event_organizer"
       event_status: "draft" | "active" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -534,6 +463,10 @@ export const Constants = {
         "venue_manager",
         "event_manager",
         "staff",
+        "waiter",
+        "cashier",
+        "consumer",
+        "event_organizer",
       ],
       event_status: ["draft", "active", "completed", "cancelled"],
     },
