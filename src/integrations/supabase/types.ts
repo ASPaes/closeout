@@ -161,6 +161,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           id: string
+          language: string
           name: string
           phone: string | null
           status: string
@@ -171,6 +172,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           id: string
+          language?: string
           name?: string
           phone?: string | null
           status?: string
@@ -181,6 +183,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           id?: string
+          language?: string
           name?: string
           phone?: string | null
           status?: string

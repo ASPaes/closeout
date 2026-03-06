@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Building2, MapPin, CalendarDays, Activity } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
 
 type AuditEntry = {
@@ -17,6 +18,7 @@ type AuditEntry = {
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const { t } = useTranslation();
   const [stats, setStats] = useState({ clients: 0, venues: 0, activeEvents: 0 });
   const [recentLogs, setRecentLogs] = useState<AuditEntry[]>([]);
 
@@ -28,29 +30,25 @@ export default function Dashboard() {
         supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("audit_logs").select("id, action, entity_type, created_at, user_id").order("created_at", { ascending: false }).limit(8),
       ]);
-      setStats({
-        clients: c.count ?? 0,
-        venues: v.count ?? 0,
-        activeEvents: e.count ?? 0,
-      });
+      setStats({ clients: c.count ?? 0, venues: v.count ?? 0, activeEvents: e.count ?? 0 });
       if (logs.data) setRecentLogs(logs.data as AuditEntry[]);
     };
     fetchData();
   }, []);
 
   const cards = [
-    { title: "Total Clients", value: stats.clients, icon: Building2, desc: "Business owners" },
-    { title: "Total Venues", value: stats.venues, icon: MapPin, desc: "Physical locations" },
-    { title: "Active Events", value: stats.activeEvents, icon: CalendarDays, desc: "Currently running" },
+    { title: t("total_clients"), value: stats.clients, icon: Building2, desc: t("business_owners") },
+    { title: t("total_venues"), value: stats.venues, icon: MapPin, desc: t("physical_locations") },
+    { title: t("active_events"), value: stats.activeEvents, icon: CalendarDays, desc: t("currently_running") },
   ];
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          Welcome back{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}
+          {t("welcome_back")}{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Here's what's happening across your operations</p>
+        <p className="text-sm text-muted-foreground mt-1">{t("operations_overview")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -75,35 +73,27 @@ export default function Dashboard() {
       <Card className="border-border bg-card">
         <CardHeader className="flex flex-row items-center gap-2 pb-4">
           <Activity className="h-4 w-4 text-muted-foreground" />
-          <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+          <CardTitle className="text-base font-semibold">{t("recent_activity")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Action</TableHead>
-                <TableHead>Entity</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead>{t("action")}</TableHead>
+                <TableHead>{t("entity")}</TableHead>
+                <TableHead>{t("time")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {recentLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono text-xs">{log.action}</Badge>
-                  </TableCell>
+                  <TableCell><Badge variant="outline" className="font-mono text-xs">{log.action}</Badge></TableCell>
                   <TableCell className="text-muted-foreground text-xs">{log.entity_type || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs font-mono">
-                    {format(new Date(log.created_at), "MMM dd, HH:mm")}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs font-mono">{format(new Date(log.created_at), "MMM dd, HH:mm")}</TableCell>
                 </TableRow>
               ))}
               {recentLogs.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    No recent activity
-                  </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">{t("no_recent_activity")}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
