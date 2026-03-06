@@ -20,7 +20,8 @@ type Client = {
 };
 
 export default function Clients() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, hasRole } = useAuth();
+  const canManage = isSuperAdmin || hasRole("client_admin");
   const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
@@ -65,7 +66,7 @@ export default function Clients() {
           <h1 className="text-2xl font-bold text-foreground">{t("clients")}</h1>
           <p className="text-sm text-muted-foreground">{t("manage_clients")}</p>
         </div>
-        {isSuperAdmin && <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />{t("add_client")}</Button>}
+        {canManage && <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />{t("add_client")}</Button>}
       </div>
 
       <div className="relative max-w-sm">
@@ -82,7 +83,7 @@ export default function Clients() {
                 <TableHead>{t("slug")}</TableHead>
                 <TableHead>{t("email")}</TableHead>
                 <TableHead>{t("status")}</TableHead>
-                {isSuperAdmin && <TableHead className="w-24">{t("actions")}</TableHead>}
+                {canManage && <TableHead className="w-24">{t("actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,7 +98,7 @@ export default function Clients() {
                       {client.status === "active" ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
-                  {isSuperAdmin && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(client)}><Pencil className="h-4 w-4" /></Button></TableCell>}
+                  {canManage && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(client)}><Pencil className="h-4 w-4" /></Button></TableCell>}
                 </TableRow>
               ))}
               {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t("no_clients_found")}</TableCell></TableRow>}
