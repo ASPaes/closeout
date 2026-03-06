@@ -20,7 +20,6 @@ type UserRole = {
   venue_id: string | null;
   event_id: string | null;
   created_at: string;
-  profiles?: { name: string | null };
 };
 
 type Client = { id: string; name: string };
@@ -70,10 +69,9 @@ export default function UsersRoles() {
     fetchData();
   };
 
-  const filtered = userRoles.filter((ur) => {
-    const name = (ur as any).profiles?.name || "";
-    return name.toLowerCase().includes(search.toLowerCase()) || ur.role.includes(search.toLowerCase());
-  });
+  const filtered = userRoles.filter((ur) =>
+    ur.role.includes(search.toLowerCase()) || ur.user_id.includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -108,14 +106,16 @@ export default function UsersRoles() {
             <TableBody>
               {filtered.map((ur) => (
                 <TableRow key={ur.id}>
-                  <TableCell className="font-medium">{(ur as any).profiles?.name || ur.user_id.slice(0, 8)}</TableCell>
-                  <TableCell><Badge variant="outline" className="capitalize">{roleLabels[ur.role] || ur.role}</Badge></TableCell>
+                  <TableCell className="font-mono text-xs">{ur.user_id.slice(0, 12)}…</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">{roleLabels[ur.role] || ur.role}</Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-xs font-mono">
                     {ur.client_id ? `client: ${ur.client_id.slice(0, 8)}` : "global"}
                   </TableCell>
                   {isSuperAdmin && (
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleRemove(ur.id)} className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="icon" onClick={() => handleRemove(ur.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
