@@ -19,8 +19,9 @@ type Venue = {
   address: string | null;
   city: string | null;
   state: string | null;
-  capacity: number | null;
-  is_active: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  status: string;
   clients?: { name: string };
 };
 
@@ -35,7 +36,7 @@ export default function Venues() {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Venue | null>(null);
-  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", capacity: "" });
+  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "" });
 
   const fetchData = async () => {
     const [v, c] = await Promise.all([
@@ -50,19 +51,19 @@ export default function Venues() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", capacity: "" });
+    setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "" });
     setSheetOpen(true);
   };
 
   const openEdit = (venue: Venue) => {
     setEditing(venue);
-    setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "", capacity: venue.capacity?.toString() || "" });
+    setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "" });
     setSheetOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, capacity: form.capacity ? parseInt(form.capacity) : null };
+    const payload = { ...form };
     if (editing) {
       const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
@@ -108,7 +109,6 @@ export default function Venues() {
                   <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
                   <div className="space-y-2"><Label>State</Label><Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} /></div>
                 </div>
-                <div className="space-y-2"><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></div>
                 <Button type="submit" className="w-full">{editing ? "Update" : "Create"}</Button>
               </form>
             </SheetContent>
@@ -138,7 +138,7 @@ export default function Venues() {
                 <TableHead>Name</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>City</TableHead>
-                <TableHead>Capacity</TableHead>
+                <TableHead>City</TableHead>
                 <TableHead>Status</TableHead>
                 {canManage && <TableHead className="w-20">Actions</TableHead>}
               </TableRow>
@@ -149,8 +149,8 @@ export default function Venues() {
                   <TableCell className="font-medium">{venue.name}</TableCell>
                   <TableCell className="text-muted-foreground">{(venue as any).clients?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{venue.city || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{venue.capacity || "—"}</TableCell>
-                  <TableCell><Badge variant={venue.is_active ? "default" : "secondary"}>{venue.is_active ? "Active" : "Inactive"}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground">{venue.state || "—"}</TableCell>
+                  <TableCell><Badge variant={venue.status === "active" ? "default" : "secondary"}>{venue.status === "active" ? "Active" : "Inactive"}</Badge></TableCell>
                   {canManage && (
                     <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(venue)}><Pencil className="h-4 w-4" /></Button></TableCell>
                   )}
