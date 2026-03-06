@@ -140,7 +140,7 @@ export default function UsersRoles() {
               <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
                 <SelectTrigger><SelectValue placeholder={t("global_no_scope")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("global")}</SelectItem>
+                  <SelectItem value="__global__">{t("global")}</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
