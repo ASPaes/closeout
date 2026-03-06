@@ -37,7 +37,7 @@ export default function AuditLogs() {
   const filtered = logs.filter(
     (l) =>
       l.action.toLowerCase().includes(search.toLowerCase()) ||
-      (l.table_name || "").toLowerCase().includes(search.toLowerCase())
+      (l.entity_type || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -71,8 +71,8 @@ export default function AuditLogs() {
                     {format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss")}
                   </TableCell>
                   <TableCell><Badge variant="outline">{log.action}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-xs">{log.table_name || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-xs">{log.record_id?.slice(0, 8) || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{log.entity_type || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{log.entity_id?.slice(0, 8) || "—"}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">{log.user_id?.slice(0, 8) || "system"}</TableCell>
                 </TableRow>
               ))}
