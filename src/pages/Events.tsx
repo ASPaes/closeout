@@ -14,6 +14,7 @@ import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
+import { EVENT_STATUS, ENTITY_STATUS } from "@/config";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
@@ -25,7 +26,12 @@ type Event = {
 type Venue = { id: string; name: string; client_id: string };
 type Client = { id: string; name: string };
 
-const statusColors: Record<string, string> = { draft: "secondary", active: "default", closed: "outline" };
+const statusColors: Record<string, string> = {
+  [EVENT_STATUS.DRAFT]: "secondary",
+  [EVENT_STATUS.ACTIVE]: "default",
+  [EVENT_STATUS.COMPLETED]: "outline",
+  [EVENT_STATUS.CANCELLED]: "destructive",
+};
 
 export default function Events() {
   const { isSuperAdmin, hasRole } = useAuth();
@@ -40,15 +46,15 @@ export default function Events() {
   const [editing, setEditing] = useState<Event | null>(null);
   const [form, setForm] = useState({
     name: "", client_id: "", venue_id: "", description: "", start_at: "", end_at: "",
-    status: "draft", geo_radius_meters: "", max_order_value: "",
+    status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
 
   const fetchData = async () => {
     const [e, v, c] = await Promise.all([
       supabase.from("events").select("*, venues(name, clients(name))").order("start_at", { ascending: false }),
-      supabase.from("venues").select("id, name, client_id").eq("status", "active"),
-      supabase.from("clients").select("id, name").eq("status", "active"),
+      supabase.from("venues").select("id, name, client_id").eq("status", ENTITY_STATUS.ACTIVE),
+      supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
     if (e.data) setEvents(e.data as Event[]);
     if (v.data) setVenues(v.data as Venue[]);
@@ -66,7 +72,7 @@ export default function Events() {
     setEditing(null);
     setForm({
       name: "", client_id: "", venue_id: "", description: "", start_at: "", end_at: "",
-      status: "draft", geo_radius_meters: "", max_order_value: "",
+      status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
       unretrieved_order_alert_minutes: "", stock_control_enabled: true,
     });
     setSheetOpen(true);
@@ -200,9 +206,10 @@ export default function Events() {
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="draft">{t("draft")}</SelectItem>
-                  <SelectItem value="active">{t("active")}</SelectItem>
-                  <SelectItem value="closed">{t("closed")}</SelectItem>
+                  <SelectItem value={EVENT_STATUS.DRAFT}>{t("draft")}</SelectItem>
+                  <SelectItem value={EVENT_STATUS.ACTIVE}>{t("active")}</SelectItem>
+                  <SelectItem value={EVENT_STATUS.COMPLETED}>{t("completed")}</SelectItem>
+                  <SelectItem value={EVENT_STATUS.CANCELLED}>{t("cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -12,12 +12,21 @@ import { toast } from "sonner";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
+import { APP_ROLE } from "@/config";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Client = { id: string; name: string };
 
 const roleKeys: Record<string, string> = {
-  super_admin: "role_super_admin", client_admin: "role_client_admin", venue_manager: "role_venue_manager", event_manager: "role_event_manager", event_organizer: "role_event_organizer", staff: "role_staff", waiter: "role_waiter", cashier: "role_cashier", consumer: "role_consumer",
+  [APP_ROLE.SUPER_ADMIN]: "role_super_admin",
+  [APP_ROLE.CLIENT_ADMIN]: "role_client_admin",
+  [APP_ROLE.VENUE_MANAGER]: "role_venue_manager",
+  [APP_ROLE.EVENT_MANAGER]: "role_event_manager",
+  [APP_ROLE.EVENT_ORGANIZER]: "role_event_organizer",
+  [APP_ROLE.STAFF]: "role_staff",
+  [APP_ROLE.WAITER]: "role_waiter",
+  [APP_ROLE.CASHIER]: "role_cashier",
+  [APP_ROLE.CONSUMER]: "role_consumer",
 };
 
 export default function UsersRoles() {
@@ -27,7 +36,7 @@ export default function UsersRoles() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", role: "staff", client_id: "" });
+  const [form, setForm] = useState({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "" });
 
   const fetchData = async () => {
     const [ur, c] = await Promise.all([
@@ -67,7 +76,7 @@ export default function UsersRoles() {
           <p className="text-sm text-muted-foreground">{t("manage_roles")}</p>
         </div>
         {isSuperAdmin && (
-          <Button onClick={() => { setForm({ user_id: "", role: "staff", client_id: "" }); setSheetOpen(true); }}>
+          <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "" }); setSheetOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
           </Button>
         )}
@@ -123,15 +132,15 @@ export default function UsersRoles() {
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="super_admin">{t("role_super_admin")}</SelectItem>
-                  <SelectItem value="client_admin">{t("role_client_admin")}</SelectItem>
-                  <SelectItem value="venue_manager">{t("role_venue_manager")}</SelectItem>
-                  <SelectItem value="event_manager">{t("role_event_manager")}</SelectItem>
-                  <SelectItem value="event_organizer">{t("role_event_organizer")}</SelectItem>
-                  <SelectItem value="staff">{t("role_staff")}</SelectItem>
-                  <SelectItem value="waiter">{t("role_waiter")}</SelectItem>
-                  <SelectItem value="cashier">{t("role_cashier")}</SelectItem>
-                  <SelectItem value="consumer">{t("role_consumer")}</SelectItem>
+                  <SelectItem value={APP_ROLE.SUPER_ADMIN}>{t("role_super_admin")}</SelectItem>
+                  <SelectItem value={APP_ROLE.CLIENT_ADMIN}>{t("role_client_admin")}</SelectItem>
+                  <SelectItem value={APP_ROLE.VENUE_MANAGER}>{t("role_venue_manager")}</SelectItem>
+                  <SelectItem value={APP_ROLE.EVENT_MANAGER}>{t("role_event_manager")}</SelectItem>
+                  <SelectItem value={APP_ROLE.EVENT_ORGANIZER}>{t("role_event_organizer")}</SelectItem>
+                  <SelectItem value={APP_ROLE.STAFF}>{t("role_staff")}</SelectItem>
+                  <SelectItem value={APP_ROLE.WAITER}>{t("role_waiter")}</SelectItem>
+                  <SelectItem value={APP_ROLE.CASHIER}>{t("role_cashier")}</SelectItem>
+                  <SelectItem value={APP_ROLE.CONSUMER}>{t("role_consumer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

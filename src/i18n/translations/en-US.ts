@@ -125,6 +125,8 @@ const enUS: Record<TranslationKey, string> = {
   all_venues: "All Venues",
   draft: "Draft",
   closed: "Closed",
+  completed: "Completed",
+  cancelled: "Cancelled",
   geo_radius_meters: "Geo radius (meters)",
   max_order_value: "Max order value",
   unretrieved_order_alert: "Unretrieved order alert (min)",
