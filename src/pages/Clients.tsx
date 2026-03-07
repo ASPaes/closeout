@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
+import { ENTITY_STATUS } from "@/config";
 
 type Client = {
   id: string; name: string; slug: string; logo_url: string | null;
@@ -27,7 +28,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: "active" });
+  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE });
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
@@ -36,7 +37,7 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: "active" }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE }); setSheetOpen(true); };
   const openEdit = (client: Client) => {
     setEditing(client);
     setForm({ name: client.name, slug: client.slug, email: client.email || "", phone: client.phone || "", document: client.document || "", address: client.address || "", status: client.status });
@@ -93,9 +94,9 @@ export default function Clients() {
                   <TableCell className="font-mono text-xs text-muted-foreground">{client.slug}</TableCell>
                   <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={client.status === "active" ? "default" : "secondary"}
-                      className={client.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}>
-                      {client.status === "active" ? t("active") : t("inactive")}
+                    <Badge variant={client.status === ENTITY_STATUS.ACTIVE ? "default" : "secondary"}
+                      className={client.status === ENTITY_STATUS.ACTIVE ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}>
+                      {client.status === ENTITY_STATUS.ACTIVE ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
                   {canManage && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(client)}><Pencil className="h-4 w-4" /></Button></TableCell>}
@@ -122,8 +123,8 @@ export default function Clients() {
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">{t("active")}</SelectItem>
-                  <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                  <SelectItem value={ENTITY_STATUS.ACTIVE}>{t("active")}</SelectItem>
+                  <SelectItem value={ENTITY_STATUS.INACTIVE}>{t("inactive")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

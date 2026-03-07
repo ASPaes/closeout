@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
+import { ENTITY_STATUS } from "@/config";
 
 type Venue = { id: string; client_id: string; name: string; address: string | null; city: string | null; state: string | null; latitude: number | null; longitude: number | null; status: string; clients?: { name: string } };
 type Client = { id: string; name: string };
@@ -26,12 +27,12 @@ export default function Venues() {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Venue | null>(null);
-  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", latitude: "", longitude: "", status: "active" });
+  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE });
 
   const fetchData = async () => {
     const [v, c] = await Promise.all([
       supabase.from("venues").select("*, clients(name)").order("created_at", { ascending: false }),
-      supabase.from("clients").select("id, name").eq("status", "active"),
+      supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
@@ -39,7 +40,7 @@ export default function Venues() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", latitude: "", longitude: "", status: "active" }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE }); setSheetOpen(true); };
   const openEdit = (venue: Venue) => {
     setEditing(venue);
     setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "", latitude: venue.latitude?.toString() || "", longitude: venue.longitude?.toString() || "", status: venue.status });
@@ -68,10 +69,10 @@ export default function Venues() {
   };
 
   const toggleStatus = async (venue: Venue) => {
-    const newStatus = venue.status === "active" ? "inactive" : "active";
+    const newStatus = venue.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(newStatus === "active" ? t("venue_activated") : t("venue_deactivated"));
+    toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("venue_activated") : t("venue_deactivated"));
     fetchData();
   };
 
@@ -120,10 +121,10 @@ export default function Venues() {
                   <TableCell className="text-muted-foreground">{venue.clients?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{venue.city || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={venue.status === "active" ? "default" : "secondary"}
-                      className={`cursor-pointer ${venue.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
+                    <Badge variant={venue.status === ENTITY_STATUS.ACTIVE ? "default" : "secondary"}
+                      className={`cursor-pointer ${venue.status === ENTITY_STATUS.ACTIVE ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
                       onClick={() => canManage && toggleStatus(venue)}>
-                      {venue.status === "active" ? t("active") : t("inactive")}
+                      {venue.status === ENTITY_STATUS.ACTIVE ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
                   {canManage && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(venue)}><Pencil className="h-4 w-4" /></Button></TableCell>}
@@ -161,8 +162,8 @@ export default function Venues() {
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">{t("active")}</SelectItem>
-                  <SelectItem value="inactive">{t("inactive")}</SelectItem>
+                  <SelectItem value={ENTITY_STATUS.ACTIVE}>{t("active")}</SelectItem>
+                  <SelectItem value={ENTITY_STATUS.INACTIVE}>{t("inactive")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
