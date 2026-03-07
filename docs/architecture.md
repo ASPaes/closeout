@@ -119,3 +119,23 @@ log_audit(p_user_id, p_action, p_entity_type, p_entity_id, p_old_data, p_new_dat
 | `cash_register_status` | open, closed |
 | `waiter_session_status` | active, closed |
 | `order_origin` | consumer_app, waiter_app, cashier |
+
+---
+
+## Constants and Shared Types
+
+### TypeScript Constants (`src/config/`)
+
+All PostgreSQL enums are mirrored as TypeScript `as const` objects in `src/config/enums.ts`. Audit actions are defined in `src/config/audit-actions.ts`. Import via `@/config`.
+
+**Rule:** Never hardcode status strings in components. Always use the typed constants.
+
+### Shared Types (`src/types/`)
+
+Generic reusable types used across multiple features:
+- `PaginatedResponse<T>` — paginated Edge Function responses
+- `ApiError` — RFC 7807 error format
+- `SelectOption` — generic select item `{ value, label }`
+- `DateRange` — date range `{ from, to }`
+
+See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
