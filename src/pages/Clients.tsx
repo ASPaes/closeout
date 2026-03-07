@@ -28,7 +28,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE });
+  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE as string });
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
@@ -37,7 +37,7 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE as string }); setSheetOpen(true); };
   const openEdit = (client: Client) => {
     setEditing(client);
     setForm({ name: client.name, slug: client.slug, email: client.email || "", phone: client.phone || "", document: client.document || "", address: client.address || "", status: client.status });

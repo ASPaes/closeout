@@ -46,7 +46,7 @@ export default function Events() {
   const [editing, setEditing] = useState<Event | null>(null);
   const [form, setForm] = useState({
     name: "", client_id: "", venue_id: "", description: "", start_at: "", end_at: "",
-    status: EVENT_STATUS.DRAFT, geo_radius_meters: "", max_order_value: "",
+    status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
 
@@ -72,7 +72,7 @@ export default function Events() {
     setEditing(null);
     setForm({
       name: "", client_id: "", venue_id: "", description: "", start_at: "", end_at: "",
-      status: EVENT_STATUS.DRAFT, geo_radius_meters: "", max_order_value: "",
+      status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
       unretrieved_order_alert_minutes: "", stock_control_enabled: true,
     });
     setSheetOpen(true);

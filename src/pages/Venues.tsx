@@ -27,7 +27,7 @@ export default function Venues() {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Venue | null>(null);
-  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE });
+  const [form, setForm] = useState({ name: "", client_id: "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE as string });
 
   const fetchData = async () => {
     const [v, c] = await Promise.all([
@@ -40,7 +40,7 @@ export default function Venues() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE }); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ name: "", client_id: clients[0]?.id || "", address: "", city: "", state: "", latitude: "", longitude: "", status: ENTITY_STATUS.ACTIVE as string }); setSheetOpen(true); };
   const openEdit = (venue: Venue) => {
     setEditing(venue);
     setForm({ name: venue.name, client_id: venue.client_id, address: venue.address || "", city: venue.city || "", state: venue.state || "", latitude: venue.latitude?.toString() || "", longitude: venue.longitude?.toString() || "", status: venue.status });

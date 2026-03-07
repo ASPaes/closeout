@@ -36,7 +36,7 @@ export default function UsersRoles() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", role: APP_ROLE.STAFF, client_id: "" });
+  const [form, setForm] = useState({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "" });
 
   const fetchData = async () => {
     const [ur, c] = await Promise.all([
@@ -76,7 +76,7 @@ export default function UsersRoles() {
           <p className="text-sm text-muted-foreground">{t("manage_roles")}</p>
         </div>
         {isSuperAdmin && (
-          <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF, client_id: "" }); setSheetOpen(true); }}>
+          <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "" }); setSheetOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
           </Button>
         )}

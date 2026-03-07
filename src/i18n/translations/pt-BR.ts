@@ -123,6 +123,8 @@ const ptBR = {
   all_venues: "Todos os Locais",
   draft: "Rascunho",
   closed: "Encerrado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
   geo_radius_meters: "Raio de geolocalização (metros)",
   max_order_value: "Valor máximo do pedido",
   unretrieved_order_alert: "Alerta de pedido não retirado (min)",
