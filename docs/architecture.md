@@ -139,3 +139,52 @@ Generic reusable types used across multiple features:
 - `DateRange` — date range `{ from, to }`
 
 See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
+
+---
+
+## Platform Settings
+
+### Table `platform_settings`
+
+Stores global platform defaults (single row). Managed via the Settings admin page.
+
+```
+platform_settings (
+  id uuid PK,
+  default_geo_radius_meters integer NOT NULL DEFAULT 500,
+  default_max_order_value numeric NOT NULL DEFAULT 500.00,
+  default_unretrieved_order_alert_minutes integer NOT NULL DEFAULT 15,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+```
+
+RLS: Only `super_admin` can read/write.
+
+---
+
+## Audit Log Automation
+
+All CRUD operations on core entities (clients, venues, events, user_roles) automatically insert audit logs via the `logAudit()` helper in `src/lib/audit.ts`. This helper calls the `log_audit` database function.
+
+Actions logged:
+- `client.created`, `client.updated`
+- `venue.created`, `venue.updated`
+- `event.created`, `event.updated`
+- `user.role_assigned`, `user.role_removed`
+
+### TypeScript Constants (`src/config/`)
+
+All PostgreSQL enums are mirrored as TypeScript `as const` objects in `src/config/enums.ts`. Audit actions are defined in `src/config/audit-actions.ts`. Import via `@/config`.
+
+**Rule:** Never hardcode status strings in components. Always use the typed constants.
+
+### Shared Types (`src/types/`)
+
+Generic reusable types used across multiple features:
+- `PaginatedResponse<T>` — paginated Edge Function responses
+- `ApiError` — RFC 7807 error format
+- `SelectOption` — generic select item `{ value, label }`
+- `DateRange` — date range `{ from, to }`
+
+See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
