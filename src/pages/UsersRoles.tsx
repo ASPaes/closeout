@@ -89,7 +89,7 @@ export default function UsersRoles() {
     setBootstrapping(true);
     const { data, error } = await supabase.rpc("bootstrap_super_admin");
     setBootstrapping(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) {
       toast.success(t("role_assigned"));
       fetchData();
