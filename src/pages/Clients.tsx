@@ -34,7 +34,7 @@ export default function Clients() {
 
   const fetchClients = async () => {
     const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); console.error("clients fetch error:", error); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) setClients(data as Client[]);
   };
 
