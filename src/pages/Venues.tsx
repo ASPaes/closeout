@@ -67,7 +67,7 @@ export default function Venues() {
       toast.success(t("venue_updated"));
     } else {
       const { data, error } = await supabase.from("venues").insert(payload).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       if (data) await logAudit({ action: "venue.created", entityType: "venue", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id }, newData: payload });
       toast.success(t("venue_created"));
     }
