@@ -116,7 +116,7 @@ export default function Events() {
     } else {
       const { data, error } = await supabase.from("events").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
-      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, newData: payload });
+      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
       toast.success(t("event_created"));
     }
     setSheetOpen(false); fetchData();
