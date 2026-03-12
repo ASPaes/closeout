@@ -22,7 +22,7 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin, data: { name: fullName } } });
-    if (error) { toast.error(error.message); } else { setSent(true); toast.success(t("email_confirm_check")); }
+    if (error) { toast.error(getPtBrErrorMessage(error)); } else { setSent(true); toast.success(t("email_confirm_check")); }
     setLoading(false);
   };
 
