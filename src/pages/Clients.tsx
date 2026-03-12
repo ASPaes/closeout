@@ -56,7 +56,7 @@ export default function Clients() {
       toast.success(t("client_updated"));
     } else {
       const { data, error } = await supabase.from("clients").insert(form).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, metadata: { name: form.name }, newData: form });
       toast.success(t("client_created"));
     }
