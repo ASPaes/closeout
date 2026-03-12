@@ -3,7 +3,6 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar
@@ -24,6 +23,18 @@ const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "settings", url: "/settings", icon: Settings },
 ];
 
+const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
+  client_admin: "Admin do Cliente",
+  venue_manager: "Gerente de Local",
+  event_manager: "Gerente de Evento",
+  event_organizer: "Organizador",
+  staff: "Equipe",
+  waiter: "Garçom",
+  cashier: "Caixa",
+  consumer: "Consumidor",
+};
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -31,7 +42,7 @@ export function AppSidebar() {
   const { profile, roles, signOut, isSuperAdmin } = useAuth();
   const { t } = useTranslation();
 
-  const primaryRole = roles[0]?.role?.replace(/_/g, " ") ?? "no role";
+  const primaryRole = roles[0]?.role ? (roleLabels[roles[0].role] ?? roles[0].role) : "sem papel";
 
   return (
     <Sidebar collapsible="icon">
@@ -98,14 +109,13 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-3">
         {!collapsed ? (
           <div className="space-y-3">
-            <LanguageSwitcher />
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary">
                   {profile?.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.name || "User"}</p>
+                  <p className="truncate text-sm font-medium text-sidebar-foreground">{profile?.name || "Usuário"}</p>
                   <Badge variant="secondary" className="mt-0.5 text-[9px] capitalize px-1.5 py-0 h-4">{primaryRole}</Badge>
                 </div>
               </div>
