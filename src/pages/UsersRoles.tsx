@@ -106,7 +106,7 @@ export default function UsersRoles() {
     if (form.venue_id) payload.venue_id = form.venue_id;
     if (form.event_id) payload.event_id = form.event_id;
     const { data, error } = await supabase.from("user_roles").insert(payload).select("id").single();
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) await logAudit({ action: "user.role_assigned", entityType: "user_role", entityId: data.id, metadata: { user_id: payload.user_id, role: payload.role, client_id: payload.client_id || null }, newData: payload });
     toast.success(t("role_assigned"));
     setSheetOpen(false); fetchData();
