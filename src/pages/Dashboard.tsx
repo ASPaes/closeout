@@ -105,7 +105,7 @@ export default function Dashboard() {
                 <TableRow key={log.id}>
                   <TableCell><Badge variant="outline" className="font-mono text-xs">{log.action}</Badge></TableCell>
                   <TableCell className="text-muted-foreground text-xs">{log.entity_type || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs font-mono">{format(new Date(log.created_at), "MMM dd, HH:mm")}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs font-mono">{format(new Date(log.created_at), "dd MMM, HH:mm", { locale: datePtBR })}</TableCell>
                 </TableRow>
               ))}
               {recentLogs.length === 0 && (

@@ -181,8 +181,8 @@ export default function Events() {
                   <TableCell className="font-medium">{event.name}</TableCell>
                   <TableCell className="text-muted-foreground">{event.venues?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{event.venues?.clients?.name || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{event.start_at ? format(new Date(event.start_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{event.end_at ? format(new Date(event.end_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{event.start_at ? format(new Date(event.start_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{event.end_at ? format(new Date(event.end_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</TableCell>
                   <TableCell><Badge variant={statusColors[event.status] as any} className="capitalize">{t(event.status as any)}</Badge></TableCell>
                   {canManage && (
                     <TableCell className="flex gap-1">
