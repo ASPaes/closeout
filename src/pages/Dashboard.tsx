@@ -7,6 +7,7 @@ import { Building2, MapPin, CalendarDays, Activity, CalendarCheck } from "lucide
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
+import { ptBR as datePtBR } from "date-fns/locale";
 import { EVENT_STATUS } from "@/config";
 
 type AuditEntry = {
