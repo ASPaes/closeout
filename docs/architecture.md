@@ -110,7 +110,7 @@ log_audit(p_user_id, p_action, p_entity_type, p_entity_id, p_old_data, p_new_dat
 | Enum | Valores |
 |---|---|
 | `app_role` | super_admin, client_admin, venue_manager, event_manager, event_organizer, staff, waiter, cashier, consumer |
-| `event_status` | draft, active, completed, cancelled |
+| `event_status` | draft, active, completed, cancelled (validated by trigger `validate_event_status`) |
 | `order_status` | pending, paid, preparing, ready, delivered, cancelled |
 | `payment_status` | created, processing, approved, failed, cancelled |
 | `qr_status` | valid, used, cancelled, invalid |
@@ -148,9 +148,11 @@ See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
 
 Stores global platform defaults (single row). Managed via the Settings admin page.
 
+**Convention:** This is a single-row table. The fixed primary key is `00000000-0000-0000-0000-000000000001`. The Settings page uses `upsert` with this ID so it works even on a fresh database with no existing row.
+
 ```
 platform_settings (
-  id uuid PK,
+  id uuid PK,  -- fixed: 00000000-0000-0000-0000-000000000001
   default_geo_radius_meters integer NOT NULL DEFAULT 500,
   default_max_order_value numeric NOT NULL DEFAULT 500.00,
   default_unretrieved_order_alert_minutes integer NOT NULL DEFAULT 15,
