@@ -46,6 +46,8 @@ const ptBR = {
   physical_locations: "Locais físicos",
   active_events: "Eventos Ativos",
   currently_running: "Em andamento",
+  events_today: "Eventos Hoje",
+  events_today_desc: "Iniciando hoje",
   recent_activity: "Atividade Recente",
   action: "Ação",
   entity: "Entidade",
@@ -114,6 +116,8 @@ const ptBR = {
   search_events: "Buscar eventos...",
   event_created: "Evento criado",
   event_updated: "Evento atualizado",
+  event_completed: "Evento concluído",
+  complete_event: "Concluir evento",
   no_events_found: "Nenhum evento encontrado",
   venue: "Local",
   description: "Descrição",
@@ -165,6 +169,20 @@ const ptBR = {
   timestamp: "Data/Hora",
   entity_id: "ID da Entidade",
   no_logs_found: "Nenhum log encontrado",
+
+  // Settings
+  settings: "Configurações",
+  settings_desc: "Configurações globais da plataforma",
+  platform_defaults: "Padrões da Plataforma",
+  default_geo_radius: "Raio de geolocalização padrão (metros)",
+  default_geo_radius_help: "Raio padrão usado para validação de localização em novos eventos",
+  default_max_order: "Valor máximo do pedido padrão",
+  default_max_order_help: "Limite padrão de valor por pedido para novos eventos",
+  default_alert_minutes: "Alerta de pedido não retirado (minutos)",
+  default_alert_minutes_help: "Tempo padrão para alertar sobre pedidos não retirados",
+  save_settings: "Salvar Configurações",
+  saving: "Salvando...",
+  settings_saved: "Configurações salvas",
 
   // Orders (future)
   orders: "Pedidos",

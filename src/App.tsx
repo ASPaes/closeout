@@ -16,6 +16,7 @@ import Venues from "@/pages/Venues";
 import Events from "@/pages/Events";
 import UsersRoles from "@/pages/UsersRoles";
 import AuditLogs from "@/pages/AuditLogs";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/events" element={<Events />} />
               <Route path="/users" element={<UsersRoles />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

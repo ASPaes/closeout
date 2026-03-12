@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
 const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "users_roles", url: "/users", icon: Users },
   { titleKey: "audit_logs", url: "/audit-logs", icon: ScrollText },
+  { titleKey: "settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {

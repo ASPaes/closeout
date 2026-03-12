@@ -48,6 +48,8 @@ const enUS: Record<TranslationKey, string> = {
   physical_locations: "Physical locations",
   active_events: "Active Events",
   currently_running: "Currently running",
+  events_today: "Events Today",
+  events_today_desc: "Starting today",
   recent_activity: "Recent Activity",
   action: "Action",
   entity: "Entity",
@@ -116,6 +118,8 @@ const enUS: Record<TranslationKey, string> = {
   search_events: "Search events...",
   event_created: "Event created",
   event_updated: "Event updated",
+  event_completed: "Event completed",
+  complete_event: "Complete event",
   no_events_found: "No events found",
   venue: "Venue",
   description: "Description",
@@ -167,6 +171,20 @@ const enUS: Record<TranslationKey, string> = {
   timestamp: "Timestamp",
   entity_id: "Entity ID",
   no_logs_found: "No logs found",
+
+  // Settings
+  settings: "Settings",
+  settings_desc: "Global platform settings",
+  platform_defaults: "Platform Defaults",
+  default_geo_radius: "Default geo radius (meters)",
+  default_geo_radius_help: "Default radius used for location validation on new events",
+  default_max_order: "Default max order value",
+  default_max_order_help: "Default order value limit for new events",
+  default_alert_minutes: "Unretrieved order alert (minutes)",
+  default_alert_minutes_help: "Default time to alert about unretrieved orders",
+  save_settings: "Save Settings",
+  saving: "Saving...",
+  settings_saved: "Settings saved",
 
   // Orders (future)
   orders: "Orders",

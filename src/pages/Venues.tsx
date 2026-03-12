@@ -13,6 +13,7 @@ import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { ENTITY_STATUS } from "@/config";
+import { logAudit } from "@/lib/audit";
 
 type Venue = { id: string; client_id: string; name: string; address: string | null; city: string | null; state: string | null; latitude: number | null; longitude: number | null; status: string; clients?: { name: string } };
 type Client = { id: string; name: string };
@@ -59,10 +60,12 @@ export default function Venues() {
     if (editing) {
       const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
+      await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("venue_updated"));
     } else {
-      const { error } = await supabase.from("venues").insert(payload);
+      const { data, error } = await supabase.from("venues").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
+      if (data) await logAudit({ action: "venue.created", entityType: "venue", entityId: data.id, newData: payload });
       toast.success(t("venue_created"));
     }
     setSheetOpen(false); fetchData();
@@ -72,6 +75,7 @@ export default function Venues() {
     const newStatus = venue.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
     if (error) { toast.error(error.message); return; }
+    await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, oldData: { status: venue.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("venue_activated") : t("venue_deactivated"));
     fetchData();
   };

@@ -13,6 +13,7 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { APP_ROLE } from "@/config";
+import { logAudit } from "@/lib/audit";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Client = { id: string; name: string };
@@ -53,15 +54,17 @@ export default function UsersRoles() {
     e.preventDefault();
     const payload: any = { user_id: form.user_id, role: form.role };
     if (form.client_id) payload.client_id = form.client_id;
-    const { error } = await supabase.from("user_roles").insert(payload);
+    const { data, error } = await supabase.from("user_roles").insert(payload).select("id").single();
     if (error) { toast.error(error.message); return; }
+    if (data) await logAudit({ action: "user.role_assigned", entityType: "user_role", entityId: data.id, newData: payload });
     toast.success(t("role_assigned"));
     setSheetOpen(false); fetchData();
   };
 
-  const handleRemove = async (id: string) => {
-    const { error } = await supabase.from("user_roles").delete().eq("id", id);
+  const handleRemove = async (ur: UserRole) => {
+    const { error } = await supabase.from("user_roles").delete().eq("id", ur.id);
     if (error) { toast.error(error.message); return; }
+    await logAudit({ action: "user.role_removed", entityType: "user_role", entityId: ur.id, oldData: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id } });
     toast.success(t("role_removed"));
     fetchData();
   };
@@ -106,7 +109,7 @@ export default function UsersRoles() {
                   <TableCell className="text-muted-foreground text-xs font-mono">{ur.client_id ? `client: ${ur.client_id.slice(0, 8)}` : t("global")}</TableCell>
                   {isSuperAdmin && (
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleRemove(ur.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Button variant="ghost" size="icon" onClick={() => handleRemove(ur)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
