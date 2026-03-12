@@ -57,7 +57,7 @@ export default function Signup() {
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2"><Label htmlFor="fullName">{t("full_name")}</Label><Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: Maria Silva" required /></div>
-              <div className="space-y-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></div>
+              <div className="space-y-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" required /></div>
               <div className="space-y-2"><Label htmlFor="password">{t("password")}</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("min_characters")} minLength={6} required /></div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

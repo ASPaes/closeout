@@ -20,7 +20,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
-    if (error) { toast.error(error.message); } else { setSent(true); }
+    if (error) { toast.error(getPtBrErrorMessage(error)); } else { setSent(true); }
     setLoading(false);
   };
 

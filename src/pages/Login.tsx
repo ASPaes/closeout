@@ -29,7 +29,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { toast.error(error.message); setLoading(false); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); setLoading(false); return; }
     if (data.session) {
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
       const totp = factorsData?.totp;

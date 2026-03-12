@@ -26,7 +26,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-    if (error) { toast.error(error.message); } else { toast.success(t("password_updated")); navigate("/"); }
+    if (error) { toast.error(getPtBrErrorMessage(error)); } else { toast.success(t("password_updated")); navigate("/"); }
     setLoading(false);
   };
 
