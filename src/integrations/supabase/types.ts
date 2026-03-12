@@ -164,6 +164,33 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          default_geo_radius_meters: number
+          default_max_order_value: number
+          default_unretrieved_order_alert_minutes: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_geo_radius_meters?: number
+          default_max_order_value?: number
+          default_unretrieved_order_alert_minutes?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_geo_radius_meters?: number
+          default_max_order_value?: number
+          default_unretrieved_order_alert_minutes?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

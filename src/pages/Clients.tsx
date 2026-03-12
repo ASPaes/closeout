@@ -13,6 +13,7 @@ import { Plus, Search, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { ENTITY_STATUS } from "@/config";
+import { logAudit } from "@/lib/audit";
 
 type Client = {
   id: string; name: string; slug: string; logo_url: string | null;
@@ -49,13 +50,24 @@ export default function Clients() {
     if (editing) {
       const { error } = await supabase.from("clients").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
+      await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: form });
       toast.success(t("client_updated"));
     } else {
-      const { error } = await supabase.from("clients").insert(form);
+      const { data, error } = await supabase.from("clients").insert(form).select("id").single();
       if (error) { toast.error(error.message); return; }
+      if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, newData: form });
       toast.success(t("client_created"));
     }
     setSheetOpen(false); fetchClients();
+  };
+
+  const toggleStatus = async (client: Client) => {
+    const newStatus = client.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
+    const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, oldData: { status: client.status }, newData: { status: newStatus } });
+    toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("client_activated") : t("client_deactivated"));
+    fetchClients();
   };
 
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
@@ -95,7 +107,8 @@ export default function Clients() {
                   <TableCell className="text-muted-foreground">{client.email || "—"}</TableCell>
                   <TableCell>
                     <Badge variant={client.status === ENTITY_STATUS.ACTIVE ? "default" : "secondary"}
-                      className={client.status === ENTITY_STATUS.ACTIVE ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}>
+                      className={`cursor-pointer ${client.status === ENTITY_STATUS.ACTIVE ? "bg-primary/15 text-primary hover:bg-primary/25" : ""}`}
+                      onClick={() => canManage && toggleStatus(client)}>
                       {client.status === ENTITY_STATUS.ACTIVE ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>

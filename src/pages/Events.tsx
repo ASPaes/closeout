@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Search, Pencil } from "lucide-react";
+import { Plus, Search, Pencil, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
 import { EVENT_STATUS, ENTITY_STATUS } from "@/config";
+import { logAudit } from "@/lib/audit";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
@@ -110,13 +111,23 @@ export default function Events() {
     if (editing) {
       const { error } = await supabase.from("events").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
+      await logAudit({ action: "event.updated", entityType: "event", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("event_updated"));
     } else {
-      const { error } = await supabase.from("events").insert(payload);
+      const { data, error } = await supabase.from("events").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
+      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, newData: payload });
       toast.success(t("event_created"));
     }
     setSheetOpen(false); fetchData();
+  };
+
+  const completeEvent = async (event: Event) => {
+    const { error } = await supabase.from("events").update({ status: EVENT_STATUS.COMPLETED }).eq("id", event.id);
+    if (error) { toast.error(error.message); return; }
+    await logAudit({ action: "event.updated", entityType: "event", entityId: event.id, oldData: { status: event.status }, newData: { status: EVENT_STATUS.COMPLETED } });
+    toast.success(t("event_completed"));
+    fetchData();
   };
 
   const filtered = events.filter((e) => filterVenue === "all" || e.venue_id === filterVenue).filter((e) => e.name.toLowerCase().includes(search.toLowerCase()));
@@ -156,7 +167,7 @@ export default function Events() {
                 <TableHead>{t("start")}</TableHead>
                 <TableHead>{t("end")}</TableHead>
                 <TableHead>{t("status")}</TableHead>
-                {canManage && <TableHead className="w-20">{t("actions")}</TableHead>}
+                {canManage && <TableHead className="w-24">{t("actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,7 +179,16 @@ export default function Events() {
                   <TableCell className="text-muted-foreground">{event.start_at ? format(new Date(event.start_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{event.end_at ? format(new Date(event.end_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
                   <TableCell><Badge variant={statusColors[event.status] as any} className="capitalize">{t(event.status as any)}</Badge></TableCell>
-                  {canManage && <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(event)}><Pencil className="h-4 w-4" /></Button></TableCell>}
+                  {canManage && (
+                    <TableCell className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(event)}><Pencil className="h-4 w-4" /></Button>
+                      {event.status === EVENT_STATUS.ACTIVE && (
+                        <Button variant="ghost" size="icon" onClick={() => completeEvent(event)} title={t("complete_event")}>
+                          <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{t("no_events_found")}</TableCell></TableRow>}
