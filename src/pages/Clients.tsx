@@ -65,7 +65,7 @@ export default function Clients() {
     const newStatus = client.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, oldData: { status: client.status }, newData: { status: newStatus } });
+    await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, metadata: { name: client.name, previous_status: client.status, new_status: newStatus }, oldData: { status: client.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("client_activated") : t("client_deactivated"));
     fetchClients();
   };

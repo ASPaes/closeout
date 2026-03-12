@@ -75,7 +75,7 @@ export default function Venues() {
     const newStatus = venue.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, oldData: { status: venue.status }, newData: { status: newStatus } });
+    await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, metadata: { name: venue.name, client_id: venue.client_id, previous_status: venue.status, new_status: newStatus }, oldData: { status: venue.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("venue_activated") : t("venue_deactivated"));
     fetchData();
   };
