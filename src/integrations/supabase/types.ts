@@ -334,6 +334,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_super_admin: { Args: never; Returns: boolean }
       get_my_roles: {
         Args: never
         Returns: {

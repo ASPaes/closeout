@@ -35,6 +35,8 @@ export default function Venues() {
       supabase.from("venues").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
+    if (v.error) { toast.error(v.error.message); console.error("venues fetch error:", v.error); }
+    if (c.error) { toast.error(c.error.message); console.error("clients fetch error:", c.error); }
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
   };
