@@ -72,7 +72,7 @@ export default function UsersRoles() {
       supabase.from("venues").select("id, name, client_id"),
       supabase.from("events").select("id, name, venue_id"),
     ]);
-    if (ur.error) { toast.error(ur.error.message); console.error("user_roles fetch error:", ur.error); }
+    if (ur.error) { toast.error(getPtBrErrorMessage(ur.error)); }
     if (ur.data) {
       setUserRoles(ur.data as UserRole[]);
       setHasSuperAdmin(ur.data.some((r: any) => r.role === "super_admin"));
