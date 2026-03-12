@@ -32,7 +32,8 @@ export default function Clients() {
   const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", document: "", address: "", status: ENTITY_STATUS.ACTIVE as string });
 
   const fetchClients = async () => {
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    if (error) { toast.error(error.message); console.error("clients fetch error:", error); return; }
     if (data) setClients(data as Client[]);
   };
 

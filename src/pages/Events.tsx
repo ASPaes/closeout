@@ -57,6 +57,9 @@ export default function Events() {
       supabase.from("venues").select("id, name, client_id").eq("status", ENTITY_STATUS.ACTIVE),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
+    if (e.error) { toast.error(e.error.message); console.error("events fetch error:", e.error); }
+    if (v.error) { toast.error(v.error.message); console.error("venues fetch error:", v.error); }
+    if (c.error) { toast.error(c.error.message); console.error("clients fetch error:", c.error); }
     if (e.data) setEvents(e.data as Event[]);
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
