@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,7 @@ export default function Clients() {
 
   const fetchClients = async () => {
     const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); console.error("clients fetch error:", error); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) setClients(data as Client[]);
   };
 
@@ -50,12 +51,12 @@ export default function Clients() {
     e.preventDefault();
     if (editing) {
       const { error } = await supabase.from("clients").update(form).eq("id", editing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: form });
       toast.success(t("client_updated"));
     } else {
       const { data, error } = await supabase.from("clients").insert(form).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, metadata: { name: form.name }, newData: form });
       toast.success(t("client_created"));
     }
@@ -65,7 +66,7 @@ export default function Clients() {
   const toggleStatus = async (client: Client) => {
     const newStatus = client.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, metadata: { name: client.name, previous_status: client.status, new_status: newStatus }, oldData: { status: client.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("client_activated") : t("client_deactivated"));
     fetchClients();
@@ -127,8 +128,8 @@ export default function Clients() {
           <SheetHeader><SheetTitle>{editing ? t("edit_client") : t("new_client")}</SheetTitle></SheetHeader>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="space-y-2"><Label>{t("slug")}</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="unique-identifier" /></div>
-            <div className="space-y-2"><Label>{t("document")}</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ or ID" /></div>
+            <div className="space-y-2"><Label>{t("slug")}</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="identificador-unico" /></div>
+            <div className="space-y-2"><Label>{t("document")}</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ ou CPF" /></div>
             <div className="space-y-2"><Label>{t("email")}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("phone")}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("address")}</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>

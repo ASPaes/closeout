@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profileRes.data) {
       const p = profileRes.data as Profile;
       setProfile(p);
-      const lang = p.language as "pt-BR" | "en-US" | null;
-      setLanguage(lang === "en-US" ? "en-US" : "pt-BR");
+      // Force pt-BR only
+      setLanguage("pt-BR");
     }
     if (rolesRes.data) setRoles(rolesRes.data as UserRole[]);
   };

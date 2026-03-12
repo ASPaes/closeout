@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,8 +36,8 @@ export default function Venues() {
       supabase.from("venues").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
-    if (v.error) { toast.error(v.error.message); console.error("venues fetch error:", v.error); }
-    if (c.error) { toast.error(c.error.message); console.error("clients fetch error:", c.error); }
+    if (v.error) { toast.error(getPtBrErrorMessage(v.error)); }
+    if (c.error) { toast.error(getPtBrErrorMessage(c.error)); }
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
   };
@@ -61,12 +62,12 @@ export default function Venues() {
     };
     if (editing) {
       const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, metadata: { name: payload.name, client_id: payload.client_id, previous_status: editing.status, new_status: payload.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("venue_updated"));
     } else {
       const { data, error } = await supabase.from("venues").insert(payload).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       if (data) await logAudit({ action: "venue.created", entityType: "venue", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id }, newData: payload });
       toast.success(t("venue_created"));
     }
@@ -76,7 +77,7 @@ export default function Venues() {
   const toggleStatus = async (venue: Venue) => {
     const newStatus = venue.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, metadata: { name: venue.name, client_id: venue.client_id, previous_status: venue.status, new_status: newStatus }, oldData: { status: venue.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("venue_activated") : t("venue_deactivated"));
     fetchData();

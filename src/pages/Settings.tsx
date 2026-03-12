@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,7 +54,7 @@ export default function Settings() {
       default_unretrieved_order_alert_minutes: parseInt(form.default_unretrieved_order_alert_minutes) || 15,
     };
     const { error } = await supabase.from("platform_settings").upsert(payload, { onConflict: "id" });
-    if (error) { setSaving(false); toast.error(error.message); return; }
+    if (error) { setSaving(false); toast.error(getPtBrErrorMessage(error)); return; }
     // Re-fetch after upsert
     const { data } = await supabase.from("platform_settings").select("*").eq("id", SETTINGS_ID).single();
     if (data) {

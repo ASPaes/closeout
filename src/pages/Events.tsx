@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { Plus, Search, Pencil, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
+import { ptBR as datePtBR } from "date-fns/locale";
 import { EVENT_STATUS, ENTITY_STATUS } from "@/config";
 import { logAudit } from "@/lib/audit";
 
@@ -57,9 +59,9 @@ export default function Events() {
       supabase.from("venues").select("id, name, client_id").eq("status", ENTITY_STATUS.ACTIVE),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
-    if (e.error) { toast.error(e.error.message); console.error("events fetch error:", e.error); }
-    if (v.error) { toast.error(v.error.message); console.error("venues fetch error:", v.error); }
-    if (c.error) { toast.error(c.error.message); console.error("clients fetch error:", c.error); }
+    if (e.error) { toast.error(getPtBrErrorMessage(e.error)); }
+    if (v.error) { toast.error(getPtBrErrorMessage(v.error)); }
+    if (c.error) { toast.error(getPtBrErrorMessage(c.error)); }
     if (e.data) setEvents(e.data as Event[]);
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
@@ -113,12 +115,12 @@ export default function Events() {
     };
     if (editing) {
       const { error } = await supabase.from("events").update(payload).eq("id", editing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       await logAudit({ action: "event.updated", entityType: "event", entityId: editing.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id, previous_status: editing.status, new_status: payload.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("event_updated"));
     } else {
       const { data, error } = await supabase.from("events").insert(payload).select("id").single();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
       toast.success(t("event_created"));
     }
@@ -127,7 +129,7 @@ export default function Events() {
 
   const completeEvent = async (event: Event) => {
     const { error } = await supabase.from("events").update({ status: EVENT_STATUS.COMPLETED }).eq("id", event.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "event.updated", entityType: "event", entityId: event.id, metadata: { name: event.name, venue_id: event.venue_id, client_id: event.client_id, previous_status: event.status, new_status: EVENT_STATUS.COMPLETED }, oldData: { status: event.status }, newData: { status: EVENT_STATUS.COMPLETED } });
     toast.success(t("event_completed"));
     fetchData();
@@ -179,8 +181,8 @@ export default function Events() {
                   <TableCell className="font-medium">{event.name}</TableCell>
                   <TableCell className="text-muted-foreground">{event.venues?.name || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{event.venues?.clients?.name || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{event.start_at ? format(new Date(event.start_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{event.end_at ? format(new Date(event.end_at), "MMM dd, yyyy HH:mm") : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{event.start_at ? format(new Date(event.start_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{event.end_at ? format(new Date(event.end_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</TableCell>
                   <TableCell><Badge variant={statusColors[event.status] as any} className="capitalize">{t(event.status as any)}</Badge></TableCell>
                   {canManage && (
                     <TableCell className="flex gap-1">

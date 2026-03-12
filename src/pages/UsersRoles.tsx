@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -71,7 +72,7 @@ export default function UsersRoles() {
       supabase.from("venues").select("id, name, client_id"),
       supabase.from("events").select("id, name, venue_id"),
     ]);
-    if (ur.error) { toast.error(ur.error.message); console.error("user_roles fetch error:", ur.error); }
+    if (ur.error) { toast.error(getPtBrErrorMessage(ur.error)); }
     if (ur.data) {
       setUserRoles(ur.data as UserRole[]);
       setHasSuperAdmin(ur.data.some((r: any) => r.role === "super_admin"));
@@ -88,14 +89,13 @@ export default function UsersRoles() {
     setBootstrapping(true);
     const { data, error } = await supabase.rpc("bootstrap_super_admin");
     setBootstrapping(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) {
       toast.success(t("role_assigned"));
       fetchData();
-      // Force reload auth to pick up new role
       window.location.reload();
     } else {
-      toast.error("Super admin already exists");
+      toast.error("Super admin já existe no sistema.");
     }
   };
 
@@ -106,7 +106,7 @@ export default function UsersRoles() {
     if (form.venue_id) payload.venue_id = form.venue_id;
     if (form.event_id) payload.event_id = form.event_id;
     const { data, error } = await supabase.from("user_roles").insert(payload).select("id").single();
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     if (data) await logAudit({ action: "user.role_assigned", entityType: "user_role", entityId: data.id, metadata: { user_id: payload.user_id, role: payload.role, client_id: payload.client_id || null }, newData: payload });
     toast.success(t("role_assigned"));
     setSheetOpen(false); fetchData();
@@ -114,7 +114,7 @@ export default function UsersRoles() {
 
   const handleRemove = async (ur: UserRole) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", ur.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "user.role_removed", entityType: "user_role", entityId: ur.id, metadata: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id }, oldData: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id } });
     toast.success(t("role_removed"));
     fetchData();
