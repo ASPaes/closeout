@@ -60,7 +60,7 @@ export default function Venues() {
     if (editing) {
       const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
-      await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: payload });
+      await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, metadata: { name: payload.name, client_id: payload.client_id, previous_status: editing.status, new_status: payload.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("venue_updated"));
     } else {
       const { data, error } = await supabase.from("venues").insert(payload).select("id").single();
