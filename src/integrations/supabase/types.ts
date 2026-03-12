@@ -335,6 +335,14 @@ export type Database = {
     }
     Functions: {
       bootstrap_super_admin: { Args: never; Returns: boolean }
+      get_clients_for_user_events: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
+      get_clients_for_user_venues: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
       get_my_roles: {
         Args: never
         Returns: {
@@ -347,6 +355,14 @@ export type Database = {
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_venues_for_user_clients: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
+      get_venues_for_user_events: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
