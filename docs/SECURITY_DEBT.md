@@ -2,6 +2,14 @@
 
 ## Resolved
 
+### 2026-03-12 — Granular RLS policies for all roles
+
+- ✅ `venue_manager` can UPDATE assigned venues and CRUD events at their venues
+- ✅ `event_manager` can UPDATE assigned events
+- ✅ Users assigned to events can SELECT the parent venue and client (read-only)
+- ✅ `venue_manager` can SELECT the parent client (read-only)
+- ✅ All policies remain PERMISSIVE (OR logic)
+
 ### 2026-03-06 — Fase 1.2: RLS Geral, Audit Logs e Enums
 
 - ✅ `FORCE ROW LEVEL SECURITY` applied on all tables: `audit_logs`, `clients`, `venues`, `events`, `profiles`
