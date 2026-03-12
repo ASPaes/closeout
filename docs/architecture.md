@@ -148,9 +148,11 @@ See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
 
 Stores global platform defaults (single row). Managed via the Settings admin page.
 
+**Convention:** This is a single-row table. The fixed primary key is `00000000-0000-0000-0000-000000000001`. The Settings page uses `upsert` with this ID so it works even on a fresh database with no existing row.
+
 ```
 platform_settings (
-  id uuid PK,
+  id uuid PK,  -- fixed: 00000000-0000-0000-0000-000000000001
   default_geo_radius_meters integer NOT NULL DEFAULT 500,
   default_max_order_value numeric NOT NULL DEFAULT 500.00,
   default_unretrieved_order_alert_minutes integer NOT NULL DEFAULT 15,
