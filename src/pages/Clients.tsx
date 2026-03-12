@@ -128,8 +128,8 @@ export default function Clients() {
           <SheetHeader><SheetTitle>{editing ? t("edit_client") : t("new_client")}</SheetTitle></SheetHeader>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-            <div className="space-y-2"><Label>{t("slug")}</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="unique-identifier" /></div>
-            <div className="space-y-2"><Label>{t("document")}</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ or ID" /></div>
+            <div className="space-y-2"><Label>{t("slug")}</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required placeholder="identificador-unico" /></div>
+            <div className="space-y-2"><Label>{t("document")}</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ ou CPF" /></div>
             <div className="space-y-2"><Label>{t("email")}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("phone")}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t("address")}</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
