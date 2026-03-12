@@ -56,7 +56,7 @@ export default function UsersRoles() {
     if (form.client_id) payload.client_id = form.client_id;
     const { data, error } = await supabase.from("user_roles").insert(payload).select("id").single();
     if (error) { toast.error(error.message); return; }
-    if (data) await logAudit({ action: "user.role_assigned", entityType: "user_role", entityId: data.id, newData: payload });
+    if (data) await logAudit({ action: "user.role_assigned", entityType: "user_role", entityId: data.id, metadata: { user_id: payload.user_id, role: payload.role, client_id: payload.client_id || null }, newData: payload });
     toast.success(t("role_assigned"));
     setSheetOpen(false); fetchData();
   };
@@ -64,7 +64,7 @@ export default function UsersRoles() {
   const handleRemove = async (ur: UserRole) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", ur.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "user.role_removed", entityType: "user_role", entityId: ur.id, oldData: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id } });
+    await logAudit({ action: "user.role_removed", entityType: "user_role", entityId: ur.id, metadata: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id }, oldData: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id } });
     toast.success(t("role_removed"));
     fetchData();
   };

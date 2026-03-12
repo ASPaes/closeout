@@ -50,12 +50,12 @@ export default function Clients() {
     if (editing) {
       const { error } = await supabase.from("clients").update(form).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
-      await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: form });
+      await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: form });
       toast.success(t("client_updated"));
     } else {
       const { data, error } = await supabase.from("clients").insert(form).select("id").single();
       if (error) { toast.error(error.message); return; }
-      if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, newData: form });
+      if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, metadata: { name: form.name }, newData: form });
       toast.success(t("client_created"));
     }
     setSheetOpen(false); fetchClients();
@@ -65,7 +65,7 @@ export default function Clients() {
     const newStatus = client.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("clients").update({ status: newStatus }).eq("id", client.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, oldData: { status: client.status }, newData: { status: newStatus } });
+    await logAudit({ action: "client.updated", entityType: "client", entityId: client.id, metadata: { name: client.name, previous_status: client.status, new_status: newStatus }, oldData: { status: client.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("client_activated") : t("client_deactivated"));
     fetchClients();
   };

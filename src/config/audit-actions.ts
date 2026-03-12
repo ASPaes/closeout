@@ -1,4 +1,20 @@
 export const AUDIT_ACTION = {
+  // Clients
+  CLIENT_CREATED: 'client.created',
+  CLIENT_UPDATED: 'client.updated',
+
+  // Venues
+  VENUE_CREATED: 'venue.created',
+  VENUE_UPDATED: 'venue.updated',
+
+  // Events
+  EVENT_CREATED: 'event.created',
+  EVENT_UPDATED: 'event.updated',
+
+  // Roles
+  ROLE_ASSIGNED: 'user.role_assigned',
+  ROLE_REVOKED: 'user.role_removed',
+
   // Payments
   PAYMENT_CREATED: 'payment.created',
   PAYMENT_APPROVED: 'payment.approved',

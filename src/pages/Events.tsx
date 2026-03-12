@@ -111,12 +111,12 @@ export default function Events() {
     if (editing) {
       const { error } = await supabase.from("events").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
-      await logAudit({ action: "event.updated", entityType: "event", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: payload });
+      await logAudit({ action: "event.updated", entityType: "event", entityId: editing.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id, previous_status: editing.status, new_status: payload.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("event_updated"));
     } else {
       const { data, error } = await supabase.from("events").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
-      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, newData: payload });
+      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
       toast.success(t("event_created"));
     }
     setSheetOpen(false); fetchData();
@@ -125,7 +125,7 @@ export default function Events() {
   const completeEvent = async (event: Event) => {
     const { error } = await supabase.from("events").update({ status: EVENT_STATUS.COMPLETED }).eq("id", event.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "event.updated", entityType: "event", entityId: event.id, oldData: { status: event.status }, newData: { status: EVENT_STATUS.COMPLETED } });
+    await logAudit({ action: "event.updated", entityType: "event", entityId: event.id, metadata: { name: event.name, venue_id: event.venue_id, client_id: event.client_id, previous_status: event.status, new_status: EVENT_STATUS.COMPLETED }, oldData: { status: event.status }, newData: { status: EVENT_STATUS.COMPLETED } });
     toast.success(t("event_completed"));
     fetchData();
   };

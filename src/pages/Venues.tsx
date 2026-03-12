@@ -60,12 +60,12 @@ export default function Venues() {
     if (editing) {
       const { error } = await supabase.from("venues").update(payload).eq("id", editing.id);
       if (error) { toast.error(error.message); return; }
-      await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, oldData: { name: editing.name, status: editing.status }, newData: payload });
+      await logAudit({ action: "venue.updated", entityType: "venue", entityId: editing.id, metadata: { name: payload.name, client_id: payload.client_id, previous_status: editing.status, new_status: payload.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("venue_updated"));
     } else {
       const { data, error } = await supabase.from("venues").insert(payload).select("id").single();
       if (error) { toast.error(error.message); return; }
-      if (data) await logAudit({ action: "venue.created", entityType: "venue", entityId: data.id, newData: payload });
+      if (data) await logAudit({ action: "venue.created", entityType: "venue", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id }, newData: payload });
       toast.success(t("venue_created"));
     }
     setSheetOpen(false); fetchData();
@@ -75,7 +75,7 @@ export default function Venues() {
     const newStatus = venue.status === ENTITY_STATUS.ACTIVE ? ENTITY_STATUS.INACTIVE : ENTITY_STATUS.ACTIVE;
     const { error } = await supabase.from("venues").update({ status: newStatus }).eq("id", venue.id);
     if (error) { toast.error(error.message); return; }
-    await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, oldData: { status: venue.status }, newData: { status: newStatus } });
+    await logAudit({ action: "venue.updated", entityType: "venue", entityId: venue.id, metadata: { name: venue.name, client_id: venue.client_id, previous_status: venue.status, new_status: newStatus }, oldData: { status: venue.status }, newData: { status: newStatus } });
     toast.success(newStatus === ENTITY_STATUS.ACTIVE ? t("venue_activated") : t("venue_deactivated"));
     fetchData();
   };
