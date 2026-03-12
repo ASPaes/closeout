@@ -93,10 +93,9 @@ export default function UsersRoles() {
     if (data) {
       toast.success(t("role_assigned"));
       fetchData();
-      // Force reload auth to pick up new role
       window.location.reload();
     } else {
-      toast.error("Super admin already exists");
+      toast.error("Super admin já existe no sistema.");
     }
   };
 
