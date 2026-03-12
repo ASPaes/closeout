@@ -51,7 +51,7 @@ export default function Clients() {
     e.preventDefault();
     if (editing) {
       const { error } = await supabase.from("clients").update(form).eq("id", editing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(getPtBrErrorMessage(error)); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: form });
       toast.success(t("client_updated"));
     } else {
