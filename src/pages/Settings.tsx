@@ -45,16 +45,27 @@ export default function Settings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!settings) return;
     setSaving(true);
     const payload = {
+      id: SETTINGS_ID,
       default_geo_radius_meters: parseInt(form.default_geo_radius_meters) || 500,
       default_max_order_value: parseFloat(form.default_max_order_value) || 500,
       default_unretrieved_order_alert_minutes: parseInt(form.default_unretrieved_order_alert_minutes) || 15,
     };
-    const { error } = await supabase.from("platform_settings").update(payload).eq("id", settings.id);
+    const { error } = await supabase.from("platform_settings").upsert(payload, { onConflict: "id" });
+    if (error) { setSaving(false); toast.error(error.message); return; }
+    // Re-fetch after upsert
+    const { data } = await supabase.from("platform_settings").select("*").eq("id", SETTINGS_ID).single();
+    if (data) {
+      const s = data as PlatformSettings;
+      setSettings(s);
+      setForm({
+        default_geo_radius_meters: s.default_geo_radius_meters.toString(),
+        default_max_order_value: s.default_max_order_value.toString(),
+        default_unretrieved_order_alert_minutes: s.default_unretrieved_order_alert_minutes.toString(),
+      });
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
     toast.success(t("settings_saved"));
   };
 

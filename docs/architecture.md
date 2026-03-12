@@ -110,7 +110,7 @@ log_audit(p_user_id, p_action, p_entity_type, p_entity_id, p_old_data, p_new_dat
 | Enum | Valores |
 |---|---|
 | `app_role` | super_admin, client_admin, venue_manager, event_manager, event_organizer, staff, waiter, cashier, consumer |
-| `event_status` | draft, active, completed, cancelled |
+| `event_status` | draft, active, completed, cancelled (validated by trigger `validate_event_status`) |
 | `order_status` | pending, paid, preparing, ready, delivered, cancelled |
 | `payment_status` | created, processing, approved, failed, cancelled |
 | `qr_status` | valid, used, cancelled, invalid |
