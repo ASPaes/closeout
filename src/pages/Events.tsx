@@ -15,6 +15,7 @@ import { Plus, Search, Pencil, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { format } from "date-fns";
+import { ptBR as datePtBR } from "date-fns/locale";
 import { EVENT_STATUS, ENTITY_STATUS } from "@/config";
 import { logAudit } from "@/lib/audit";
 
