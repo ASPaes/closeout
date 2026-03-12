@@ -2,6 +2,14 @@
 
 ## Resolved
 
+### 2026-03-12 — Fix RLS infinite recursion (42P17)
+
+- ✅ Root cause: cross-table inline subqueries in RLS policies caused infinite recursion (venues↔events)
+- ✅ Created 4 SECURITY DEFINER helper functions to break the cycle:
+  - `get_venues_for_user_clients()`, `get_clients_for_user_venues()`, `get_clients_for_user_events()`, `get_venues_for_user_events()`
+- ✅ Rewrote 6 policies on clients/venues/events to use helpers instead of inline subqueries
+- ✅ All policies remain PERMISSIVE (OR logic)
+
 ### 2026-03-12 — Granular RLS policies for all roles
 
 - ✅ `venue_manager` can UPDATE assigned venues and CRUD events at their venues
