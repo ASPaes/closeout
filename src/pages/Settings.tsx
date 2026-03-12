@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Settings as SettingsIcon } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
 
+const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
+
 type PlatformSettings = {
   id: string;
   default_geo_radius_meters: number;
