@@ -55,7 +55,7 @@ export default function Clients() {
     } else {
       const { data, error } = await supabase.from("clients").insert(form).select("id").single();
       if (error) { toast.error(error.message); return; }
-      if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, newData: form });
+      if (data) await logAudit({ action: "client.created", entityType: "client", entityId: data.id, metadata: { name: form.name }, newData: form });
       toast.success(t("client_created"));
     }
     setSheetOpen(false); fetchClients();
