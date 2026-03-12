@@ -114,7 +114,7 @@ export default function UsersRoles() {
 
   const handleRemove = async (ur: UserRole) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", ur.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "user.role_removed", entityType: "user_role", entityId: ur.id, metadata: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id }, oldData: { user_id: ur.user_id, role: ur.role, client_id: ur.client_id } });
     toast.success(t("role_removed"));
     fetchData();

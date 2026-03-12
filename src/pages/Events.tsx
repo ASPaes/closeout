@@ -128,7 +128,7 @@ export default function Events() {
 
   const completeEvent = async (event: Event) => {
     const { error } = await supabase.from("events").update({ status: EVENT_STATUS.COMPLETED }).eq("id", event.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     await logAudit({ action: "event.updated", entityType: "event", entityId: event.id, metadata: { name: event.name, venue_id: event.venue_id, client_id: event.client_id, previous_status: event.status, new_status: EVENT_STATUS.COMPLETED }, oldData: { status: event.status }, newData: { status: EVENT_STATUS.COMPLETED } });
     toast.success(t("event_completed"));
     fetchData();
