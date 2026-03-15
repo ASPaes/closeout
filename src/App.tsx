@@ -18,6 +18,7 @@ import UsersRoles from "@/pages/UsersRoles";
 import AuditLogs from "@/pages/AuditLogs";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+import InvitePage from "@/pages/InvitePage";
 
 const queryClient = new QueryClient();
 
