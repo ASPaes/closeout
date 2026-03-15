@@ -501,6 +501,109 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_balances: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          low_stock_threshold: number
+          product_id: string
+          quantity_available: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          low_stock_threshold?: number
+          product_id: string
+          quantity_available?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          low_stock_threshold?: number
+          product_id?: string
+          quantity_available?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_balances_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_balances_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_entries: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          entry_type: string
+          id: string
+          product_id: string
+          quantity: number
+          reason: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          entry_type: string
+          id?: string
+          product_id: string
+          quantity: number
+          reason?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          entry_type?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_invites: {
         Row: {
           client_id: string | null
