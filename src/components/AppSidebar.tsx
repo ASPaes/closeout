@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Settings, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +21,6 @@ const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
 
 const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "users_roles", url: "/admin/users", icon: Users },
-  { titleKey: "audit_logs", url: "/admin/audit-logs", icon: ScrollText },
   { titleKey: "settings", url: "/admin/settings", icon: Settings },
 ];
 
