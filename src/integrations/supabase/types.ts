@@ -56,6 +56,111 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_items: {
+        Row: {
+          campaign_id: string
+          combo_id: string | null
+          created_at: string
+          discount_percent: number | null
+          id: string
+          is_active: boolean
+          item_type: string
+          product_id: string | null
+          promo_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          combo_id?: string | null
+          created_at?: string
+          discount_percent?: number | null
+          id?: string
+          is_active?: boolean
+          item_type: string
+          product_id?: string | null
+          promo_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          combo_id?: string | null
+          created_at?: string
+          discount_percent?: number | null
+          id?: string
+          is_active?: boolean
+          item_type?: string
+          product_id?: string | null
+          promo_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_items_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "combos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           client_id: string
