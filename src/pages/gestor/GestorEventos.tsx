@@ -324,6 +324,7 @@ export default function GestorEventos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("events")} subtitle={t("gevt_subtitle")} icon={CalendarDays}
         actions={<Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("create_event")}</Button>}
