@@ -100,6 +100,14 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/gestor" className="hover:bg-sidebar-accent/50 transition-colors">
+                      <ArrowRightLeft className="h-4 w-4" />
+                      {!collapsed && <span>{t("go_to_gestor")}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

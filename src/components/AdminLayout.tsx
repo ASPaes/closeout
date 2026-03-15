@@ -1,9 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { AuthGuard } from "@/components/AuthGuard";
+import { RoleGuard } from "@/components/RoleGuard";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,7 +10,7 @@ export function AdminLayout() {
   const { profile } = useAuth();
 
   return (
-    <AuthGuard>
+    <RoleGuard area="admin">
       <SidebarProvider>
         <div className="min-h-screen flex w-full dark">
           <AppSidebar />
@@ -35,6 +34,6 @@ export function AdminLayout() {
           </div>
         </div>
       </SidebarProvider>
-    </AuthGuard>
+    </RoleGuard>
   );
 }
