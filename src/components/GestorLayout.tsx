@@ -1,19 +1,19 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { GestorSidebar } from "@/components/GestorSidebar";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AdminLayout() {
+export function GestorLayout() {
   const { profile } = useAuth();
 
   return (
-    <RoleGuard area="admin">
+    <RoleGuard area="gestor">
       <SidebarProvider>
         <div className="min-h-screen flex w-full dark">
-          <AppSidebar />
+          <GestorSidebar />
           <div className="flex-1 flex flex-col min-w-0">
             <header className="h-14 flex items-center justify-between border-b border-border px-4 shrink-0 bg-card/50 backdrop-blur-sm">
               <div className="flex items-center gap-3">

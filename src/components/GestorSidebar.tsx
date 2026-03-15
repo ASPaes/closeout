@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield, Settings, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, LogOut, Shield, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,17 +10,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
-const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
-  { titleKey: "clients", url: "/admin/clients", icon: Building2 },
-  { titleKey: "venues", url: "/admin/venues", icon: MapPin },
-  { titleKey: "events", url: "/admin/events", icon: CalendarDays },
-];
-
-const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "users_roles", url: "/admin/users", icon: Users },
-  { titleKey: "audit_logs", url: "/admin/audit-logs", icon: ScrollText },
-  { titleKey: "settings", url: "/admin/settings", icon: Settings },
+const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
+  { titleKey: "dashboard", url: "/gestor", icon: LayoutDashboard },
+  { titleKey: "venues", url: "/gestor/venues", icon: MapPin },
+  { titleKey: "events", url: "/gestor/events", icon: CalendarDays },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -35,7 +28,7 @@ const roleLabels: Record<string, string> = {
   consumer: "Consumidor",
 };
 
-export function AppSidebar() {
+export function GestorSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -56,7 +49,7 @@ export function AppSidebar() {
               <span className="text-base font-bold tracking-tight text-sidebar-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 CLOSE<span className="text-primary"> OUT</span>
               </span>
-              <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{t("admin_panel")}</p>
+              <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{t("gestor_panel")}</p>
             </div>
           </div>
         ) : (
@@ -71,7 +64,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("navigation")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {gestorItems.map((item) => (
                 <SidebarMenuItem key={item.titleKey}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
@@ -87,24 +80,13 @@ export function AppSidebar() {
 
         {isSuperAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("system")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {systemItems.map((item) => (
-                  <SidebarMenuItem key={item.titleKey}>
-                    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                      <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{t(item.titleKey)}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/gestor" className="hover:bg-sidebar-accent/50 transition-colors">
+                    <NavLink to="/admin" className="hover:bg-sidebar-accent/50 transition-colors">
                       <ArrowRightLeft className="h-4 w-4" />
-                      {!collapsed && <span>{t("go_to_gestor")}</span>}
+                      {!collapsed && <span>{t("go_to_admin")}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

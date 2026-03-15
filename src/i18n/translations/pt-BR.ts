@@ -228,6 +228,12 @@ const ptBR = {
   invite_success: "Convite aceito. Permissões aplicadas.",
   invite_role_assigned_as: "Papel atribuído:",
   invite_go_to_panel: "Ir para o painel",
+
+  // Gestor area
+  gestor_panel: "Painel Gestor",
+  go_to_admin: "Ir para Painel Admin",
+  go_to_gestor: "Ir para Painel Gestor",
+  no_permission: "Você não tem permissão para acessar esta área.",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

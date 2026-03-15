@@ -230,6 +230,12 @@ const enUS: Record<TranslationKey, string> = {
   invite_success: "Invite accepted. Permissions applied.",
   invite_role_assigned_as: "Role assigned:",
   invite_go_to_panel: "Go to panel",
+
+  // Gestor area
+  gestor_panel: "Manager Panel",
+  go_to_admin: "Go to Admin Panel",
+  go_to_gestor: "Go to Manager Panel",
+  no_permission: "You do not have permission to access this area.",
 };
 
 export default enUS;
