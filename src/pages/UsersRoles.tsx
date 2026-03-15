@@ -48,6 +48,7 @@ export default function UsersRoles() {
   const [form, setForm] = useState({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" });
   const [hasSuperAdmin, setHasSuperAdmin] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const profileMap = useMemo(() => {
     const map = new Map<string, string>();
