@@ -338,7 +338,7 @@ const enUS: Record<TranslationKey, string> = {
   stock_threshold: "Low stock alert",
   stock_low: "Low",
   stock_control_off: "Disabled",
-  stock_control: "Control",
+  stock_control_label: "Control",
   stock_toggle_label: "Enable/disable stock control",
   stock_adjust: "Adjust stock",
   stock_config_threshold: "Configure alert",

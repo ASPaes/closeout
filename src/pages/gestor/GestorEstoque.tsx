@@ -229,7 +229,7 @@ export default function GestorEstoque() {
     },
     {
       key: "enabled",
-      header: t("stock_control"),
+      header: t("stock_control_label"),
       className: "w-28 text-center",
       render: (r) => (
         <Switch
