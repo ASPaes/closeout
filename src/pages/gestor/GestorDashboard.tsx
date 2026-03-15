@@ -16,7 +16,7 @@ const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any }[] 
 
 export default function GestorDashboard() {
   const { profile } = useAuth();
-  const { clientName, isSuperAdmin } = useGestor();
+  const { clientName } = useGestor();
   const { t } = useTranslation();
 
   return (
