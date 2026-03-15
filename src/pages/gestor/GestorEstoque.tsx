@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,7 +43,7 @@ type HistoryEntry = {
 
 export default function GestorEstoque() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { user } = useAuth();
 
   const [rows, setRows] = useState<StockRow[]>([]);
@@ -352,6 +353,7 @@ export default function GestorEstoque() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("gestor_stock")}
@@ -509,5 +511,6 @@ export default function GestorEstoque() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -37,7 +38,7 @@ type CatalogItem = {
 
 export default function GestorCatalogos() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
 
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -316,6 +317,7 @@ export default function GestorCatalogos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("ctlg_title")}
@@ -433,5 +435,6 @@ export default function GestorCatalogos() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

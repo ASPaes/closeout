@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useGestor } from "@/contexts/GestorContext";
@@ -22,7 +23,7 @@ type Product = { id: string; client_id: string; category_id: string | null; name
 const emptyForm = { name: "", description: "", price: "", category_id: "" };
 
 export default function GestorProdutos() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -37,7 +38,7 @@ export default function GestorProdutos() {
   const fetchProducts = async () => {
     setLoading(true);
     let q = supabase.from("products").select("id, client_id, category_id, name, description, price, is_active").order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
     setProducts(data ?? []);
@@ -46,7 +47,7 @@ export default function GestorProdutos() {
 
   const fetchCategories = async () => {
     let q = supabase.from("categories").select("id, name").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setCategories(data ?? []);
   };
@@ -72,7 +73,7 @@ export default function GestorProdutos() {
     e.preventDefault();
     const name = form.name.trim();
     const price = parseFloat(form.price);
-    if (!name || isNaN(price) || price < 0 || (!clientId && !isSuperAdmin)) return;
+    if (!name || isNaN(price) || price < 0 || !clientId) return;
     setSaving(true);
     try {
       const payload = { name, description: form.description.trim() || null, price, category_id: form.category_id || null };
@@ -114,6 +115,7 @@ export default function GestorProdutos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("gestor_products")} subtitle={t("gestor_products_desc")} icon={Package}
         actions={clientId ? <Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("add_product")}</Button> : undefined}
@@ -153,5 +155,6 @@ export default function GestorProdutos() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

@@ -450,6 +450,13 @@ const enUS: Record<TranslationKey, string> = {
   gvn_validation_lat_range: "Latitude must be between -90 and 90.",
   gvn_validation_lng_range: "Longitude must be between -180 and 180.",
 
+  // Gestor Admin Mode
+  gestor_admin_mode: "Admin Mode",
+  gestor_select_client: "Select client",
+  gestor_select_client_hint: "Select a client to operate",
+  gestor_no_client_selected: "No client selected",
+  gestor_no_client_desc: "Select an active client from the menu above to view and manage data.",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",

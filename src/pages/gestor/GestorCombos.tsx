@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useGestor } from "@/contexts/GestorContext";
@@ -47,7 +48,7 @@ type Product = {
 const emptyForm = { name: "", description: "", price: "" };
 
 export default function GestorCombos() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [combos, setCombos] = useState<Combo[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -64,7 +65,7 @@ export default function GestorCombos() {
   const fetchCombos = async () => {
     setLoading(true);
     let q = supabase.from("combos").select("id, client_id, name, description, price, is_active").order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
 
@@ -90,7 +91,7 @@ export default function GestorCombos() {
 
   const fetchProducts = async () => {
     let q = supabase.from("products").select("id, name, price").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setProducts(data ?? []);
   };
@@ -139,7 +140,7 @@ export default function GestorCombos() {
 
     if (!name) { toast.error(t("combo_validation_name_required")); return; }
     if (isNaN(price) || price <= 0) { toast.error(t("combo_validation_price_positive")); return; }
-    if (!clientId && !isSuperAdmin) return;
+    if (!clientId) return;
 
     setSaving(true);
 
@@ -302,6 +303,7 @@ export default function GestorCombos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("gestor_combos")}
@@ -452,5 +454,6 @@ export default function GestorCombos() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </GestorClientGuard>
   );
 }

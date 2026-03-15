@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useGestor } from "@/contexts/GestorContext";
@@ -61,7 +62,7 @@ type CampaignForm = {
 const emptyForm: CampaignForm = { name: "", description: "", starts_at: undefined, ends_at: undefined };
 
 export default function GestorCampanhas() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -79,7 +80,7 @@ export default function GestorCampanhas() {
   const fetchCampaigns = async () => {
     setLoading(true);
     let q = supabase.from("campaigns").select("id, client_id, name, description, starts_at, ends_at, is_active").order("starts_at", { ascending: false });
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
 
@@ -101,14 +102,14 @@ export default function GestorCampanhas() {
 
   const fetchProducts = async () => {
     let q = supabase.from("products").select("id, name, price").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setProducts(data ?? []);
   };
 
   const fetchCombos = async () => {
     let q = supabase.from("combos").select("id, name, price").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setCombos((data as Combo[]) ?? []);
   };
@@ -189,7 +190,7 @@ export default function GestorCampanhas() {
     if (!name) { toast.error(t("camp_validation_name")); return; }
     if (!form.starts_at || !form.ends_at) { toast.error(t("camp_validation_dates")); return; }
     if (form.ends_at <= form.starts_at) { toast.error(t("camp_validation_end_after_start")); return; }
-    if (!clientId && !isSuperAdmin) return;
+    if (!clientId) return;
 
     if (!validateItems()) return;
 
@@ -399,6 +400,7 @@ export default function GestorCampanhas() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("gestor_campaigns")}
@@ -632,5 +634,6 @@ export default function GestorCampanhas() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </GestorClientGuard>
   );
 }

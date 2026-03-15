@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
@@ -46,7 +47,7 @@ const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"] as const;
 
 export default function GestorEventos() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const navigate = useNavigate();
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -323,6 +324,7 @@ export default function GestorEventos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("events")} subtitle={t("gevt_subtitle")} icon={CalendarDays}
         actions={<Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("create_event")}</Button>}
@@ -454,5 +456,6 @@ export default function GestorEventos() {
         </Tabs>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

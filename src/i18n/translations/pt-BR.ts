@@ -448,6 +448,13 @@ const ptBR = {
   gvn_validation_lat_range: "Latitude deve estar entre -90 e 90.",
   gvn_validation_lng_range: "Longitude deve estar entre -180 e 180.",
 
+  // Gestor Admin Mode
+  gestor_admin_mode: "Modo Admin",
+  gestor_select_client: "Selecionar cliente",
+  gestor_select_client_hint: "Selecione um cliente para operar",
+  gestor_no_client_selected: "Nenhum cliente selecionado",
+  gestor_no_client_desc: "Selecione um cliente ativo no menu acima para visualizar e gerenciar os dados.",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",

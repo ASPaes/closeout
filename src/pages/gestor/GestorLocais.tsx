@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -30,7 +31,7 @@ type Venue = {
 
 export default function GestorLocais() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
 
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,6 +175,7 @@ export default function GestorLocais() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("venues")} subtitle={t("gvn_subtitle")} icon={MapPin}
         actions={<Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("add_venue")}</Button>}
@@ -228,5 +230,6 @@ export default function GestorLocais() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

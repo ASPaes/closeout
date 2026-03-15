@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useGestor } from "@/contexts/GestorContext";
@@ -17,7 +18,7 @@ import { ModalForm } from "@/components/ModalForm";
 type Category = { id: string; client_id: string; name: string; is_active: boolean; created_at: string };
 
 export default function GestorCategorias() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
@@ -30,7 +31,7 @@ export default function GestorCategorias() {
   const fetchCategories = async () => {
     setLoading(true);
     let q = supabase.from("categories").select("id, client_id, name, is_active, created_at").order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) { toast.error(getPtBrErrorMessage(error)); }
     setCategories(data ?? []);
@@ -47,7 +48,7 @@ export default function GestorCategorias() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
-    if (!name || (!clientId && !isSuperAdmin)) return;
+    if (!name || !clientId) return;
     setSaving(true);
     try {
       if (editing) {
@@ -84,6 +85,7 @@ export default function GestorCategorias() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("gestor_categories")} subtitle={t("gestor_categories_desc")} icon={Tags}
         actions={clientId ? <Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("add_category")}</Button> : undefined}
@@ -105,5 +107,6 @@ export default function GestorCategorias() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }
