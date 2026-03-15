@@ -20,4 +20,7 @@ export default defineConfig(({ mode }) => ({
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
+  optimizeDeps: {
+    include: ["react", "react-dom", "@tanstack/react-query"],
+  },
 }));
