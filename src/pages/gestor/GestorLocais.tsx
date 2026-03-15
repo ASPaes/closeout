@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MapPin, Plus, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { LocationPicker } from "@/components/LocationPicker";
 
 type Venue = {
   id: string;
