@@ -205,14 +205,16 @@ export default function GestorLocais() {
               <Input value={state} onChange={(e) => setState(e.target.value)} maxLength={2} placeholder="UF" />
             </div>
           </div>
-          <LocationPicker
-            latitude={latitude}
-            longitude={longitude}
-            onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
-            address={address}
-            city={city}
-            state={state}
-          />
+          <Suspense fallback={<div className="h-[260px] rounded-lg border border-border/60 flex items-center justify-center text-muted-foreground text-sm">Carregando mapa…</div>}>
+            <LocationPicker
+              latitude={latitude}
+              longitude={longitude}
+              onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+              address={address}
+              city={city}
+              state={state}
+            />
+          </Suspense>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{t("latitude")}</Label>
