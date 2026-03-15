@@ -284,11 +284,18 @@ const ptBR = {
   combo_activated: "Combo ativado",
   combo_deactivated: "Combo desativado",
   no_combos_found: "Nenhum combo encontrado",
+  combo_empty_hint: "Crie combos para agrupar produtos com preço especial",
   combo_name: "Nome do combo",
+  combo_name_placeholder: "Ex: Combo Cerveja + Petisco",
   combo_items_label: "Itens do combo",
   combo_add_item: "Adicionar item",
   combo_no_items: "Nenhum item adicionado ao combo",
   combo_all_products_added: "Todos os produtos já foram adicionados",
+  combo_validation_name_required: "O nome do combo é obrigatório",
+  combo_validation_price_positive: "O preço deve ser maior que zero",
+  combo_activate_needs_items: "Não é possível ativar um combo sem itens. Adicione pelo menos um produto.",
+  combo_remove_item_title: "Remover item do combo",
+  combo_remove_item_desc: "Tem certeza que deseja remover este item do combo?",
 
   // Shared UI
   cancel: "Cancelar",
