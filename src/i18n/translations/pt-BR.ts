@@ -440,6 +440,13 @@ const ptBR = {
   gestor_venues: "Locais",
   gvn_map_hint: "Clique no mapa ou arraste o marcador para definir a localização.",
   gvn_use_my_location: "Usar minha localização",
+  gvn_geocode_btn: "Buscar pelo endereço",
+  gvn_geocode_empty: "Preencha o endereço, cidade ou estado para buscar.",
+  gvn_geocode_not_found: "Não encontrei esse endereço. Ajuste no mapa manualmente.",
+  gvn_geocode_error: "Erro ao buscar endereço. Tente novamente.",
+  gvn_validation_lat_lng_pair: "Latitude e longitude devem ser preenchidas juntas.",
+  gvn_validation_lat_range: "Latitude deve estar entre -90 e 90.",
+  gvn_validation_lng_range: "Longitude deve estar entre -180 e 180.",
 
   // Shared UI
   cancel: "Cancelar",
