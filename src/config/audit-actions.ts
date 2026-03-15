@@ -50,6 +50,11 @@ export const AUDIT_ACTION = {
   COMBO_ITEM_REMOVED: 'combo_item.removed',
 
   // Campaigns
+  CAMPAIGN_ITEM_ADDED: 'campaign_item.added',
+  CAMPAIGN_ITEM_UPDATED: 'campaign_item.updated',
+  CAMPAIGN_ITEM_REMOVED: 'campaign_item.removed',
+
+  // Campaigns
   CAMPAIGN_CREATED: 'campaign.created',
   CAMPAIGN_ACTIVATED: 'campaign.activated',
   CAMPAIGN_PAUSED: 'campaign.paused',
