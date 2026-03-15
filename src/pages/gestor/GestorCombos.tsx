@@ -48,7 +48,7 @@ type Product = {
 const emptyForm = { name: "", description: "", price: "" };
 
 export default function GestorCombos() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [combos, setCombos] = useState<Combo[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
