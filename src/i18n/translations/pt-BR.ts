@@ -258,6 +258,7 @@ const ptBR = {
   category_name: "Nome da categoria",
 
   // Products CRUD
+  product: "Produto",
   add_product: "Adicionar Produto",
   edit_product: "Editar Produto",
   new_product: "Novo Produto",

@@ -260,6 +260,7 @@ const enUS: Record<TranslationKey, string> = {
   category_name: "Category name",
 
   // Products CRUD
+  product: "Product",
   add_product: "Add Product",
   edit_product: "Edit Product",
   new_product: "New Product",
