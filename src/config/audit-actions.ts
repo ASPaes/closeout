@@ -36,6 +36,8 @@ export const AUDIT_ACTION = {
   // Stock
   STOCK_ENTRY: 'stock.entry',
   STOCK_ADJUSTED: 'stock.adjusted',
+  STOCK_BALANCE_UPDATED: 'stock.balance_updated',
+  STOCK_ENTRY_CREATED: 'stock.entry_created',
 
   // Catalog
   PRODUCT_CREATED: 'product.created',
