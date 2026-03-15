@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-lea
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "@/components/ui/button";
-import { Locate, Loader2 } from "lucide-react";
+import { Locate, Loader2, Search } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
+import { toast } from "sonner";
 
 // Fix default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,6 +22,9 @@ interface LocationPickerProps {
   latitude: string;
   longitude: string;
   onLocationChange: (lat: string, lng: string) => void;
+  address?: string;
+  city?: string;
+  state?: string;
 }
 
 function DraggableMarker({ position, onDrag }: { position: [number, number]; onDrag: (lat: number, lng: number) => void }) {
@@ -56,12 +60,14 @@ function FlyToPosition({ position }: { position: [number, number] }) {
   return null;
 }
 
-export function LocationPicker({ latitude, longitude, onLocationChange }: LocationPickerProps) {
+export function LocationPicker({ latitude, longitude, onLocationChange, address, city, state }: LocationPickerProps) {
   const { t } = useTranslation();
   const [locating, setLocating] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [hasMarker, setHasMarker] = useState(false);
   const [markerPos, setMarkerPos] = useState<[number, number]>(DEFAULT_CENTER);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
+  const lastGeocode = useRef(0);
 
   // Init from props
   useEffect(() => {
@@ -74,12 +80,16 @@ export function LocationPicker({ latitude, longitude, onLocationChange }: Locati
     }
   }, []);
 
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    const pos: [number, number] = [lat, lng];
-    setMarkerPos(pos);
+  const setPosition = useCallback((lat: number, lng: number) => {
+    setMarkerPos([lat, lng]);
     setHasMarker(true);
+    setFlyTarget([lat, lng]);
     onLocationChange(lat.toFixed(6), lng.toFixed(6));
   }, [onLocationChange]);
+
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    setPosition(lat, lng);
+  }, [setPosition]);
 
   const handleDrag = useCallback((lat: number, lng: number) => {
     setMarkerPos([lat, lng]);
@@ -90,30 +100,55 @@ export function LocationPicker({ latitude, longitude, onLocationChange }: Locati
     if (!navigator.geolocation) return;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setMarkerPos([lat, lng]);
-        setHasMarker(true);
-        setFlyTarget([lat, lng]);
-        onLocationChange(lat.toFixed(6), lng.toFixed(6));
-        setLocating(false);
-      },
+      (pos) => { setPosition(pos.coords.latitude, pos.coords.longitude); setLocating(false); },
       () => setLocating(false),
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, [onLocationChange]);
+  }, [setPosition]);
+
+  const geocodeAddress = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastGeocode.current < 2000) return; // rate limit 2s
+    lastGeocode.current = now;
+
+    const parts = [address, city, state].filter(Boolean).join(", ");
+    if (!parts.trim()) { toast.error(t("gvn_geocode_empty")); return; }
+
+    setGeocoding(true);
+    try {
+      const q = encodeURIComponent(parts);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`, {
+        headers: { "Accept-Language": "pt-BR" },
+      });
+      const data = await res.json();
+      if (data.length > 0) {
+        setPosition(parseFloat(data[0].lat), parseFloat(data[0].lon));
+      } else {
+        toast.warning(t("gvn_geocode_not_found"));
+      }
+    } catch {
+      toast.error(t("gvn_geocode_error"));
+    } finally {
+      setGeocoding(false);
+    }
+  }, [address, city, state, setPosition, t]);
 
   const center: [number, number] = hasMarker ? markerPos : DEFAULT_CENTER;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">{t("gvn_map_hint")}</p>
-        <Button type="button" variant="outline" size="sm" onClick={useMyLocation} disabled={locating} className="text-xs gap-1.5">
-          {locating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Locate className="h-3 w-3" />}
-          {t("gvn_use_my_location")}
-        </Button>
+        <div className="flex gap-1.5">
+          <Button type="button" variant="outline" size="sm" onClick={geocodeAddress} disabled={geocoding} className="text-xs gap-1.5">
+            {geocoding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+            {t("gvn_geocode_btn")}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={useMyLocation} disabled={locating} className="text-xs gap-1.5">
+            {locating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Locate className="h-3 w-3" />}
+            {t("gvn_use_my_location")}
+          </Button>
+        </div>
       </div>
       <div className="rounded-lg overflow-hidden border border-border/60" style={{ height: 260 }}>
         <MapContainer

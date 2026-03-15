@@ -88,14 +88,27 @@ export default function GestorLocais() {
     if (!city.trim()) { toast.error(t("gvn_validation_city")); return; }
     if (!state.trim()) { toast.error(t("gvn_validation_state")); return; }
 
+    const latVal = latitude ? parseFloat(latitude) : null;
+    const lngVal = longitude ? parseFloat(longitude) : null;
+
+    if ((latVal != null && lngVal == null) || (latVal == null && lngVal != null)) {
+      toast.error(t("gvn_validation_lat_lng_pair")); return;
+    }
+    if (latVal != null && (latVal < -90 || latVal > 90)) {
+      toast.error(t("gvn_validation_lat_range")); return;
+    }
+    if (lngVal != null && (lngVal < -180 || lngVal > 180)) {
+      toast.error(t("gvn_validation_lng_range")); return;
+    }
+
     setSaving(true);
     const payload = {
       name: name.trim(),
       address: address.trim() || null,
       city: city.trim(),
       state: state.trim(),
-      latitude: latitude ? parseFloat(latitude) : null,
-      longitude: longitude ? parseFloat(longitude) : null,
+      latitude: latVal,
+      longitude: lngVal,
       client_id: clientId!,
     };
 
@@ -195,6 +208,9 @@ export default function GestorLocais() {
             latitude={latitude}
             longitude={longitude}
             onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+            address={address}
+            city={city}
+            state={state}
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
