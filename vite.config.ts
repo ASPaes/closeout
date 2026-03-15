@@ -21,6 +21,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "@tanstack/react-query"],
+    include: ["react", "react-dom", "@tanstack/react-query", "react-leaflet", "leaflet"],
   },
 }));
