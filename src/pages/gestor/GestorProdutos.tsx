@@ -72,7 +72,7 @@ export default function GestorProdutos() {
     e.preventDefault();
     const name = form.name.trim();
     const price = parseFloat(form.price);
-    if (!name || isNaN(price) || price < 0 || (!clientId && !isSuperAdmin)) return;
+    if (!name || isNaN(price) || price < 0 || !clientId) return;
     setSaving(true);
     try {
       const payload = { name, description: form.description.trim() || null, price, category_id: form.category_id || null };
