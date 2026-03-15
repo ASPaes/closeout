@@ -390,6 +390,8 @@ const ptBR = {
   gevt_activate: "Ativar evento",
   gevt_cancel: "Cancelar evento",
   gevt_no_limit: "Sem limite",
+  gevt_no_venues_hint: "Cadastre um local antes de criar eventos.",
+  gevt_create_venue: "Criar local",
 
   // Catalogs
   ctlg_title: "Catálogos",
