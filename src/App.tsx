@@ -28,6 +28,7 @@ import GestorCampanhas from "@/pages/gestor/GestorCampanhas";
 import GestorEstoque from "@/pages/gestor/GestorEstoque";
 import GestorEventos from "@/pages/gestor/GestorEventos";
 import GestorCatalogos from "@/pages/gestor/GestorCatalogos";
+import GestorLocais from "@/pages/gestor/GestorLocais";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="campanhas" element={<GestorCampanhas />} />
               <Route path="estoque" element={<GestorEstoque />} />
               <Route path="catalogos" element={<GestorCatalogos />} />
+              <Route path="locais" element={<GestorLocais />} />
               <Route path="eventos" element={<GestorEventos />} />
             </Route>
 

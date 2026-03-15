@@ -429,6 +429,16 @@ const enUS: Record<TranslationKey, string> = {
   ctlg_no_catalogs: "No catalogs linked",
   ctlg_active_items: "active items",
 
+  // Gestor Venues
+  gvn_subtitle: "Manage your venue locations",
+  gvn_name_placeholder: "Venue name",
+  gvn_validation_name: "Venue name is required",
+  gvn_validation_city: "City is required",
+  gvn_validation_state: "State is required",
+  gvn_save_error: "Error saving venue",
+  gvn_empty_hint: "Create your first venue to get started",
+  gestor_venues: "Venues",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",
