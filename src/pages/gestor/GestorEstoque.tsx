@@ -511,5 +511,6 @@ export default function GestorEstoque() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

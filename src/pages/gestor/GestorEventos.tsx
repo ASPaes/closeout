@@ -456,5 +456,6 @@ export default function GestorEventos() {
         </Tabs>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }
