@@ -27,6 +27,7 @@ import GestorCombos from "@/pages/gestor/GestorCombos";
 import GestorCampanhas from "@/pages/gestor/GestorCampanhas";
 import GestorEstoque from "@/pages/gestor/GestorEstoque";
 import GestorEventos from "@/pages/gestor/GestorEventos";
+import GestorCatalogos from "@/pages/gestor/GestorCatalogos";
 
 const queryClient = new QueryClient();
 
