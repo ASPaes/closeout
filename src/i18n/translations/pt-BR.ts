@@ -219,6 +219,14 @@ const ptBR = {
   invite_days: "dias",
   invite_error_session: "Sessão expirada. Faça login novamente.",
   invite_error_generic: "Erro ao gerar link de convite.",
+  invite_page_title: "Convite",
+  invite_verifying: "Verificando convite...",
+  invite_login_required: "Você precisa estar logado para aceitar este convite.",
+  invite_accepting: "Aceitando convite...",
+  invite_accepted: "Convite aceito com sucesso!",
+  invite_success: "Convite aceito. Permissões aplicadas.",
+  invite_role_assigned_as: "Papel atribuído:",
+  invite_go_to_panel: "Ir para o painel",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

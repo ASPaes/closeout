@@ -221,6 +221,14 @@ const enUS: Record<TranslationKey, string> = {
   invite_days: "days",
   invite_error_session: "Session expired. Please log in again.",
   invite_error_generic: "Error generating invite link.",
+  invite_page_title: "Invite",
+  invite_verifying: "Verifying invite...",
+  invite_login_required: "You need to be logged in to accept this invite.",
+  invite_accepting: "Accepting invite...",
+  invite_accepted: "Invite accepted!",
+  invite_success: "Invite accepted. Permissions applied.",
+  invite_role_assigned_as: "Role assigned:",
+  invite_go_to_panel: "Go to panel",
 };
 
 export default enUS;
