@@ -10,7 +10,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
-import logoFull from "@/assets/brand/logo-full.png";
+import logoFull from "@/assets/brand/logo-full-2.png";
 
 type LoginStep = "credentials" | "mfa";
 
