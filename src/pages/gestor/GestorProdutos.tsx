@@ -39,6 +39,7 @@ export default function GestorProdutos() {
     setLoading(true);
     let q = supabase.from("products").select("id, client_id, category_id, name, description, price, is_active").order("name");
     if (clientId) q = q.eq("client_id", clientId);
+    const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
     setProducts(data ?? []);
     setLoading(false);
