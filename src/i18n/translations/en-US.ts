@@ -442,6 +442,13 @@ const enUS: Record<TranslationKey, string> = {
   gestor_venues: "Venues",
   gvn_map_hint: "Click on the map or drag the marker to set the location.",
   gvn_use_my_location: "Use my location",
+  gvn_geocode_btn: "Search by address",
+  gvn_geocode_empty: "Fill in the address, city or state to search.",
+  gvn_geocode_not_found: "Address not found. Adjust on the map manually.",
+  gvn_geocode_error: "Error searching address. Try again.",
+  gvn_validation_lat_lng_pair: "Latitude and longitude must be filled together.",
+  gvn_validation_lat_range: "Latitude must be between -90 and 90.",
+  gvn_validation_lng_range: "Longitude must be between -180 and 180.",
 
   // Shared UI
   cancel: "Cancel",
