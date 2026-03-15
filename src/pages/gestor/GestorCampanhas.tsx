@@ -62,7 +62,7 @@ type CampaignForm = {
 const emptyForm: CampaignForm = { name: "", description: "", starts_at: undefined, ends_at: undefined };
 
 export default function GestorCampanhas() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
