@@ -317,6 +317,7 @@ export default function GestorCatalogos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("ctlg_title")}
