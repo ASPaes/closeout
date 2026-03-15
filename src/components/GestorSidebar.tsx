@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, LogOut, Shield, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, LogOut, Shield, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,8 +12,12 @@ import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "dashboard", url: "/gestor", icon: LayoutDashboard },
-  { titleKey: "venues", url: "/gestor/venues", icon: MapPin },
-  { titleKey: "events", url: "/gestor/events", icon: CalendarDays },
+  { titleKey: "gestor_products", url: "/gestor/produtos", icon: Package },
+  { titleKey: "gestor_categories", url: "/gestor/categorias", icon: Tags },
+  { titleKey: "gestor_combos", url: "/gestor/combos", icon: Layers },
+  { titleKey: "gestor_campaigns", url: "/gestor/campanhas", icon: Megaphone },
+  { titleKey: "gestor_stock", url: "/gestor/estoque", icon: Warehouse },
+  { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -65,7 +69,7 @@ export function GestorSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {gestorItems.map((item) => (
-                <SidebarMenuItem key={item.titleKey}>
+                <SidebarMenuItem key={item.titleKey + item.url}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
                       <item.icon className="h-4 w-4" />
