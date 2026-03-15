@@ -161,6 +161,109 @@ export type Database = {
           },
         ]
       }
+      catalog_items: {
+        Row: {
+          catalog_id: string
+          client_id: string
+          combo_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          item_type: string
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          catalog_id: string
+          client_id: string
+          combo_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type: string
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          catalog_id?: string
+          client_id?: string
+          combo_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type?: string
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_items_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "catalogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_items_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "combos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogs: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           client_id: string
@@ -317,6 +420,55 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_catalogs: {
+        Row: {
+          catalog_id: string
+          client_id: string
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          catalog_id: string
+          client_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          catalog_id?: string
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_catalogs_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "catalogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_catalogs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_catalogs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
