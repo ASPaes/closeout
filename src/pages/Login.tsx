@@ -67,7 +67,7 @@ export default function Login() {
   }, [factorId, challengeId, mfaCode, navigate, t]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center px-4 relative overflow-hidden" style={{ backgroundColor: '#000' }}>
       <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center animate-[fade-in_0.6s_ease-out,scale-in_0.6s_ease-out]">
           <img
