@@ -150,6 +150,7 @@ const ptBR = {
   role_assigned: "Papel atribuído",
   role_removed: "Papel removido",
   no_roles_assigned: "Nenhum papel atribuído",
+  no_role: "Sem papel",
   search_users_roles: "Buscar usuários ou papéis...",
   select_user: "Selecionar usuário",
   bootstrap_super_admin: "Ativar Super Admin",
