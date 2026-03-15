@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MapPin, Plus, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
-import { LocationPicker } from "@/components/LocationPicker";
+
+const LocationPicker = lazy(() => import("@/components/LocationPicker").then(m => ({ default: m.LocationPicker })));
 
 type Venue = {
   id: string;
@@ -204,14 +205,16 @@ export default function GestorLocais() {
               <Input value={state} onChange={(e) => setState(e.target.value)} maxLength={2} placeholder="UF" />
             </div>
           </div>
-          <LocationPicker
-            latitude={latitude}
-            longitude={longitude}
-            onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
-            address={address}
-            city={city}
-            state={state}
-          />
+          <Suspense fallback={<div className="h-[260px] rounded-lg border border-border/60 flex items-center justify-center text-muted-foreground text-sm">Carregando mapa…</div>}>
+            <LocationPicker
+              latitude={latitude}
+              longitude={longitude}
+              onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+              address={address}
+              city={city}
+              state={state}
+            />
+          </Suspense>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{t("latitude")}</Label>
