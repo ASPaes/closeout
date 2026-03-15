@@ -57,8 +57,15 @@ const App = () => (
               <Route path="events" element={<Events />} />
             </Route>
 
-            {/* Redirect root to admin */}
+            {/* Legacy redirects */}
             <Route path="/" element={<Navigate to="/admin" replace />} />
+            <Route path="/clients" element={<Navigate to="/admin/clients" replace />} />
+            <Route path="/venues" element={<Navigate to="/admin/venues" replace />} />
+            <Route path="/events" element={<Navigate to="/admin/events" replace />} />
+            <Route path="/users" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/audit-logs" element={<Navigate to="/admin/audit-logs" replace />} />
+            <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
