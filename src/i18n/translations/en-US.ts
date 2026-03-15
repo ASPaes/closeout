@@ -286,11 +286,18 @@ const enUS: Record<TranslationKey, string> = {
   combo_activated: "Combo activated",
   combo_deactivated: "Combo deactivated",
   no_combos_found: "No combos found",
+  combo_empty_hint: "Create combos to bundle products at a special price",
   combo_name: "Combo name",
+  combo_name_placeholder: "E.g.: Beer + Snack Combo",
   combo_items_label: "Combo items",
   combo_add_item: "Add item",
   combo_no_items: "No items added to this combo",
   combo_all_products_added: "All products have been added already",
+  combo_validation_name_required: "Combo name is required",
+  combo_validation_price_positive: "Price must be greater than zero",
+  combo_activate_needs_items: "Cannot activate a combo without items. Add at least one product.",
+  combo_remove_item_title: "Remove combo item",
+  combo_remove_item_desc: "Are you sure you want to remove this item from the combo?",
 
   // Shared UI
   cancel: "Cancel",

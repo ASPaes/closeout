@@ -9,8 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Layers, Trash2 } from "lucide-react";
+import { Plus, Pencil, Layers, Trash2, Package } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -24,6 +29,7 @@ type Combo = {
   description: string | null;
   price: number;
   is_active: boolean;
+  item_count?: number;
 };
 
 type ComboItem = {
@@ -53,6 +59,7 @@ export default function GestorCombos() {
   const [originalItems, setOriginalItems] = useState<ComboItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [removeConfirm, setRemoveConfirm] = useState<number | null>(null);
 
   const fetchCombos = async () => {
     setLoading(true);
@@ -60,7 +67,24 @@ export default function GestorCombos() {
     if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
-    setCombos((data as Combo[]) ?? []);
+
+    const comboList = (data as Combo[]) ?? [];
+
+    // Fetch item counts
+    if (comboList.length > 0) {
+      const { data: itemData } = await supabase
+        .from("combo_items")
+        .select("combo_id")
+        .in("combo_id", comboList.map((c) => c.id));
+
+      const countMap = new Map<string, number>();
+      (itemData ?? []).forEach((row: { combo_id: string }) => {
+        countMap.set(row.combo_id, (countMap.get(row.combo_id) ?? 0) + 1);
+      });
+      comboList.forEach((c) => { c.item_count = countMap.get(c.id) ?? 0; });
+    }
+
+    setCombos(comboList);
     setLoading(false);
   };
 
@@ -75,8 +99,6 @@ export default function GestorCombos() {
     fetchCombos();
     fetchProducts();
   }, [clientId]);
-
-  const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
   const filtered = useMemo(
     () => combos.filter((c) => !search || c.name.toLowerCase().includes(search.toLowerCase())),
@@ -106,11 +128,19 @@ export default function GestorCombos() {
     setSheetOpen(true);
   };
 
+  // Validation
+  const priceNum = parseFloat(form.price);
+  const isFormValid = form.name.trim().length > 0 && !isNaN(priceNum) && priceNum > 0;
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
     const price = parseFloat(form.price);
-    if (!name || isNaN(price) || price < 0 || (!clientId && !isSuperAdmin)) return;
+
+    if (!name) { toast.error(t("combo_validation_name_required")); return; }
+    if (isNaN(price) || price <= 0) { toast.error(t("combo_validation_price_positive")); return; }
+    if (!clientId && !isSuperAdmin) return;
+
     setSaving(true);
 
     try {
@@ -147,7 +177,6 @@ export default function GestorCombos() {
   };
 
   const syncComboItems = async (comboId: string, current: ComboItem[], original: ComboItem[]) => {
-    const originalIds = new Set(original.filter((i) => i.id).map((i) => i.id!));
     const currentIds = new Set(current.filter((i) => i.id).map((i) => i.id!));
 
     // Delete removed items
@@ -169,7 +198,7 @@ export default function GestorCombos() {
       if (error) throw error;
     }
 
-    // Update existing items (quantity changed)
+    // Update existing items
     const toUpdate = current.filter((i) => {
       if (!i.id) return false;
       const orig = original.find((o) => o.id === i.id);
@@ -185,6 +214,15 @@ export default function GestorCombos() {
   };
 
   const toggleActive = async (combo: Combo) => {
+    // Block activation without items
+    if (!combo.is_active) {
+      const itemCount = combo.item_count ?? 0;
+      if (itemCount === 0) {
+        toast.error(t("combo_activate_needs_items"));
+        return;
+      }
+    }
+
     const { error } = await supabase.from("combos").update({ is_active: !combo.is_active }).eq("id", combo.id);
     if (error) {
       toast.error(getPtBrErrorMessage(error));
@@ -205,18 +243,41 @@ export default function GestorCombos() {
     setItems([...items, { product_id: available.id, quantity: 1 }]);
   };
 
-  const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
+  const confirmRemoveItem = (index: number) => {
+    setRemoveConfirm(index);
+  };
+
+  const executeRemoveItem = () => {
+    if (removeConfirm !== null) {
+      setItems(items.filter((_, i) => i !== removeConfirm));
+      setRemoveConfirm(null);
+    }
   };
 
   const updateItem = (index: number, field: "product_id" | "quantity", value: string | number) => {
-    setItems(items.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+    const newValue = field === "quantity" ? Math.max(1, typeof value === "number" ? value : parseInt(value) || 1) : value;
+    setItems(items.map((item, i) => (i === index ? { ...item, [field]: newValue } : item)));
   };
 
   const formatPrice = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  const getAvailableProducts = (currentIndex: number) => {
+    const usedIds = new Set(items.filter((_, i) => i !== currentIndex).map((i) => i.product_id));
+    return products.filter((p) => !usedIds.has(p.id));
+  };
+
   const columns: DataTableColumn<Combo>[] = [
     { key: "name", header: t("name"), render: (c) => <span className="font-medium">{c.name}</span> },
+    {
+      key: "items",
+      header: t("combo_items_label"),
+      render: (c) => (
+        <Badge variant="secondary" className="font-mono text-xs">
+          <Package className="mr-1 h-3 w-3" />
+          {c.item_count ?? 0} {c.item_count === 1 ? "item" : "itens"}
+        </Badge>
+      ),
+    },
     { key: "price", header: t("price"), render: (c) => <span className="font-mono text-sm">{formatPrice(c.price)}</span> },
     {
       key: "status",
@@ -239,12 +300,6 @@ export default function GestorCombos() {
       ),
     },
   ];
-
-  // Products available for selection (excluding already-used ones except current row)
-  const getAvailableProducts = (currentIndex: number) => {
-    const usedIds = new Set(items.filter((_, i) => i !== currentIndex).map((i) => i.product_id));
-    return products.filter((p) => !usedIds.has(p.id));
-  };
 
   return (
     <div className="space-y-6">
@@ -271,6 +326,7 @@ export default function GestorCombos() {
         onSearchChange={setSearch}
         searchPlaceholder={t("search_combos")}
         emptyMessage={t("no_combos_found")}
+        emptyHint={t("combo_empty_hint")}
         emptyActionLabel={clientId ? t("add_combo") : undefined}
         onEmptyAction={clientId ? openCreate : undefined}
       />
@@ -282,11 +338,20 @@ export default function GestorCombos() {
         onSubmit={handleSave}
         saving={saving}
         submitLabel={editing ? t("update") : t("create")}
-        disabled={!form.name.trim() || !form.price}
+        disabled={!isFormValid}
       >
         <div className="space-y-2">
-          <Label>{t("combo_name")}</Label>
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={150} autoFocus />
+          <Label>{t("combo_name")} *</Label>
+          <Input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            maxLength={150}
+            autoFocus
+            placeholder={t("combo_name_placeholder")}
+          />
+          {form.name.length > 0 && !form.name.trim() && (
+            <p className="text-xs text-destructive">{t("combo_validation_name_required")}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>{t("description")}</Label>
@@ -298,21 +363,28 @@ export default function GestorCombos() {
           />
         </div>
         <div className="space-y-2">
-          <Label>{t("price")}</Label>
+          <Label>{t("price")} *</Label>
           <Input
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
+            placeholder="0,00"
           />
+          {form.price && (isNaN(priceNum) || priceNum <= 0) && (
+            <p className="text-xs text-destructive">{t("combo_validation_price_positive")}</p>
+          )}
         </div>
 
         <Separator className="my-4" />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold">{t("combo_items_label")}</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-semibold">{t("combo_items_label")}</Label>
+              <Badge variant="outline" className="text-xs font-mono">{items.length}</Badge>
+            </div>
             <Button type="button" variant="outline" size="sm" onClick={addItem}>
               <Plus className="mr-1 h-3 w-3" />
               {t("combo_add_item")}
@@ -320,37 +392,65 @@ export default function GestorCombos() {
           </div>
 
           {items.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">{t("combo_no_items")}</p>
+            <div className="rounded-lg border border-dashed border-border/60 p-6 text-center">
+              <Package className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t("combo_no_items")}</p>
+            </div>
           )}
 
-          {items.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Select value={item.product_id} onValueChange={(v) => updateItem(index, "product_id", v)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {getAvailableProducts(index).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {formatPrice(p.price)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                min="1"
-                className="w-20"
-                value={item.quantity}
-                onChange={(e) => updateItem(index, "quantity", Math.max(1, parseInt(e.target.value) || 1))}
-              />
-              <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)} className="hover:text-destructive shrink-0">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+          {items.map((item, index) => {
+            const product = products.find((p) => p.id === item.product_id);
+            return (
+              <div key={index} className="flex items-center gap-2 rounded-md border border-border/40 bg-secondary/30 p-2">
+                <Select value={item.product_id} onValueChange={(v) => updateItem(index, "product_id", v)}>
+                  <SelectTrigger className="flex-1 bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableProducts(index).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} — {formatPrice(p.price)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  min="1"
+                  className="w-20 bg-background"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => confirmRemoveItem(index)}
+                  className="hover:text-destructive shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </ModalForm>
+
+      {/* Confirm remove item dialog */}
+      <AlertDialog open={removeConfirm !== null} onOpenChange={(open) => { if (!open) setRemoveConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("combo_remove_item_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("combo_remove_item_desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={executeRemoveItem} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
