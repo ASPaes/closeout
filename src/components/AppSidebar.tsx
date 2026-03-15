@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield, Settings, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,16 +11,16 @@ import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "dashboard", url: "/", icon: LayoutDashboard },
-  { titleKey: "clients", url: "/clients", icon: Building2 },
-  { titleKey: "venues", url: "/venues", icon: MapPin },
-  { titleKey: "events", url: "/events", icon: CalendarDays },
+  { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
+  { titleKey: "clients", url: "/admin/clients", icon: Building2 },
+  { titleKey: "venues", url: "/admin/venues", icon: MapPin },
+  { titleKey: "events", url: "/admin/events", icon: CalendarDays },
 ];
 
 const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "users_roles", url: "/users", icon: Users },
-  { titleKey: "audit_logs", url: "/audit-logs", icon: ScrollText },
-  { titleKey: "settings", url: "/settings", icon: Settings },
+  { titleKey: "users_roles", url: "/admin/users", icon: Users },
+  { titleKey: "audit_logs", url: "/admin/audit-logs", icon: ScrollText },
+  { titleKey: "settings", url: "/admin/settings", icon: Settings },
 ];
 
 const roleLabels: Record<string, string> = {
