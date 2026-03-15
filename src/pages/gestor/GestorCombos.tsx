@@ -303,6 +303,7 @@ export default function GestorCombos() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("gestor_combos")}
