@@ -142,9 +142,14 @@ export default function UsersRoles() {
             </Button>
           )}
           {isSuperAdmin && (
-            <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" }); setSheetOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setInviteDialogOpen(true)}>
+                <Link2 className="mr-2 h-4 w-4" />{t("invite_by_link")}
+              </Button>
+              <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" }); setSheetOpen(true); }}>
+                <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
+              </Button>
+            </>
           )}
         </div>
       </div>
