@@ -70,36 +70,6 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
-
-      <Card className="border-border bg-card">
-        <CardHeader className="flex flex-row items-center gap-2 pb-4">
-          <Activity className="h-4 w-4 text-muted-foreground" />
-          <CardTitle className="text-base font-semibold">{t("recent_activity")}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("action")}</TableHead>
-                <TableHead>{t("entity")}</TableHead>
-                <TableHead>{t("time")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentLogs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell><Badge variant="outline" className="font-mono text-xs">{log.action}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{log.entity_type || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs font-mono">{format(new Date(log.created_at), "dd MMM, HH:mm", { locale: datePtBR })}</TableCell>
-                </TableRow>
-              ))}
-              {recentLogs.length === 0 && (
-                <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">{t("no_recent_activity")}</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }

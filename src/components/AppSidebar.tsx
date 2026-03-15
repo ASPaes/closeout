@@ -21,7 +21,6 @@ const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
 
 const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "users_roles", url: "/admin/users", icon: Users },
-  { titleKey: "audit_logs", url: "/admin/audit-logs", icon: ScrollText },
   { titleKey: "settings", url: "/admin/settings", icon: Settings },
 ];
 
