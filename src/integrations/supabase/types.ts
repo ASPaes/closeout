@@ -227,6 +227,87 @@ export type Database = {
         }
         Relationships: []
       }
+      user_invites: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          event_id: string | null
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+          used_at: string | null
+          used_by: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          event_id?: string | null
+          expires_at: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+          used_at?: string | null
+          used_by?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          event_id?: string | null
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token_hash?: string
+          used_at?: string | null
+          used_by?: string | null
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invites_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invites_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           client_id: string | null
