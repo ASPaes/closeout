@@ -18,7 +18,7 @@ import { logAudit } from "@/lib/audit";
 import InviteLinkDialog from "@/components/InviteLinkDialog";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
-type Profile = { id: string; name: string; status: string };
+type Profile = { id: string; name: string; status: string; created_at: string };
 type Client = { id: string; name: string };
 type Venue = { id: string; name: string; client_id: string };
 type Event = { id: string; name: string; venue_id: string };
@@ -50,11 +50,16 @@ export default function UsersRoles() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const profileMap = useMemo(() => {
-    const map = new Map<string, string>();
-    profiles.forEach((p) => map.set(p.id, p.name || p.id.slice(0, 12)));
+  // Group roles by user_id for quick lookup
+  const rolesByUser = useMemo(() => {
+    const map = new Map<string, UserRole[]>();
+    userRoles.forEach((ur) => {
+      const list = map.get(ur.user_id) || [];
+      list.push(ur);
+      map.set(ur.user_id, list);
+    });
     return map;
-  }, [profiles]);
+  }, [userRoles]);
 
   const filteredVenues = useMemo(() => {
     if (!form.client_id) return [];
@@ -67,19 +72,20 @@ export default function UsersRoles() {
   }, [form.venue_id, events]);
 
   const fetchData = async () => {
-    const [ur, p, c, v, ev] = await Promise.all([
+    const [p, ur, c, v, ev] = await Promise.all([
+      supabase.from("profiles").select("id, name, status, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("id, name, status"),
       supabase.from("clients").select("id, name"),
       supabase.from("venues").select("id, name, client_id"),
       supabase.from("events").select("id, name, venue_id"),
     ]);
-    if (ur.error) { toast.error(getPtBrErrorMessage(ur.error)); }
+    if (ur.error) toast.error(getPtBrErrorMessage(ur.error));
+    if (p.error) toast.error(getPtBrErrorMessage(p.error));
+    if (p.data) setProfiles(p.data as Profile[]);
     if (ur.data) {
       setUserRoles(ur.data as UserRole[]);
       setHasSuperAdmin(ur.data.some((r: any) => r.role === "super_admin"));
     }
-    if (p.data) setProfiles(p.data as Profile[]);
     if (c.data) setClients(c.data as Client[]);
     if (v.data) setVenues(v.data as Venue[]);
     if (ev.data) setEvents(ev.data as Event[]);
@@ -122,9 +128,21 @@ export default function UsersRoles() {
     fetchData();
   };
 
-  const filtered = userRoles.filter((ur) => {
-    const userName = profileMap.get(ur.user_id) || ur.user_id;
-    return ur.role.includes(search.toLowerCase()) || userName.toLowerCase().includes(search.toLowerCase());
+  const renderScope = (ur: UserRole) => {
+    const parts: string[] = [];
+    if (ur.client_id) parts.push(`${t("client")}: ${ur.client_id.slice(0, 8)}`);
+    if (ur.venue_id) parts.push(`${t("venue")}: ${ur.venue_id.slice(0, 8)}`);
+    if (ur.event_id) parts.push(`${t("event_label")}: ${ur.event_id.slice(0, 8)}`);
+    return parts.length > 0 ? parts.join(" · ") : t("global");
+  };
+
+  // Filter profiles by search (name or role)
+  const filtered = profiles.filter((p) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    if (p.name?.toLowerCase().includes(q)) return true;
+    const roles = rolesByUser.get(p.id) || [];
+    return roles.some((r) => r.role.includes(q));
   });
 
   return (
@@ -165,37 +183,78 @@ export default function UsersRoles() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("user")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
                 <TableHead>{t("role")}</TableHead>
                 <TableHead>{t("scope")}</TableHead>
                 {isSuperAdmin && <TableHead className="w-20">{t("actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((ur) => (
-                <TableRow key={ur.id}>
-                  <TableCell className="font-medium">{profileMap.get(ur.user_id) || ur.user_id.slice(0, 12) + "…"}</TableCell>
-                  <TableCell><Badge variant="outline" className="capitalize">{roleKeys[ur.role] ? t(roleKeys[ur.role] as any) : ur.role}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
-                    {ur.client_id ? `${t("client")}: ${ur.client_id.slice(0, 8)}` : ""}
-                    {ur.venue_id ? ` ${t("venue")}: ${ur.venue_id.slice(0, 8)}` : ""}
-                    {ur.event_id ? ` ${t("event_label")}: ${ur.event_id.slice(0, 8)}` : ""}
-                    {!ur.client_id && !ur.venue_id && !ur.event_id ? t("global") : ""}
-                  </TableCell>
-                  {isSuperAdmin && (
+              {filtered.map((profile) => {
+                const roles = rolesByUser.get(profile.id) || [];
+                const hasRoles = roles.length > 0;
+
+                if (!hasRoles) {
+                  // Single row: user with no roles
+                  return (
+                    <TableRow key={profile.id}>
+                      <TableCell className="font-medium">{profile.name || profile.id.slice(0, 12) + "…"}</TableCell>
+                      <TableCell>
+                        <Badge variant={profile.status === "active" ? "default" : "secondary"} className="capitalize">
+                          {profile.status === "active" ? t("active") : t("inactive")}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-muted-foreground">{t("no_role")}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">—</TableCell>
+                      {isSuperAdmin && <TableCell />}
+                    </TableRow>
+                  );
+                }
+
+                // One row per role for users with roles
+                return roles.map((ur, idx) => (
+                  <TableRow key={ur.id}>
+                    {idx === 0 ? (
+                      <>
+                        <TableCell className="font-medium" rowSpan={roles.length}>
+                          {profile.name || profile.id.slice(0, 12) + "…"}
+                        </TableCell>
+                        <TableCell rowSpan={roles.length}>
+                          <Badge variant={profile.status === "active" ? "default" : "secondary"} className="capitalize">
+                            {profile.status === "active" ? t("active") : t("inactive")}
+                          </Badge>
+                        </TableCell>
+                      </>
+                    ) : null}
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleRemove(ur)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Badge variant="outline" className="capitalize">
+                        {roleKeys[ur.role] ? t(roleKeys[ur.role] as any) : ur.role}
+                      </Badge>
                     </TableCell>
-                  )}
+                    <TableCell className="text-muted-foreground text-xs">{renderScope(ur)}</TableCell>
+                    {isSuperAdmin && (
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={() => handleRemove(ur)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ));
+              })}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">{t("no_roles_assigned")}</TableCell>
                 </TableRow>
-              ))}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{t("no_roles_assigned")}</TableCell></TableRow>}
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
+      {/* Assign Role Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader><SheetTitle>{t("assign_role")}</SheetTitle></SheetHeader>

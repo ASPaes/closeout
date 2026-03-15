@@ -152,6 +152,7 @@ const enUS: Record<TranslationKey, string> = {
   role_assigned: "Role assigned",
   role_removed: "Role removed",
   no_roles_assigned: "No roles assigned",
+  no_role: "No role",
   search_users_roles: "Search users or roles...",
   select_user: "Select user",
   bootstrap_super_admin: "Activate Super Admin",
