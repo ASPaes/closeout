@@ -203,6 +203,22 @@ const ptBR = {
   language_updated: "Idioma atualizado",
   portuguese_brazil: "Português (Brasil)",
   english_us: "English (United States)",
+
+  // Invite link
+  invite_by_link: "Convidar por link",
+  invite_optional: "opcional",
+  invite_link_ready: "Link de convite gerado com sucesso. Copie e envie ao usuário.",
+  invite_link_created: "Link de convite criado",
+  invite_link_copied: "Link copiado para a área de transferência",
+  invite_generate_another: "Gerar outro link",
+  invite_generate_link: "Gerar link",
+  invite_generating: "Gerando...",
+  invite_expires_in: "Validade",
+  invite_hour: "hora",
+  invite_hours: "horas",
+  invite_days: "dias",
+  invite_error_session: "Sessão expirada. Faça login novamente.",
+  invite_error_generic: "Erro ao gerar link de convite.",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

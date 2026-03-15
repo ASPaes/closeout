@@ -10,11 +10,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Search, Trash2, ShieldCheck } from "lucide-react";
+import { Plus, Search, Trash2, ShieldCheck, Link2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { APP_ROLE } from "@/config";
 import { logAudit } from "@/lib/audit";
+import InviteLinkDialog from "@/components/InviteLinkDialog";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Profile = { id: string; name: string; status: string };
@@ -47,6 +48,7 @@ export default function UsersRoles() {
   const [form, setForm] = useState({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" });
   const [hasSuperAdmin, setHasSuperAdmin] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const profileMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -140,9 +142,14 @@ export default function UsersRoles() {
             </Button>
           )}
           {isSuperAdmin && (
-            <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" }); setSheetOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setInviteDialogOpen(true)}>
+                <Link2 className="mr-2 h-4 w-4" />{t("invite_by_link")}
+              </Button>
+              <Button onClick={() => { setForm({ user_id: "", role: APP_ROLE.STAFF as string, client_id: "", venue_id: "", event_id: "" }); setSheetOpen(true); }}>
+                <Plus className="mr-2 h-4 w-4" />{t("assign_role")}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -259,6 +266,14 @@ export default function UsersRoles() {
           </form>
         </SheetContent>
       </Sheet>
+
+      <InviteLinkDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        clients={clients}
+        venues={venues}
+        events={events}
+      />
     </div>
   );
 }
