@@ -283,6 +283,12 @@ export default function GestorCampanhas() {
   };
 
   const toggleActive = async (campaign: Campaign) => {
+    // Block activation without items
+    if (!campaign.is_active && (campaign.item_count ?? 0) === 0) {
+      toast.error(t("camp_activate_needs_items"));
+      return;
+    }
+
     const { error } = await supabase.from("campaigns").update({ is_active: !campaign.is_active }).eq("id", campaign.id);
     if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     toast.success(campaign.is_active ? t("camp_deactivated") : t("camp_activated"));
