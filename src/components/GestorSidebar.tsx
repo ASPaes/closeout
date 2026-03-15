@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, LogOut, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, LogOut, ArrowRightLeft, BookOpen } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "gestor_combos", url: "/gestor/combos", icon: Layers },
   { titleKey: "gestor_campaigns", url: "/gestor/campanhas", icon: Megaphone },
   { titleKey: "gestor_stock", url: "/gestor/estoque", icon: Warehouse },
+  { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
   { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
 ];
 
