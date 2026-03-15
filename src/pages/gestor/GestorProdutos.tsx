@@ -23,7 +23,7 @@ type Product = { id: string; client_id: string; category_id: string | null; name
 const emptyForm = { name: "", description: "", price: "", category_id: "" };
 
 export default function GestorProdutos() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
