@@ -392,6 +392,8 @@ const enUS: Record<TranslationKey, string> = {
   gevt_activate: "Activate event",
   gevt_cancel: "Cancel event",
   gevt_no_limit: "No limit",
+  gevt_no_venues_hint: "Create a venue before creating events.",
+  gevt_create_venue: "Create venue",
 
   // Catalogs
   ctlg_title: "Catalogs",
