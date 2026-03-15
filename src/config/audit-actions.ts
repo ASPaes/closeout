@@ -11,6 +11,10 @@ export const AUDIT_ACTION = {
   EVENT_CREATED: 'event.created',
   EVENT_UPDATED: 'event.updated',
 
+  // Event Settings
+  EVENT_SETTINGS_CREATED: 'event_settings.created',
+  EVENT_SETTINGS_UPDATED: 'event_settings.updated',
+
   // Roles
   ROLE_ASSIGNED: 'user.role_assigned',
   ROLE_REVOKED: 'user.role_removed',

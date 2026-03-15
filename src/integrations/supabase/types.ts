@@ -321,6 +321,57 @@ export type Database = {
           },
         ]
       }
+      event_settings: {
+        Row: {
+          client_id: string
+          created_at: string
+          event_id: string
+          geo_radius_meters: number
+          id: string
+          max_order_value: number | null
+          stock_control_enabled: boolean
+          unretrieved_order_alert_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          event_id: string
+          geo_radius_meters?: number
+          id?: string
+          max_order_value?: number | null
+          stock_control_enabled?: boolean
+          unretrieved_order_alert_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          geo_radius_meters?: number
+          id?: string
+          max_order_value?: number | null
+          stock_control_enabled?: boolean
+          unretrieved_order_alert_minutes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_settings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           client_id: string | null
