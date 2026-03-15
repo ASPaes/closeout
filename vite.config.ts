@@ -20,13 +20,6 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: [
-      "react",
-      "react-dom",
-      "@tanstack/react-query",
-      "react-leaflet",
-      "@react-leaflet/core",
-      "leaflet",
-    ],
+    include: ["react", "react-dom", "@tanstack/react-query"],
   },
 }));
