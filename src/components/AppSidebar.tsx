@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Shield, Settings, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, ScrollText, LogOut, Settings, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
+import logoMark from "@/assets/brand/logo-mark.png";
 
 const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
@@ -49,20 +50,16 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border px-4 py-5">
         {!collapsed ? (
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img src={logoMark} alt="Close Out" className="h-8 w-8 rounded-lg object-contain" />
             <div>
-              <span className="text-base font-bold tracking-tight text-sidebar-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              <span className="text-base font-bold tracking-tight text-sidebar-foreground">
                 CLOSE<span className="text-primary"> OUT</span>
               </span>
               <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{t("admin_panel")}</p>
             </div>
           </div>
         ) : (
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <Shield className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img src={logoMark} alt="Close Out" className="h-8 w-8 rounded-lg object-contain mx-auto" />
         )}
       </SidebarHeader>
 
