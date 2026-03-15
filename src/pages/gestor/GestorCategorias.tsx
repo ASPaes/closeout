@@ -48,7 +48,7 @@ export default function GestorCategorias() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
-    if (!name || (!clientId && !isSuperAdmin)) return;
+    if (!name || !clientId) return;
     setSaving(true);
     try {
       if (editing) {
