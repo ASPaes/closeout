@@ -590,9 +590,28 @@ export default function GestorCampanhas() {
                 </div>
               </div>
 
-              {!item.promo_price && !item.discount_percent && (
-                <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
-              )}
+              {/* Discount preview + validation */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {item.promo_price && parseFloat(item.promo_price) > 0 && (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                    {t("camp_preview_promo")}
+                  </Badge>
+                )}
+                {item.discount_percent && parseFloat(item.discount_percent) >= 1 && parseFloat(item.discount_percent) <= 100 && (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                    {item.discount_percent}% off
+                  </Badge>
+                )}
+                {item.promo_price && parseFloat(item.promo_price) <= 0 && (
+                  <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
+                )}
+                {item.discount_percent && (parseFloat(item.discount_percent) < 1 || parseFloat(item.discount_percent) > 100) && (
+                  <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
+                )}
+                {!item.promo_price && !item.discount_percent && (
+                  <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
