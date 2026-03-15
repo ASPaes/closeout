@@ -336,7 +336,7 @@ const ptBR = {
   stock_threshold: "Alerta mínimo",
   stock_low: "Baixo",
   stock_control_off: "Desativado",
-  stock_control: "Controle",
+  stock_control_label: "Controle",
   stock_toggle_label: "Ativar/desativar controle de estoque",
   stock_adjust: "Ajustar estoque",
   stock_config_threshold: "Configurar alerta",
