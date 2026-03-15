@@ -7,6 +7,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar
 } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 import logoMark from "@/assets/brand/logo-mark.png";
@@ -35,6 +36,39 @@ const roleLabels: Record<string, string> = {
   cashier: "Caixa",
   consumer: "Consumidor",
 };
+
+function SidebarNavItem({ item, collapsed, isActive, t }: { item: typeof mainItems[0]; collapsed: boolean; isActive: boolean; t: (key: TranslationKey) => string }) {
+  const content = (
+    <SidebarMenuButton asChild isActive={isActive}>
+      <NavLink
+        to={item.url}
+        end
+        className={`transition-all duration-200 ${isActive ? "bg-sidebar-accent text-primary font-medium glow-sm" : "hover:bg-sidebar-accent/50"}`}
+        activeClassName="bg-sidebar-accent text-primary font-medium"
+      >
+        <item.icon className={`h-4 w-4 transition-colors duration-200 ${isActive ? "text-primary" : ""}`} />
+        {!collapsed && <span>{t(item.titleKey)}</span>}
+      </NavLink>
+    </SidebarMenuButton>
+  );
+
+  if (collapsed) {
+    return (
+      <SidebarMenuItem>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
+            <TooltipContent side="right" className="bg-card border-border/60">
+              {t(item.titleKey)}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </SidebarMenuItem>
+    );
+  }
+
+  return <SidebarMenuItem>{content}</SidebarMenuItem>;
+}
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -69,14 +103,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
-                <SidebarMenuItem key={item.titleKey}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{t(item.titleKey)}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -88,23 +115,14 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {systemItems.map((item) => (
-                  <SidebarMenuItem key={item.titleKey}>
-                    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                      <NavLink to={item.url} end className="hover:bg-sidebar-accent/50 transition-colors" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{t(item.titleKey)}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
                 ))}
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/gestor" className="hover:bg-sidebar-accent/50 transition-colors">
-                      <ArrowRightLeft className="h-4 w-4" />
-                      {!collapsed && <span>{t("go_to_gestor")}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarNavItem
+                  item={{ titleKey: "go_to_gestor", url: "/gestor", icon: ArrowRightLeft }}
+                  collapsed={collapsed}
+                  isActive={false}
+                  t={t}
+                />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -130,9 +148,16 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <button onClick={signOut} className="mx-auto rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title={t("sign_out")}>
-            <LogOut className="h-4 w-4" />
-          </button>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button onClick={signOut} className="mx-auto rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-card border-border/60">{t("sign_out")}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </SidebarFooter>
     </Sidebar>

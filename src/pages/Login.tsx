@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
@@ -26,7 +26,7 @@ export default function Login() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -49,9 +49,9 @@ export default function Login() {
       navigate("/");
     }
     setLoading(false);
-  };
+  }, [email, password, navigate, t]);
 
-  const handleMfaVerify = async (e: React.FormEvent) => {
+  const handleMfaVerify = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!factorId || !challengeId) return;
     setLoading(true);
@@ -64,25 +64,27 @@ export default function Login() {
     }
     navigate("/");
     setLoading(false);
-  };
+  }, [factorId, challengeId, mfaCode, navigate, t]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
       {/* Radial glow behind logo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
 
       <div className="w-full max-w-md space-y-8 relative z-10">
-        <div className="text-center">
+        <div className="text-center animate-[fade-in_0.6s_ease-out,scale-in_0.6s_ease-out]">
           <img
             src={logoFull}
             alt="Close Out"
-            className="mx-auto h-32 w-auto mb-2 drop-shadow-[0_0_24px_hsl(24,100%,50%,0.3)]"
+            className="mx-auto h-36 w-auto mb-3 drop-shadow-[0_0_30px_hsl(24,100%,50%,0.35)]"
           />
-          <p className="text-sm text-muted-foreground">{t("operations_platform")}</p>
+          <p className="text-sm text-muted-foreground italic tracking-wide">
+            Mais vibes, menos filas.
+          </p>
         </div>
 
         {step === "credentials" && (
-          <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader>
               <CardTitle className="text-xl">{t("sign_in")}</CardTitle>
               <CardDescription>{t("credentials_subtitle")}</CardDescription>
@@ -116,7 +118,7 @@ export default function Login() {
         )}
 
         {step === "mfa" && (
-          <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader className="text-center">
               <div className="mx-auto mb-2 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <KeyRound className="h-6 w-6 text-primary" />
