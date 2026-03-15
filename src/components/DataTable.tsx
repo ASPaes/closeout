@@ -1,10 +1,11 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export interface DataTableColumn<T> {
   key: string;
@@ -42,6 +43,18 @@ export function DataTable<T>({
   onEmptyAction,
   filters,
 }: DataTableProps<T>) {
+  // Internal search state with debounce for parent callback
+  const [internalSearch, setInternalSearch] = useState(search ?? "");
+  const debouncedSearch = useDebounce(internalSearch, 250);
+
+  // Sync debounced value to parent
+  const handleSearchChange = (value: string) => {
+    setInternalSearch(value);
+    // We pass immediately to parent for controlled usage, 
+    // but parent should use the value from props
+    onSearchChange?.(value);
+  };
+
   return (
     <Card className="border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden">
       {(onSearchChange || filters) && (
@@ -52,8 +65,8 @@ export function DataTable<T>({
               <Input
                 placeholder={searchPlaceholder}
                 value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-9 bg-secondary/50 border-border/60"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 bg-secondary/50 border-border/60 transition-shadow duration-200 focus:glow-sm"
               />
             </div>
           )}
@@ -61,51 +74,48 @@ export function DataTable<T>({
         </div>
       )}
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/40 hover:bg-transparent">
-              {columns.map((col) => (
-                <TableHead key={col.key} className={col.className}>
-                  {col.header}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {columns.map((col) => (
-                    <TableCell key={col.key}>
-                      <Skeleton className="h-4 w-3/4" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="p-0">
-                  <EmptyState
-                    message={emptyMessage}
-                    hint={emptyHint}
-                    actionLabel={emptyActionLabel}
-                    onAction={onEmptyAction}
-                  />
-                </TableCell>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 animate-fade-in">
+            <Loader2 className="h-6 w-6 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border/40 hover:bg-transparent">
+                {columns.map((col) => (
+                  <TableHead key={col.key} className={col.className}>
+                    {col.header}
+                  </TableHead>
+                ))}
               </TableRow>
-            ) : (
-              data.map((row) => (
-                <TableRow key={keyExtractor(row)} className="border-border/30 transition-colors duration-150">
-                  {columns.map((col) => (
-                    <TableCell key={col.key} className={col.className}>
-                      {col.render(row)}
-                    </TableCell>
-                  ))}
+            </TableHeader>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="p-0">
+                    <EmptyState
+                      message={emptyMessage}
+                      hint={emptyHint}
+                      actionLabel={emptyActionLabel}
+                      onAction={onEmptyAction}
+                    />
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                data.map((row) => (
+                  <TableRow key={keyExtractor(row)} className="border-border/30 transition-colors duration-150">
+                    {columns.map((col) => (
+                      <TableCell key={col.key} className={col.className}>
+                        {col.render(row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );
