@@ -162,6 +162,27 @@ export default function GestorCampanhas() {
 
   const isFormValid = form.name.trim().length > 0 && form.starts_at && form.ends_at && form.ends_at > form.starts_at;
 
+  const validateItems = (): boolean => {
+    for (const item of items) {
+      const pp = item.promo_price ? parseFloat(item.promo_price) : null;
+      const dp = item.discount_percent ? parseFloat(item.discount_percent) : null;
+
+      if (pp === null && dp === null) {
+        toast.error(t("camp_validation_item_pricing"));
+        return false;
+      }
+      if (pp !== null && (isNaN(pp) || pp <= 0)) {
+        toast.error(t("camp_validation_promo_positive"));
+        return false;
+      }
+      if (dp !== null && (isNaN(dp) || dp < 1 || dp > 100)) {
+        toast.error(t("camp_validation_discount_range"));
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
@@ -170,13 +191,7 @@ export default function GestorCampanhas() {
     if (form.ends_at <= form.starts_at) { toast.error(t("camp_validation_end_after_start")); return; }
     if (!clientId && !isSuperAdmin) return;
 
-    // Validate items
-    for (const item of items) {
-      if (!item.promo_price && !item.discount_percent) {
-        toast.error(t("camp_validation_item_pricing"));
-        return;
-      }
-    }
+    if (!validateItems()) return;
 
     setSaving(true);
     try {
@@ -268,6 +283,12 @@ export default function GestorCampanhas() {
   };
 
   const toggleActive = async (campaign: Campaign) => {
+    // Block activation without items
+    if (!campaign.is_active && (campaign.item_count ?? 0) === 0) {
+      toast.error(t("camp_activate_needs_items"));
+      return;
+    }
+
     const { error } = await supabase.from("campaigns").update({ is_active: !campaign.is_active }).eq("id", campaign.id);
     if (error) { toast.error(getPtBrErrorMessage(error)); return; }
     toast.success(campaign.is_active ? t("camp_deactivated") : t("camp_activated"));
@@ -569,9 +590,28 @@ export default function GestorCampanhas() {
                 </div>
               </div>
 
-              {!item.promo_price && !item.discount_percent && (
-                <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
-              )}
+              {/* Discount preview + validation */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {item.promo_price && parseFloat(item.promo_price) > 0 && (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                    {t("camp_preview_promo")}
+                  </Badge>
+                )}
+                {item.discount_percent && parseFloat(item.discount_percent) >= 1 && parseFloat(item.discount_percent) <= 100 && (
+                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                    {item.discount_percent}% off
+                  </Badge>
+                )}
+                {item.promo_price && parseFloat(item.promo_price) <= 0 && (
+                  <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
+                )}
+                {item.discount_percent && (parseFloat(item.discount_percent) < 1 || parseFloat(item.discount_percent) > 100) && (
+                  <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
+                )}
+                {!item.promo_price && !item.discount_percent && (
+                  <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
+                )}
+              </div>
             </div>
           ))}
         </div>

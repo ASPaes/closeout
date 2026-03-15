@@ -328,6 +328,10 @@ const enUS: Record<TranslationKey, string> = {
   camp_validation_item_pricing: "Provide at least one: promo price or discount",
   camp_remove_item_title: "Remove campaign item",
   camp_remove_item_desc: "Are you sure you want to remove this item from the campaign?",
+  camp_validation_promo_positive: "Promo price must be greater than zero",
+  camp_validation_discount_range: "Discount must be between 1% and 100%",
+  camp_activate_needs_items: "Cannot activate a campaign without items. Add at least one product or combo.",
+  camp_preview_promo: "Promo price",
 
   // Shared UI
   cancel: "Cancel",
