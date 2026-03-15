@@ -31,7 +31,7 @@ export default function GestorCategorias() {
   const fetchCategories = async () => {
     setLoading(true);
     let q = supabase.from("categories").select("id, client_id, name, is_active, created_at").order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) { toast.error(getPtBrErrorMessage(error)); }
     setCategories(data ?? []);
