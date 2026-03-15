@@ -125,7 +125,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
             <div className="flex items-center gap-2">
               <Input readOnly value={generatedUrl} className="text-xs" />
               <Button size="icon" variant="outline" onClick={handleCopy}>
-                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
             <Button variant="outline" className="w-full" onClick={() => setGeneratedUrl("")}>
