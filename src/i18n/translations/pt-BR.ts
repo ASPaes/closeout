@@ -377,6 +377,20 @@ const ptBR = {
   stock_allow_negative_on: "Estoque negativo permitido",
   stock_allow_negative_off: "Estoque negativo bloqueado",
 
+  // Gestor Events
+  gevt_subtitle: "Gerenciar eventos do seu estabelecimento",
+  gevt_tab_general: "Geral",
+  gevt_tab_settings: "Configurações",
+  gevt_name_placeholder: "Nome do evento",
+  gevt_validation_name: "O nome do evento é obrigatório",
+  gevt_validation_venue: "Selecione um local para o evento",
+  gevt_validation_dates: "A data final deve ser posterior à data inicial",
+  gevt_save_error: "Erro ao salvar evento",
+  gevt_empty_hint: "Crie seu primeiro evento para começar",
+  gevt_activate: "Ativar evento",
+  gevt_cancel: "Cancelar evento",
+  gevt_no_limit: "Sem limite",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",
