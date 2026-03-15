@@ -634,5 +634,6 @@ export default function GestorCampanhas() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </GestorClientGuard>
   );
 }
