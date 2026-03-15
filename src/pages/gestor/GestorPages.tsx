@@ -16,9 +16,6 @@ function GestorPlaceholder({ titleKey, descKey }: { titleKey: TranslationKey; de
   );
 }
 
-export function GestorEstoque() {
-  return <GestorPlaceholder titleKey="gestor_stock" descKey="gestor_stock_desc" />;
-}
 export function GestorEventos() {
   return <GestorPlaceholder titleKey="events" descKey="manage_events" />;
 }
