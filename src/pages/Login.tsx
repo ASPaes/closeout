@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, Shield, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
+import logoFull from "@/assets/brand/logo-full.png";
 
 type LoginStep = "credentials" | "mfa";
 
@@ -66,20 +67,22 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 dark">
-      <div className="w-full max-w-md space-y-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
+      {/* Radial glow behind logo */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 mb-4">
-            <Shield className="h-7 w-7 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            CLOSE<span className="text-primary"> OUT</span>
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">{t("operations_platform")}</p>
+          <img
+            src={logoFull}
+            alt="Close Out"
+            className="mx-auto h-32 w-auto mb-2 drop-shadow-[0_0_24px_hsl(24,100%,50%,0.3)]"
+          />
+          <p className="text-sm text-muted-foreground">{t("operations_platform")}</p>
         </div>
 
         {step === "credentials" && (
-          <Card className="border-border bg-card">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-xl">{t("sign_in")}</CardTitle>
               <CardDescription>{t("credentials_subtitle")}</CardDescription>
@@ -88,23 +91,23 @@ export default function Login() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("email")}</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@closeout.com" required />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@closeout.com" required className="bg-secondary/50 border-border/60" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">{t("password")}</Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="bg-secondary/50 border-border/60" />
                     <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11 text-base font-semibold glow-hover transition-all" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("sign_in")}
                 </Button>
                 <div className="flex items-center justify-between text-sm">
-                  <Link to="/signup" className="text-primary hover:underline">{t("create_account")}</Link>
+                  <Link to="/signup" className="text-primary hover:text-primary-glow hover:underline transition-colors">{t("create_account")}</Link>
                   <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground transition-colors">{t("forgot_password")}</Link>
                 </div>
               </form>
@@ -113,7 +116,7 @@ export default function Login() {
         )}
 
         {step === "mfa" && (
-          <Card className="border-border bg-card">
+          <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
             <CardHeader className="text-center">
               <div className="mx-auto mb-2 h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <KeyRound className="h-6 w-6 text-primary" />
@@ -131,7 +134,7 @@ export default function Login() {
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || mfaCode.length !== 6}>
+                <Button type="submit" className="w-full h-11 text-base font-semibold glow-hover transition-all" disabled={loading || mfaCode.length !== 6}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("verify")}
                 </Button>
