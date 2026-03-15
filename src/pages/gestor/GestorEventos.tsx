@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -17,7 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 
 type Event = {
   id: string;
@@ -45,6 +47,7 @@ const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"] as const;
 export default function GestorEventos() {
   const { t } = useTranslation();
   const { clientId } = useGestor();
+  const navigate = useNavigate();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -331,7 +334,7 @@ export default function GestorEventos() {
         emptyActionLabel={t("create_event")} onEmptyAction={openCreate}
       />
 
-      <ModalForm open={modalOpen} onOpenChange={setModalOpen} title={editingId ? t("edit_event") : t("new_event")} onSubmit={handleSave} saving={saving}>
+      <ModalForm open={modalOpen} onOpenChange={setModalOpen} title={editingId ? t("edit_event") : t("new_event")} onSubmit={handleSave} saving={saving} disabled={venues.length === 0 && !editingId}>
         <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
           <TabsList className={`grid w-full ${editingId ? "grid-cols-3" : "grid-cols-2"}`}>
             <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
@@ -350,10 +353,22 @@ export default function GestorEventos() {
             </div>
             <div className="space-y-2">
               <Label>{t("venue")}</Label>
-              <Select value={venueId} onValueChange={setVenueId}>
-                <SelectTrigger><SelectValue placeholder={t("select_venue")} /></SelectTrigger>
-                <SelectContent>{venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-              </Select>
+              {venues.length === 0 ? (
+                <div className="rounded-lg border border-border/60 p-4">
+                  <EmptyState
+                    message={t("no_venues_found")}
+                    hint={t("gevt_no_venues_hint")}
+                    actionLabel={t("gevt_create_venue")}
+                    onAction={() => navigate("/gestor/locais")}
+                    icon={MapPin}
+                  />
+                </div>
+              ) : (
+                <Select value={venueId} onValueChange={setVenueId}>
+                  <SelectTrigger><SelectValue placeholder={t("select_venue")} /></SelectTrigger>
+                  <SelectContent>{venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
