@@ -46,7 +46,7 @@ export default function GestorProdutos() {
 
   const fetchCategories = async () => {
     let q = supabase.from("categories").select("id, name").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setCategories(data ?? []);
   };
