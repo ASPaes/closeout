@@ -162,6 +162,27 @@ export default function GestorCampanhas() {
 
   const isFormValid = form.name.trim().length > 0 && form.starts_at && form.ends_at && form.ends_at > form.starts_at;
 
+  const validateItems = (): boolean => {
+    for (const item of items) {
+      const pp = item.promo_price ? parseFloat(item.promo_price) : null;
+      const dp = item.discount_percent ? parseFloat(item.discount_percent) : null;
+
+      if (pp === null && dp === null) {
+        toast.error(t("camp_validation_item_pricing"));
+        return false;
+      }
+      if (pp !== null && (isNaN(pp) || pp <= 0)) {
+        toast.error(t("camp_validation_promo_positive"));
+        return false;
+      }
+      if (dp !== null && (isNaN(dp) || dp < 1 || dp > 100)) {
+        toast.error(t("camp_validation_discount_range"));
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
@@ -170,13 +191,7 @@ export default function GestorCampanhas() {
     if (form.ends_at <= form.starts_at) { toast.error(t("camp_validation_end_after_start")); return; }
     if (!clientId && !isSuperAdmin) return;
 
-    // Validate items
-    for (const item of items) {
-      if (!item.promo_price && !item.discount_percent) {
-        toast.error(t("camp_validation_item_pricing"));
-        return;
-      }
-    }
+    if (!validateItems()) return;
 
     setSaving(true);
     try {
