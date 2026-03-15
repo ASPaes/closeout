@@ -352,10 +352,22 @@ export default function GestorEventos() {
             </div>
             <div className="space-y-2">
               <Label>{t("venue")}</Label>
-              <Select value={venueId} onValueChange={setVenueId}>
-                <SelectTrigger><SelectValue placeholder={t("select_venue")} /></SelectTrigger>
-                <SelectContent>{venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-              </Select>
+              {venues.length === 0 ? (
+                <div className="rounded-lg border border-border/60 p-4">
+                  <EmptyState
+                    message={t("no_venues_found")}
+                    hint={t("gevt_no_venues_hint")}
+                    actionLabel={t("gevt_create_venue")}
+                    onAction={() => navigate("/gestor/locais")}
+                    icon={MapPin}
+                  />
+                </div>
+              ) : (
+                <Select value={venueId} onValueChange={setVenueId}>
+                  <SelectTrigger><SelectValue placeholder={t("select_venue")} /></SelectTrigger>
+                  <SelectContent>{venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
