@@ -244,6 +244,35 @@ const ptBR = {
   gestor_campaigns_desc: "Gerenciar promoções e campanhas",
   gestor_stock: "Estoque",
   gestor_stock_desc: "Controle de estoque dos produtos",
+
+  // Categories CRUD
+  add_category: "Adicionar Categoria",
+  edit_category: "Editar Categoria",
+  new_category: "Nova Categoria",
+  search_categories: "Buscar categorias...",
+  category_created: "Categoria criada",
+  category_updated: "Categoria atualizada",
+  category_activated: "Categoria ativada",
+  category_deactivated: "Categoria desativada",
+  no_categories_found: "Nenhuma categoria encontrada",
+  category_name: "Nome da categoria",
+
+  // Products CRUD
+  add_product: "Adicionar Produto",
+  edit_product: "Editar Produto",
+  new_product: "Novo Produto",
+  search_products: "Buscar produtos...",
+  product_created: "Produto criado",
+  product_updated: "Produto atualizado",
+  product_activated: "Produto ativado",
+  product_deactivated: "Produto desativado",
+  no_products_found: "Nenhum produto encontrado",
+  product_name: "Nome do produto",
+  price: "Preço",
+  category: "Categoria",
+  select_category: "Selecionar categoria",
+  no_category: "Sem categoria",
+  all_categories: "Todas as Categorias",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

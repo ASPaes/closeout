@@ -16,12 +16,6 @@ function GestorPlaceholder({ titleKey, descKey }: { titleKey: TranslationKey; de
   );
 }
 
-export function GestorProdutos() {
-  return <GestorPlaceholder titleKey="gestor_products" descKey="gestor_products_desc" />;
-}
-export function GestorCategorias() {
-  return <GestorPlaceholder titleKey="gestor_categories" descKey="gestor_categories_desc" />;
-}
 export function GestorCombos() {
   return <GestorPlaceholder titleKey="gestor_combos" descKey="gestor_combos_desc" />;
 }

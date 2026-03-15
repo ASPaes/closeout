@@ -21,7 +21,9 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import InvitePage from "@/pages/InvitePage";
 import GestorDashboard from "@/pages/gestor/GestorDashboard";
-import { GestorProdutos, GestorCategorias, GestorCombos, GestorCampanhas, GestorEstoque, GestorEventos } from "@/pages/gestor/GestorPages";
+import GestorCategorias from "@/pages/gestor/GestorCategorias";
+import GestorProdutos from "@/pages/gestor/GestorProdutos";
+import { GestorCombos, GestorCampanhas, GestorEstoque, GestorEventos } from "@/pages/gestor/GestorPages";
 
 const queryClient = new QueryClient();
 
