@@ -379,6 +379,20 @@ const enUS: Record<TranslationKey, string> = {
   stock_allow_negative_on: "Negative stock allowed",
   stock_allow_negative_off: "Negative stock blocked",
 
+  // Gestor Events
+  gevt_subtitle: "Manage your venue events",
+  gevt_tab_general: "General",
+  gevt_tab_settings: "Settings",
+  gevt_name_placeholder: "Event name",
+  gevt_validation_name: "Event name is required",
+  gevt_validation_venue: "Select a venue for the event",
+  gevt_validation_dates: "End date must be after start date",
+  gevt_save_error: "Error saving event",
+  gevt_empty_hint: "Create your first event to get started",
+  gevt_activate: "Activate event",
+  gevt_cancel: "Cancel event",
+  gevt_no_limit: "No limit",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",
