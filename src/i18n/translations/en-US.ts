@@ -246,6 +246,35 @@ const enUS: Record<TranslationKey, string> = {
   gestor_campaigns_desc: "Manage promotions and campaigns",
   gestor_stock: "Stock",
   gestor_stock_desc: "Product stock control",
+
+  // Categories CRUD
+  add_category: "Add Category",
+  edit_category: "Edit Category",
+  new_category: "New Category",
+  search_categories: "Search categories...",
+  category_created: "Category created",
+  category_updated: "Category updated",
+  category_activated: "Category activated",
+  category_deactivated: "Category deactivated",
+  no_categories_found: "No categories found",
+  category_name: "Category name",
+
+  // Products CRUD
+  add_product: "Add Product",
+  edit_product: "Edit Product",
+  new_product: "New Product",
+  search_products: "Search products...",
+  product_created: "Product created",
+  product_updated: "Product updated",
+  product_activated: "Product activated",
+  product_deactivated: "Product deactivated",
+  no_products_found: "No products found",
+  product_name: "Product name",
+  price: "Price",
+  category: "Category",
+  select_category: "Select category",
+  no_category: "No category",
+  all_categories: "All Categories",
 };
 
 export default enUS;
