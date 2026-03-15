@@ -438,6 +438,8 @@ const ptBR = {
   gvn_save_error: "Erro ao salvar local",
   gvn_empty_hint: "Cadastre seu primeiro local para começar",
   gestor_venues: "Locais",
+  gvn_map_hint: "Clique no mapa ou arraste o marcador para definir a localização.",
+  gvn_use_my_location: "Usar minha localização",
 
   // Shared UI
   cancel: "Cancelar",
