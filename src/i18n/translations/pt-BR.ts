@@ -426,7 +426,6 @@ const ptBR = {
   ctlg_select_catalog: "Selecionar catálogo",
   ctlg_no_catalogs: "Nenhum catálogo vinculado",
   ctlg_active_items: "itens ativos",
-  inactive: "Inativo",
 
   // Shared UI
   cancel: "Cancelar",
