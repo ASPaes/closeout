@@ -18,7 +18,7 @@ import { ModalForm } from "@/components/ModalForm";
 type Category = { id: string; client_id: string; name: string; is_active: boolean; created_at: string };
 
 export default function GestorCategorias() {
-  const { clientId, isSuperAdmin } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
