@@ -80,7 +80,7 @@ export default function GestorCampanhas() {
   const fetchCampaigns = async () => {
     setLoading(true);
     let q = supabase.from("campaigns").select("id, client_id, name, description, starts_at, ends_at, is_active").order("starts_at", { ascending: false });
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
 
