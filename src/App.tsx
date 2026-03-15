@@ -21,6 +21,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import InvitePage from "@/pages/InvitePage";
 import GestorDashboard from "@/pages/gestor/GestorDashboard";
+import { GestorProdutos, GestorCategorias, GestorCombos, GestorCampanhas, GestorEstoque, GestorEventos } from "@/pages/gestor/GestorPages";
 
 const queryClient = new QueryClient();
 
@@ -53,8 +54,12 @@ const App = () => (
             {/* Gestor area */}
             <Route path="/gestor" element={<GestorLayout />}>
               <Route index element={<GestorDashboard />} />
-              <Route path="venues" element={<Venues />} />
-              <Route path="events" element={<Events />} />
+              <Route path="produtos" element={<GestorProdutos />} />
+              <Route path="categorias" element={<GestorCategorias />} />
+              <Route path="combos" element={<GestorCombos />} />
+              <Route path="campanhas" element={<GestorCampanhas />} />
+              <Route path="estoque" element={<GestorEstoque />} />
+              <Route path="eventos" element={<GestorEventos />} />
             </Route>
 
             {/* Legacy redirects */}

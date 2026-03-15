@@ -236,6 +236,16 @@ const enUS: Record<TranslationKey, string> = {
   go_to_admin: "Go to Admin Panel",
   go_to_gestor: "Go to Manager Panel",
   no_permission: "You do not have permission to access this area.",
+  gestor_products: "Products",
+  gestor_products_desc: "Manage menu and products",
+  gestor_categories: "Categories",
+  gestor_categories_desc: "Organize products by category",
+  gestor_combos: "Combos",
+  gestor_combos_desc: "Create and manage product combos",
+  gestor_campaigns: "Campaigns",
+  gestor_campaigns_desc: "Manage promotions and campaigns",
+  gestor_stock: "Stock",
+  gestor_stock_desc: "Product stock control",
 };
 
 export default enUS;
