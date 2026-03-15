@@ -16,7 +16,7 @@ const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any }[] 
 
 export default function GestorDashboard() {
   const { profile } = useAuth();
-  const { clientId, isSuperAdmin } = useGestor();
+  const { clientName, isSuperAdmin } = useGestor();
   const { t } = useTranslation();
 
   return (
@@ -25,9 +25,9 @@ export default function GestorDashboard() {
         <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
         <p className="text-muted-foreground">
           {t("welcome_back")}, {profile?.name || "Gestor"}
-          {!isSuperAdmin && clientId && (
-            <span className="ml-2 text-xs text-muted-foreground/60">
-              (client: {clientId.slice(0, 8)}…)
+          {!isSuperAdmin && clientName && (
+            <span className="ml-2 text-sm font-medium text-foreground">
+              — {clientName}
             </span>
           )}
         </p>
