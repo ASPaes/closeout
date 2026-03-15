@@ -503,6 +503,7 @@ export type Database = {
       }
       stock_balances: {
         Row: {
+          allow_negative: boolean
           client_id: string
           created_at: string
           id: string
@@ -513,6 +514,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_negative?: boolean
           client_id: string
           created_at?: string
           id?: string
@@ -523,6 +525,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_negative?: boolean
           client_id?: string
           created_at?: string
           id?: string
