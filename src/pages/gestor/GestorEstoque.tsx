@@ -353,6 +353,7 @@ export default function GestorEstoque() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader
         title={t("gestor_stock")}
