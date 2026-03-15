@@ -273,6 +273,15 @@ const ptBR = {
   select_category: "Selecionar categoria",
   no_category: "Sem categoria",
   all_categories: "Todas as Categorias",
+
+  // Shared UI
+  cancel: "Cancelar",
+  save: "Salvar",
+  loading: "Carregando...",
+  confirm: "Confirmar",
+  close: "Fechar",
+  search: "Buscar",
+  no_results: "Nenhum resultado encontrado",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

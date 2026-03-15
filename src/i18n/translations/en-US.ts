@@ -275,6 +275,15 @@ const enUS: Record<TranslationKey, string> = {
   select_category: "Select category",
   no_category: "No category",
   all_categories: "All Categories",
+
+  // Shared UI
+  cancel: "Cancel",
+  save: "Save",
+  loading: "Loading...",
+  confirm: "Confirm",
+  close: "Close",
+  search: "Search",
+  no_results: "No results found",
 };
 
 export default enUS;
