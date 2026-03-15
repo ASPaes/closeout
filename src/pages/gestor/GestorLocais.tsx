@@ -191,14 +191,19 @@ export default function GestorLocais() {
               <Input value={state} onChange={(e) => setState(e.target.value)} maxLength={2} placeholder="UF" />
             </div>
           </div>
+          <LocationPicker
+            latitude={latitude}
+            longitude={longitude}
+            onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{t("latitude")}</Label>
-              <Input type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)} />
+              <Input readOnly value={latitude} className="bg-muted/50" placeholder="—" />
             </div>
             <div className="space-y-2">
               <Label>{t("longitude")}</Label>
-              <Input type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)} />
+              <Input readOnly value={longitude} className="bg-muted/50" placeholder="—" />
             </div>
           </div>
         </div>
