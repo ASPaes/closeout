@@ -175,6 +175,7 @@ export default function GestorLocais() {
   ];
 
   return (
+    <GestorClientGuard>
     <div className="space-y-6">
       <PageHeader title={t("venues")} subtitle={t("gvn_subtitle")} icon={MapPin}
         actions={<Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("add_venue")}</Button>}
