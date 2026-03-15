@@ -83,7 +83,7 @@ export function GestorSidebar() {
           <div className="flex items-center gap-2.5">
             <img src={logoMark} alt="Close Out" className="h-8 w-8 rounded-lg object-contain" />
             <div>
-              <span className="text-base font-bold tracking-tight text-sidebar-foreground">
+              <span className="text-base font-bold tracking-tight text-sidebar-foreground" style={{ fontFamily: '"Mustica Pro", sans-serif' }}>
                 CLOSE<span className="text-primary"> OUT</span>
               </span>
               <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{t("gestor_panel")}</p>
