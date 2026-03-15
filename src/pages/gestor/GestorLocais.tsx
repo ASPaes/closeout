@@ -30,7 +30,7 @@ type Venue = {
 
 export default function GestorLocais() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
 
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
