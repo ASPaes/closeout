@@ -326,6 +326,10 @@ const ptBR = {
   camp_validation_item_pricing: "Informe pelo menos um: preço promocional ou desconto",
   camp_remove_item_title: "Remover item da campanha",
   camp_remove_item_desc: "Tem certeza que deseja remover este item da campanha?",
+  camp_validation_promo_positive: "O preço promocional deve ser maior que zero",
+  camp_validation_discount_range: "O desconto deve ser entre 1% e 100%",
+  camp_activate_needs_items: "Não é possível ativar uma campanha sem itens. Adicione pelo menos um produto ou combo.",
+  camp_preview_promo: "Preço promocional",
 
   // Shared UI
   cancel: "Cancelar",
