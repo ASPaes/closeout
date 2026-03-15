@@ -208,6 +208,9 @@ export default function GestorLocais() {
             latitude={latitude}
             longitude={longitude}
             onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); }}
+            address={address}
+            city={city}
+            state={state}
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
