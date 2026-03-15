@@ -140,7 +140,7 @@ export default function GestorCombos() {
 
     if (!name) { toast.error(t("combo_validation_name_required")); return; }
     if (isNaN(price) || price <= 0) { toast.error(t("combo_validation_price_positive")); return; }
-    if (!clientId && !isSuperAdmin) return;
+    if (!clientId) return;
 
     setSaving(true);
 
