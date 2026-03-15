@@ -205,6 +205,22 @@ const enUS: Record<TranslationKey, string> = {
   language_updated: "Language updated",
   portuguese_brazil: "Português (Brasil)",
   english_us: "English (United States)",
+
+  // Invite link
+  invite_by_link: "Invite by link",
+  invite_optional: "optional",
+  invite_link_ready: "Invite link generated successfully. Copy and send to the user.",
+  invite_link_created: "Invite link created",
+  invite_link_copied: "Link copied to clipboard",
+  invite_generate_another: "Generate another link",
+  invite_generate_link: "Generate link",
+  invite_generating: "Generating...",
+  invite_expires_in: "Expires in",
+  invite_hour: "hour",
+  invite_hours: "hours",
+  invite_days: "days",
+  invite_error_session: "Session expired. Please log in again.",
+  invite_error_generic: "Error generating invite link.",
 };
 
 export default enUS;

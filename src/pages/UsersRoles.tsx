@@ -266,6 +266,14 @@ export default function UsersRoles() {
           </form>
         </SheetContent>
       </Sheet>
+
+      <InviteLinkDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        clients={clients}
+        venues={venues}
+        events={events}
+      />
     </div>
   );
 }
