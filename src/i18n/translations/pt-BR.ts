@@ -234,6 +234,16 @@ const ptBR = {
   go_to_admin: "Ir para Painel Admin",
   go_to_gestor: "Ir para Painel Gestor",
   no_permission: "Você não tem permissão para acessar esta área.",
+  gestor_products: "Produtos",
+  gestor_products_desc: "Gerenciar cardápio e produtos",
+  gestor_categories: "Categorias",
+  gestor_categories_desc: "Organizar produtos por categoria",
+  gestor_combos: "Combos",
+  gestor_combos_desc: "Criar e gerenciar combos de produtos",
+  gestor_campaigns: "Campanhas",
+  gestor_campaigns_desc: "Gerenciar promoções e campanhas",
+  gestor_stock: "Estoque",
+  gestor_stock_desc: "Controle de estoque dos produtos",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
