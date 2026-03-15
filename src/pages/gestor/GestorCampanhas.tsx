@@ -109,7 +109,7 @@ export default function GestorCampanhas() {
 
   const fetchCombos = async () => {
     let q = supabase.from("combos").select("id, name, price").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setCombos((data as Combo[]) ?? []);
   };
