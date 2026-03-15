@@ -47,7 +47,7 @@ const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"] as const;
 
 export default function GestorEventos() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const navigate = useNavigate();
 
   const [events, setEvents] = useState<Event[]>([]);

@@ -107,5 +107,6 @@ export default function GestorCategorias() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

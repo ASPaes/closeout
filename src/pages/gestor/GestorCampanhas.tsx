@@ -190,7 +190,7 @@ export default function GestorCampanhas() {
     if (!name) { toast.error(t("camp_validation_name")); return; }
     if (!form.starts_at || !form.ends_at) { toast.error(t("camp_validation_dates")); return; }
     if (form.ends_at <= form.starts_at) { toast.error(t("camp_validation_end_after_start")); return; }
-    if (!clientId && !isSuperAdmin) return;
+    if (!clientId) return;
 
     if (!validateItems()) return;
 

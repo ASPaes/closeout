@@ -25,7 +25,7 @@ export default function GestorDashboard() {
         <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
         <p className="text-muted-foreground">
           {t("welcome_back")}, {profile?.name || "Gestor"}
-          {!isSuperAdmin && clientName && (
+          {clientName && (
             <span className="ml-2 text-sm font-medium text-foreground">
               — {clientName}
             </span>

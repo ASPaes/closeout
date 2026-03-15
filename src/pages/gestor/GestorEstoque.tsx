@@ -43,7 +43,7 @@ type HistoryEntry = {
 
 export default function GestorEstoque() {
   const { t } = useTranslation();
-  const { clientId } = useGestor();
+  const { effectiveClientId: clientId } = useGestor();
   const { user } = useAuth();
 
   const [rows, setRows] = useState<StockRow[]>([]);

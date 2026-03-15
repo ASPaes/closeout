@@ -154,5 +154,6 @@ export default function GestorProdutos() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

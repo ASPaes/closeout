@@ -454,5 +454,6 @@ export default function GestorCombos() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </GestorClientGuard>
   );
 }

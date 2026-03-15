@@ -435,5 +435,6 @@ export default function GestorCatalogos() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }

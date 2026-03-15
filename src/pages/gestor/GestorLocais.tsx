@@ -230,5 +230,6 @@ export default function GestorLocais() {
         </div>
       </ModalForm>
     </div>
+    </GestorClientGuard>
   );
 }
