@@ -91,7 +91,7 @@ export default function GestorCombos() {
 
   const fetchProducts = async () => {
     let q = supabase.from("products").select("id, name, price").eq("is_active", true).order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data } = await q;
     setProducts(data ?? []);
   };
