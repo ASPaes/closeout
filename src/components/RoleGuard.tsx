@@ -11,6 +11,11 @@ const areaRoles: Record<Area, string[]> = {
   gestor: ["super_admin", "client_admin"],
 };
 
+const redirectForUnauthorized: Record<Area, string> = {
+  admin: "/gestor",
+  gestor: "/login",
+};
+
 export function RoleGuard({ area, children }: { area: Area; children: React.ReactNode }) {
   const { session, roles, loading } = useAuth();
   const toastShown = useRef(false);
@@ -37,7 +42,7 @@ export function RoleGuard({ area, children }: { area: Area; children: React.Reac
   }
 
   if (!hasAccess) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirectForUnauthorized[area]} replace />;
   }
 
   return <>{children}</>;
