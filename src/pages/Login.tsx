@@ -68,18 +68,15 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Radial glow behind logo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
-
       <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center animate-[fade-in_0.6s_ease-out,scale-in_0.6s_ease-out]">
           <img
             src={logoFull}
             alt="Close Out"
-            className="mx-auto h-36 w-auto mb-3 drop-shadow-[0_0_30px_hsl(24,100%,50%,0.35)]"
+            className="mx-auto h-44 w-auto mb-4"
           />
           <p className="text-sm text-muted-foreground italic tracking-wide">
-            Mais vibes, menos filas.
+            More vibes, less lines.
           </p>
         </div>
 
