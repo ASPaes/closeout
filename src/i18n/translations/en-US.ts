@@ -276,6 +276,22 @@ const enUS: Record<TranslationKey, string> = {
   no_category: "No category",
   all_categories: "All Categories",
 
+  // Combos CRUD
+  add_combo: "Add Combo",
+  edit_combo: "Edit Combo",
+  new_combo: "New Combo",
+  search_combos: "Search combos...",
+  combo_created: "Combo created",
+  combo_updated: "Combo updated",
+  combo_activated: "Combo activated",
+  combo_deactivated: "Combo deactivated",
+  no_combos_found: "No combos found",
+  combo_name: "Combo name",
+  combo_items_label: "Combo items",
+  combo_add_item: "Add item",
+  combo_no_items: "No items added to this combo",
+  combo_all_products_added: "All products have been added already",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",

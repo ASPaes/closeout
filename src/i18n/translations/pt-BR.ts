@@ -274,6 +274,22 @@ const ptBR = {
   no_category: "Sem categoria",
   all_categories: "Todas as Categorias",
 
+  // Combos CRUD
+  add_combo: "Adicionar Combo",
+  edit_combo: "Editar Combo",
+  new_combo: "Novo Combo",
+  search_combos: "Buscar combos...",
+  combo_created: "Combo criado",
+  combo_updated: "Combo atualizado",
+  combo_activated: "Combo ativado",
+  combo_deactivated: "Combo desativado",
+  no_combos_found: "Nenhum combo encontrado",
+  combo_name: "Nome do combo",
+  combo_items_label: "Itens do combo",
+  combo_add_item: "Adicionar item",
+  combo_no_items: "Nenhum item adicionado ao combo",
+  combo_all_products_added: "Todos os produtos já foram adicionados",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",
