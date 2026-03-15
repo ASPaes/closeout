@@ -440,6 +440,8 @@ const enUS: Record<TranslationKey, string> = {
   gvn_save_error: "Error saving venue",
   gvn_empty_hint: "Create your first venue to get started",
   gestor_venues: "Venues",
+  gvn_map_hint: "Click on the map or drag the marker to set the location.",
+  gvn_use_my_location: "Use my location",
 
   // Shared UI
   cancel: "Cancel",
