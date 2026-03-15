@@ -43,10 +43,19 @@ export const AUDIT_ACTION = {
   STOCK_BALANCE_UPDATED: 'stock.balance_updated',
   STOCK_ENTRY_CREATED: 'stock.entry_created',
 
-  // Catalog
+  // Catalog (products)
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_DEACTIVATED: 'product.deactivated',
+
+  // Catalogs (reusable)
+  CATALOG_CREATED: 'catalog.created',
+  CATALOG_UPDATED: 'catalog.updated',
+  CATALOG_ITEM_ADDED: 'catalog_item.added',
+  CATALOG_ITEM_UPDATED: 'catalog_item.updated',
+  CATALOG_ITEM_REMOVED: 'catalog_item.removed',
+  EVENT_CATALOG_LINKED: 'event_catalog.linked',
+  EVENT_CATALOG_UNLINKED: 'event_catalog.unlinked',
 
   // Combos
   COMBO_CREATED: 'combo.created',
