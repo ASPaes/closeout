@@ -65,7 +65,7 @@ export default function GestorCombos() {
   const fetchCombos = async () => {
     setLoading(true);
     let q = supabase.from("combos").select("id, client_id, name, description, price, is_active").order("name");
-    if (!isSuperAdmin && clientId) q = q.eq("client_id", clientId);
+    if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
 
