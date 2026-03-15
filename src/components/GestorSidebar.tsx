@@ -20,6 +20,7 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "gestor_campaigns", url: "/gestor/campanhas", icon: Megaphone },
   { titleKey: "gestor_stock", url: "/gestor/estoque", icon: Warehouse },
   { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
+  { titleKey: "gestor_venues", url: "/gestor/locais", icon: MapPin },
   { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
 ];
 

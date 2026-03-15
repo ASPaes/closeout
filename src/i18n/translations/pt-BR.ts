@@ -427,6 +427,16 @@ const ptBR = {
   ctlg_no_catalogs: "Nenhum catálogo vinculado",
   ctlg_active_items: "itens ativos",
 
+  // Gestor Venues
+  gvn_subtitle: "Gerenciar locais do seu estabelecimento",
+  gvn_name_placeholder: "Nome do local",
+  gvn_validation_name: "O nome do local é obrigatório",
+  gvn_validation_city: "A cidade é obrigatória",
+  gvn_validation_state: "O estado é obrigatório",
+  gvn_save_error: "Erro ao salvar local",
+  gvn_empty_hint: "Cadastre seu primeiro local para começar",
+  gestor_venues: "Locais",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",
