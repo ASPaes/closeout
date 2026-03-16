@@ -181,7 +181,7 @@ export default function GestorProdutos() {
         if (error) throw error;
         toast.success(t("product_updated"));
       } else {
-        const { error } = await supabase.from("products").insert({ ...payload, client_id: clientId });
+        const { error } = await supabase.from("products").insert([{ ...payload, client_id: clientId } as any]);
         if (error) throw error;
         toast.success(t("product_created"));
       }
