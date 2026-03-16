@@ -413,26 +413,6 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 )}
               </div>
             </div>
-
-            <Separator />
-
-            {/* Section: Fee */}
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_fee")}</h3>
-              <div className="space-y-1.5">
-                <Label>{t("cl_default_fee")}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={form.default_fee_percent}
-                  onChange={(e) => setForm({ ...form, default_fee_percent: e.target.value })}
-                  placeholder="10.00"
-                />
-                <p className="text-xs text-muted-foreground">{t("cl_default_fee_help")}</p>
-              </div>
-            </div>
           </div>
         </div>
   );
