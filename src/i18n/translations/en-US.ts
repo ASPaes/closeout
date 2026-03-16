@@ -508,6 +508,28 @@ const enUS: Record<TranslationKey, string> = {
   recipe_select_ingredient: "Select ingredient",
   recipe_no_ingredients_available: "No ingredients available. Create products with the 'Can be ingredient' flag.",
 
+  // Client form sections
+  cl_section_data: "Client Data",
+  cl_section_owner: "Owner",
+  cl_section_contact: "Venue Contact",
+  cl_section_logo: "Client Logo",
+  cl_section_fee: "Default Fee",
+  cl_owner_name: "Owner name",
+  cl_owner_cpf: "Owner CPF",
+  cl_owner_phone: "Owner phone",
+  cl_contact_name: "Contact name",
+  cl_contact_phone: "Contact phone",
+  cl_default_fee: "Default fee (%)",
+  cl_default_fee_help: "Default fee percentage applied to client",
+  cl_fee_validation: "Fee must be between 0 and 100",
+  cl_logo_upload: "Upload logo (PNG, max 512KB)",
+  cl_logo_uploading: "Uploading logo...",
+  cl_logo_upload_error: "Error uploading logo",
+  cl_logo_upload_success: "Logo uploaded successfully",
+  cl_logo_too_large: "File must be at most 512KB",
+  cl_logo_png_only: "Only PNG files are accepted",
+  cl_slug_auto: "Auto-generated",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",
