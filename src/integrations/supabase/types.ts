@@ -56,6 +56,59 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_rules: {
+        Row: {
+          activation_amount: number | null
+          billing_day: number | null
+          client_id: string
+          created_at: string
+          currency: string
+          fee_percent: number | null
+          id: string
+          is_active: boolean
+          monthly_amount: number | null
+          notes: string | null
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          activation_amount?: number | null
+          billing_day?: number | null
+          client_id: string
+          created_at?: string
+          currency?: string
+          fee_percent?: number | null
+          id?: string
+          is_active?: boolean
+          monthly_amount?: number | null
+          notes?: string | null
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          activation_amount?: number | null
+          billing_day?: number | null
+          client_id?: string
+          created_at?: string
+          currency?: string
+          fee_percent?: number | null
+          id?: string
+          is_active?: boolean
+          monthly_amount?: number | null
+          notes?: string | null
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_rules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_items: {
         Row: {
           campaign_id: string
@@ -441,6 +494,73 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_billing_overrides: {
+        Row: {
+          activation_amount: number | null
+          billing_rule_id: string
+          client_id: string
+          created_at: string
+          currency: string | null
+          event_id: string
+          fee_percent: number | null
+          id: string
+          is_active: boolean
+          monthly_amount: number | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          activation_amount?: number | null
+          billing_rule_id: string
+          client_id: string
+          created_at?: string
+          currency?: string | null
+          event_id: string
+          fee_percent?: number | null
+          id?: string
+          is_active?: boolean
+          monthly_amount?: number | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activation_amount?: number | null
+          billing_rule_id?: string
+          client_id?: string
+          created_at?: string
+          currency?: string | null
+          event_id?: string
+          fee_percent?: number | null
+          id?: string
+          is_active?: boolean
+          monthly_amount?: number | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_billing_overrides_billing_rule_id_fkey"
+            columns: ["billing_rule_id"]
+            isOneToOne: false
+            referencedRelation: "billing_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_billing_overrides_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_billing_overrides_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
