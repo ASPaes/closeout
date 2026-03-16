@@ -87,7 +87,6 @@ export default function Clients() {
       owner_name: client.owner_name || "", owner_cpf: client.owner_cpf || "",
       owner_phone: client.owner_phone || "",
       contact_name: client.contact_name || "", contact_phone: client.contact_phone || "",
-      default_fee_percent: client.default_fee_percent?.toString() || "",
     });
     setLogoFile(null);
     if (client.logo_path) {
