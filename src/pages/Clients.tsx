@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { maskPhone, maskCPF, maskDocument, unmask } from "@/lib/masks";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -289,7 +290,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("document")}</Label>
-                  <Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ ou CPF" />
+                  <Input value={maskDocument(form.document)} onChange={(e) => setForm({ ...form, document: unmask(e.target.value) })} placeholder="00.000.000/0000-00" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -298,7 +299,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("phone")}</Label>
-                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                    <Input value={maskPhone(form.phone)} onChange={(e) => setForm({ ...form, phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -331,11 +332,11 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t("cl_owner_cpf")}</Label>
-                    <Input value={form.owner_cpf} onChange={(e) => setForm({ ...form, owner_cpf: e.target.value })} placeholder="000.000.000-00" />
+                    <Input value={maskCPF(form.owner_cpf)} onChange={(e) => setForm({ ...form, owner_cpf: unmask(e.target.value) })} placeholder="000.000.000-00" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("cl_owner_phone")}</Label>
-                    <Input value={form.owner_phone} onChange={(e) => setForm({ ...form, owner_phone: e.target.value })} />
+                    <Input value={maskPhone(form.owner_phone)} onChange={(e) => setForm({ ...form, owner_phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
                   </div>
                 </div>
               </div>
@@ -353,7 +354,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("cl_contact_phone")}</Label>
-                  <Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+                  <Input value={maskPhone(form.contact_phone)} onChange={(e) => setForm({ ...form, contact_phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
                 </div>
               </div>
             </div>
