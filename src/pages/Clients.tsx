@@ -210,6 +210,13 @@ export default function Clients() {
     { key: "name", header: t("name"), render: (c) => <span className="font-medium">{c.name}</span> },
     { key: "slug", header: t("slug"), render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.slug}</span> },
     { key: "email", header: t("email"), render: (c) => <span className="text-muted-foreground">{c.email || "—"}</span> },
+    { key: "fee", header: "Fee %", className: "w-20 text-right", render: (c) => (
+      <span className="text-muted-foreground text-sm font-mono">
+        {c.default_fee_percent != null
+          ? c.default_fee_percent.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"
+          : "—"}
+      </span>
+    )},
     { key: "status", header: t("status"), render: (c) => (
       <StatusBadge
         status={c.status === ENTITY_STATUS.ACTIVE ? "active" : "inactive"}
