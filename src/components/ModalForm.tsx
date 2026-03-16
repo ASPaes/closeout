@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ModalFormProps {
   open: boolean;
