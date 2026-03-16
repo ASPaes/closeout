@@ -99,6 +99,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) {
+    // During HMR or edge cases, return a safe loading state instead of crashing
+    return {
+      session: null,
+      user: null,
+      profile: null,
+      roles: [],
+      loading: true,
+      signOut: async () => {},
+      hasRole: () => false,
+      isSuperAdmin: false,
+    } as AuthContextType;
+  }
   return context;
 }
