@@ -41,7 +41,6 @@ const emptyForm = (): FormState => ({
   owner_name: "", owner_cpf: "", owner_phone: "",
   contact_name: "", contact_phone: "",
 });
-});
 
 export default function Clients() {
   const { isSuperAdmin, hasRole } = useAuth();
