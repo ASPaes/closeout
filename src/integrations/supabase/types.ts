@@ -302,12 +302,19 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
+          default_fee_percent: number | null
           document: string | null
           email: string | null
           id: string
+          logo_path: string | null
           logo_url: string | null
           name: string
+          owner_cpf: string | null
+          owner_name: string | null
+          owner_phone: string | null
           phone: string | null
           slug: string
           status: string
@@ -315,12 +322,19 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
+          default_fee_percent?: number | null
           document?: string | null
           email?: string | null
           id?: string
+          logo_path?: string | null
           logo_url?: string | null
           name: string
+          owner_cpf?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
           slug: string
           status?: string
@@ -328,12 +342,19 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
+          default_fee_percent?: number | null
           document?: string | null
           email?: string | null
           id?: string
+          logo_path?: string | null
           logo_url?: string | null
           name?: string
+          owner_cpf?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone?: string | null
           slug?: string
           status?: string
@@ -593,6 +614,7 @@ export type Database = {
       platform_settings: {
         Row: {
           created_at: string
+          default_fee_percent: number
           default_geo_radius_meters: number
           default_max_order_value: number
           default_unretrieved_order_alert_minutes: number
@@ -601,6 +623,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_fee_percent?: number
           default_geo_radius_meters?: number
           default_max_order_value?: number
           default_unretrieved_order_alert_minutes?: number
@@ -609,6 +632,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_fee_percent?: number
           default_geo_radius_meters?: number
           default_max_order_value?: number
           default_unretrieved_order_alert_minutes?: number
