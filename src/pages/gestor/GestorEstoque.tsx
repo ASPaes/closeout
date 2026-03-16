@@ -171,6 +171,18 @@ export default function GestorEstoque() {
       { onConflict: "client_id,product_id", ignoreDuplicates: true }
     );
 
+    // Check if removal would go negative when not allowed
+    if (adjustType === "remove") {
+      const currentRow = rows.find((r) => r.product_id === adjustProductId);
+      if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
+        setAdjustSaving(false);
+        toast.error(t("stock_insufficient"), {
+          description: `${t("stock_qty")}: ${currentRow.quantity_available}`,
+        });
+        return;
+      }
+    }
+
     const { error } = await supabase.from("stock_entries").insert({
       client_id: clientId!,
       product_id: adjustProductId,
@@ -183,7 +195,7 @@ export default function GestorEstoque() {
     setAdjustSaving(false);
 
     if (error) {
-      const msg = error.message.includes("negativo") || error.message.includes("Cannot remove")
+      const msg = error.message.includes("negativ") || error.message.includes("Cannot remove") || error.message.includes("insufficient")
         ? t("stock_negative_not_allowed")
         : t("stock_adjust_error");
       toast.error(msg);
@@ -192,7 +204,24 @@ export default function GestorEstoque() {
 
     toast.success(t("stock_adjusted_ok"));
     setAdjustOpen(false);
-    fetchData();
+
+    // Re-fetch and check low stock warning
+    await fetchData();
+    const updatedRow = rows.find((r) => r.product_id === adjustProductId);
+    if (updatedRow && updatedRow.is_enabled && updatedRow.low_stock_threshold > 0) {
+      // We need fresh data — read from state after fetchData settles
+      const { data: freshBalance } = await supabase
+        .from("stock_balances")
+        .select("quantity_available, low_stock_threshold")
+        .eq("client_id", clientId!)
+        .eq("product_id", adjustProductId)
+        .single();
+      if (freshBalance && freshBalance.quantity_available <= freshBalance.low_stock_threshold) {
+        toast.warning(t("stock_low_warning"), {
+          description: `${updatedRow.product_name}: ${freshBalance.quantity_available} ${t("stock_units_remaining")}`,
+        });
+      }
+    }
   };
 
   // ---- Threshold ----

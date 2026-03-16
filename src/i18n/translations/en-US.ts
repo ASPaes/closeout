@@ -368,6 +368,8 @@ const enUS: Record<TranslationKey, string> = {
   stock_allow_negative_label: "Negative",
   stock_negative: "Negative",
   stock_negative_not_allowed: "Negative stock is not allowed for this product.",
+  stock_low_warning: "Warning: low stock!",
+  stock_units_remaining: "units remaining",
   stock_history: "Movement history",
   stock_history_empty: "No movements recorded",
   stock_history_date: "Date",
