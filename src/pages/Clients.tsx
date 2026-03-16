@@ -137,13 +137,6 @@ export default function Clients() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validate fee
-    const feeVal = form.default_fee_percent ? parseFloat(form.default_fee_percent) : null;
-    if (feeVal != null && (feeVal < 0 || feeVal > 100)) {
-      toast.error(t("cl_fee_validation"));
-      return;
-    }
-
     setSaving(true);
     const payload: Record<string, any> = {
       name: form.name, email: form.email || null, phone: form.phone || null,
@@ -151,7 +144,6 @@ export default function Clients() {
       owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
       owner_phone: form.owner_phone || null,
       contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
-      default_fee_percent: feeVal,
     };
 
     if (editing) {
