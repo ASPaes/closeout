@@ -1123,14 +1123,23 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_stock_entry: {
-        Args: {
-          p_entry_id: string
-          p_new_quantity: number
-          p_new_reason?: string
-        }
-        Returns: undefined
-      }
+      update_stock_entry:
+        | {
+            Args: {
+              p_entry_id: string
+              p_new_quantity: number
+              p_new_reason?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_entry_id: string
+              p_new_quantity: number
+              p_new_reason?: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role:
