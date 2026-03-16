@@ -175,7 +175,7 @@ export default function Events() {
 
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={editing ? t("edit_event") : t("new_event")}
         onSubmit={handleSubmit} saving={saving} submitLabel={editing ? t("update") : t("create")}
-        size={editing && isSuperAdmin ? "wide" : "default"}>
+        size="wide">
         {editing && isSuperAdmin ? (
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="mb-4">
