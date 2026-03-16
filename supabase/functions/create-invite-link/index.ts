@@ -24,7 +24,7 @@ const InputSchema = z.object({
   clientId: z.string().uuid().optional(),
   venueId: z.string().uuid().optional(),
   eventId: z.string().uuid().optional(),
-  expiresInMinutes: z.number().int().min(5).max(43200).default(1440),
+  expiresInMinutes: z.number().int().min(0).max(43200).default(1440),
 });
 
 function problem(status: number, title: string, detail: string, requestId: string) {
