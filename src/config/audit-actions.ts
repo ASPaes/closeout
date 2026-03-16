@@ -99,6 +99,11 @@ export const AUDIT_ACTION = {
   RETURN_REQUESTED: 'return.requested',
   RETURN_AUTHORIZED: 'return.authorized',
   EXCHANGE_CREATED: 'exchange.created',
+
+  // Recipes (BOM)
+  RECIPE_CREATED: 'recipe.created',
+  RECIPE_UPDATED: 'recipe.updated',
+  RECIPE_REMOVED: 'recipe.removed',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];
