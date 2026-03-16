@@ -70,6 +70,7 @@ export default function GestorEstoque() {
   const [adjustType, setAdjustType] = useState<"add" | "remove" | "adjust">("add");
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
+  const [adjustError, setAdjustError] = useState("");
 
   // Threshold modal
   const [thresholdOpen, setThresholdOpen] = useState(false);
