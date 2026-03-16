@@ -184,6 +184,7 @@ export default function GestorEstoque() {
 
   const handleAdjustSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAdjustError("");
     if (!adjustProductId) { toast.error(t("stock_select_product")); return; }
     const qty = parseInt(adjustQty, 10);
 
@@ -197,10 +198,8 @@ export default function GestorEstoque() {
     if (adjustType === "remove") {
       const currentRow = rows.find((r) => r.product_id === adjustProductId);
       if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
-        toast.error(t("stock_insufficient"), {
-          description: `${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`,
-          duration: 6000,
-        });
+        const errorMsg = `${t("stock_insufficient")}. ${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`;
+        setAdjustError(errorMsg);
         return;
       }
     }
