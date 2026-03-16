@@ -262,6 +262,39 @@ export default function Clients() {
         submitLabel={editing ? t("update") : t("create")}
         size="wide"
       >
+        {editing ? (
+          <Tabs defaultValue="dados" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="dados">{t("cl_section_data")}</TabsTrigger>
+              <TabsTrigger value="cobranca">{t("br_tab_billing")}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dados">
+              <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+            </TabsContent>
+            <TabsContent value="cobranca">
+              <ClientBillingRules clientId={editing.id} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+        )}
+      </ModalForm>
+    </div>
+  );
+}
+
+function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileInputRef, handleLogoSelect, removeLogo, t }: {
+  form: FormState;
+  setForm: (f: FormState) => void;
+  editing: Client | null;
+  logoPreview: string | null;
+  logoFile: File | null;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  handleLogoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  removeLogo: () => void;
+  t: (key: any) => string;
+}) {
+  return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left column */}
           <div className="space-y-5">
@@ -430,7 +463,5 @@ export default function Clients() {
             </div>
           </div>
         </div>
-      </ModalForm>
-    </div>
   );
 }
