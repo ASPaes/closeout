@@ -661,6 +661,7 @@ export default function GestorEstoque() {
             </Alert>
           )}
         </div>
+      </ModalForm>
 
       {/* Threshold Modal */}
       <ModalForm
