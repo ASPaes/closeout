@@ -104,6 +104,14 @@ export const AUDIT_ACTION = {
   RECIPE_CREATED: 'recipe.created',
   RECIPE_UPDATED: 'recipe.updated',
   RECIPE_REMOVED: 'recipe.removed',
+
+  // Billing Rules
+  BILLING_RULE_CREATED: 'billing_rule.created',
+  BILLING_RULE_UPDATED: 'billing_rule.updated',
+
+  // Event Billing Overrides
+  EVENT_BILLING_OVERRIDE_CREATED: 'event_billing_override.created',
+  EVENT_BILLING_OVERRIDE_UPDATED: 'event_billing_override.updated',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];
