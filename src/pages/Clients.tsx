@@ -40,7 +40,7 @@ const emptyForm = (): FormState => ({
   status: ENTITY_STATUS.ACTIVE as string,
   owner_name: "", owner_cpf: "", owner_phone: "",
   contact_name: "", contact_phone: "",
-  default_fee_percent: "",
+});
 });
 
 export default function Clients() {
