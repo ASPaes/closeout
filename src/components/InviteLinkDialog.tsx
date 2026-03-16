@@ -232,6 +232,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
                   <SelectItem value="4320">3 {t("invite_days")}</SelectItem>
                   <SelectItem value="10080">7 {t("invite_days")}</SelectItem>
                   <SelectItem value="43200">30 {t("invite_days")}</SelectItem>
+                  <SelectItem value="0">{t("invite_lifetime")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

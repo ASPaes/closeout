@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       if (anyInvite.used_at) {
         return problem(410, "Gone", "INVITE_ALREADY_USED", requestId);
       }
-      if (new Date(anyInvite.expires_at) <= new Date()) {
+      if (anyInvite.expires_at && new Date(anyInvite.expires_at) <= new Date()) {
         return problem(410, "Gone", "INVITE_EXPIRED", requestId);
       }
       return problem(404, "Not Found", "INVITE_NOT_FOUND", requestId);

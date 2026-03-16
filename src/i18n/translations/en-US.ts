@@ -239,6 +239,7 @@ const enUS: Record<TranslationKey, string> = {
   invite_hour: "hour",
   invite_hours: "hours",
   invite_days: "days",
+  invite_lifetime: "Lifetime (no expiration)",
   invite_error_session: "Session expired. Please log in again.",
   invite_error_generic: "Error generating invite link.",
   invite_page_title: "Invite",
