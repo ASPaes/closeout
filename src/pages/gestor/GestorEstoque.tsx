@@ -34,6 +34,7 @@ import { Package, Plus, Settings2, History, Pencil, Trash2, AlertTriangle } from
 type ProductInfo = {
   id: string;
   name: string;
+  is_stock_tracked: boolean;
   stock_unit: string | null;
   base_unit: string | null;
   base_per_stock_unit: number | null;
@@ -132,9 +133,10 @@ export default function GestorEstoque() {
         .eq("client_id", clientId),
       supabase
         .from("products")
-        .select("id, name, stock_unit, base_unit, base_per_stock_unit")
+        .select("id, name, is_stock_tracked, stock_unit, base_unit, base_per_stock_unit")
         .eq("client_id", clientId)
         .eq("is_active", true)
+        .eq("is_stock_tracked", true)
         .order("name"),
       supabase
         .from("stock_entries")
