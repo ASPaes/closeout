@@ -22,6 +22,7 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
   { titleKey: "gestor_venues", url: "/gestor/locais", icon: MapPin },
   { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
+  { titleKey: "gestor_invite_team", url: "/gestor/equipe", icon: UserPlus },
 ];
 
 const roleLabels: Record<string, string> = {

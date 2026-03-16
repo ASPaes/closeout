@@ -70,6 +70,7 @@ const App = () => (
               <Route path="catalogos" element={<GestorCatalogos />} />
               <Route path="locais" element={<GestorLocais />} />
               <Route path="eventos" element={<GestorEventos />} />
+              <Route path="equipe" element={<GestorEquipe />} />
             </Route>
 
             {/* Legacy redirects */}
