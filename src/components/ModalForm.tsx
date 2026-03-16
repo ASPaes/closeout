@@ -27,7 +27,7 @@ export function ModalForm({
   saving = false,
   submitLabel,
   disabled = false,
-  size = "default",
+  size = "wide",
 }: ModalFormProps) {
   const { t } = useTranslation();
 
