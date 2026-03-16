@@ -170,6 +170,8 @@ const ptBR = {
   role_cashier: "Operador de Caixa",
   role_consumer: "Consumidor",
   gestor_invite_team: "Convidar Equipe",
+  gestor_invite_team_desc: "Convide membros da equipe para sua organização",
+  gestor_invite_team_help: "Use o botão acima para gerar um link de convite. Os convidados receberão o papel selecionado automaticamente ao aceitar.",
 
   // Audit Logs
   audit_logs: "Logs de Auditoria",

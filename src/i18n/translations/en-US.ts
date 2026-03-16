@@ -172,6 +172,8 @@ const enUS: Record<TranslationKey, string> = {
   role_cashier: "Cashier",
   role_consumer: "Consumer",
   gestor_invite_team: "Invite Team",
+  gestor_invite_team_desc: "Invite team members to your organization",
+  gestor_invite_team_help: "Use the button above to generate an invite link. Invitees will receive the selected role automatically upon acceptance.",
 
   // Audit Logs
   audit_logs: "Audit Logs",
