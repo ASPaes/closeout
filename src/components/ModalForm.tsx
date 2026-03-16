@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ModalFormProps {
   open: boolean;
@@ -60,13 +59,13 @@ export function ModalForm({
   if (size === "wide") {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[1000px] w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60">
-          <DialogHeader className="px-6 pt-6 pb-0">
+        <DialogContent className="max-w-[1000px] w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-80px)] px-6 pb-6">
+          <div className="overflow-y-auto flex-1 px-6 pb-6 pt-2">
             {formContent}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     );
