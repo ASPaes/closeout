@@ -178,6 +178,7 @@ export default function GestorEstoque() {
     setAdjustType("add");
     setAdjustQty("");
     setAdjustReason("");
+    setAdjustError("");
     setAdjustOpen(true);
   };
 
