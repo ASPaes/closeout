@@ -100,11 +100,7 @@ export default function Clients() {
       default_fee_percent: client.default_fee_percent?.toString() || "",
     });
     setLogoFile(null);
-    // Load existing logo preview
     if (client.logo_path) {
-      const { data } = supabase.storage.from("client-logos").createSignedUrl(client.logo_path, 3600);
-      data?.then?.(undefined); // not a promise here
-      // createSignedUrl is sync-returning in newer SDK
       supabase.storage.from("client-logos").createSignedUrl(client.logo_path, 3600).then(({ data: signedData }) => {
         if (signedData?.signedUrl) setLogoPreview(signedData.signedUrl);
         else setLogoPreview(null);
