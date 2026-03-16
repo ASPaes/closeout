@@ -69,19 +69,9 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
-  const fetchDefaultFee = async (): Promise<string> => {
-    const { data } = await supabase.from("platform_settings").select("default_fee_percent").limit(1).single();
-    if (data && (data as any).default_fee_percent != null) {
-      return (data as any).default_fee_percent.toString();
-    }
-    return "";
-  };
-
-  const openCreate = async () => {
+  const openCreate = () => {
     setEditing(null);
-    const f = emptyForm();
-    f.default_fee_percent = await fetchDefaultFee();
-    setForm(f);
+    setForm(emptyForm());
     setLogoFile(null);
     setLogoPreview(null);
     setSheetOpen(true);
