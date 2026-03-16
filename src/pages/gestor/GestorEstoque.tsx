@@ -70,6 +70,7 @@ export default function GestorEstoque() {
   const [adjustType, setAdjustType] = useState<"add" | "remove" | "adjust">("add");
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
+  const [adjustError, setAdjustError] = useState("");
 
   // Threshold modal
   const [thresholdOpen, setThresholdOpen] = useState(false);
@@ -177,11 +178,13 @@ export default function GestorEstoque() {
     setAdjustType("add");
     setAdjustQty("");
     setAdjustReason("");
+    setAdjustError("");
     setAdjustOpen(true);
   };
 
   const handleAdjustSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAdjustError("");
     if (!adjustProductId) { toast.error(t("stock_select_product")); return; }
     const qty = parseInt(adjustQty, 10);
 
@@ -195,10 +198,8 @@ export default function GestorEstoque() {
     if (adjustType === "remove") {
       const currentRow = rows.find((r) => r.product_id === adjustProductId);
       if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
-        toast.error(t("stock_insufficient"), {
-          description: `${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`,
-          duration: 6000,
-        });
+        const errorMsg = `${t("stock_insufficient")}. ${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`;
+        setAdjustError(errorMsg);
         return;
       }
     }
@@ -638,7 +639,7 @@ export default function GestorEstoque() {
               type="number"
               min={0}
               value={adjustQty}
-              onChange={(e) => setAdjustQty(e.target.value)}
+              onChange={(e) => { setAdjustQty(e.target.value); setAdjustError(""); }}
               placeholder="0"
             />
           </div>
@@ -652,6 +653,13 @@ export default function GestorEstoque() {
               rows={2}
             />
           </div>
+
+          {adjustError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{adjustError}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </ModalForm>
 
