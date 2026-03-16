@@ -723,11 +723,11 @@ export default function GestorEstoque() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("stock_entry_delete_title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("stock_entry_delete_desc", {
-                product: deleteEntryTarget?.product_name ?? "",
-                qty: String(deleteEntryTarget?.quantity ?? 0),
-                type: entryTypeLabel(deleteEntryTarget?.entry_type ?? ""),
-              })}
+              {t("stock_entry_delete_desc")}
+              <br />
+              <span className="font-medium">
+                {deleteEntryTarget?.product_name} — {entryTypeLabel(deleteEntryTarget?.entry_type ?? "")}: {deleteEntryTarget?.quantity}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
