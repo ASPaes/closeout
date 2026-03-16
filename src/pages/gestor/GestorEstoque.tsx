@@ -17,8 +17,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, Plus, Settings2, History } from "lucide-react";
+import { Package, Plus, Settings2, History, Pencil, Trash2, AlertTriangle } from "lucide-react";
 
 type StockRow = {
   id: string;
@@ -66,6 +77,19 @@ export default function GestorEstoque() {
   const [thresholdRow, setThresholdRow] = useState<StockRow | null>(null);
   const [thresholdValue, setThresholdValue] = useState("");
 
+  // Edit entry modal
+  const [editEntryOpen, setEditEntryOpen] = useState(false);
+  const [editEntrySaving, setEditEntrySaving] = useState(false);
+  const [editEntry, setEditEntry] = useState<HistoryEntry | null>(null);
+  const [editEntryQty, setEditEntryQty] = useState("");
+  const [editEntryReason, setEditEntryReason] = useState("");
+
+  // Delete entry confirmation
+  const [deleteEntryOpen, setDeleteEntryOpen] = useState(false);
+  const [deleteEntryTarget, setDeleteEntryTarget] = useState<HistoryEntry | null>(null);
+  const [deleteEntryLoading, setDeleteEntryLoading] = useState(false);
+
+  // ---- Fetch ----
   const fetchData = useCallback(async () => {
     if (!clientId) return;
     setLoading(true);
@@ -86,7 +110,7 @@ export default function GestorEstoque() {
         .select("id, created_at, product_id, entry_type, quantity, reason, created_by")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(50),
     ]);
 
     const prods = productsRes.data ?? [];
@@ -144,6 +168,9 @@ export default function GestorEstoque() {
     r.product_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Helper: get current stock info for selected product
+  const selectedProductRow = adjustProductId ? rows.find((r) => r.product_id === adjustProductId) : null;
+
   // ---- Adjust stock ----
   const openAdjust = (productId?: string) => {
     setAdjustProductId(productId ?? "");
@@ -164,24 +191,24 @@ export default function GestorEstoque() {
       if (isNaN(qty) || qty <= 0) { toast.error(t("stock_invalid_qty")); return; }
     }
 
+    // Client-side validation: check insufficient stock BEFORE any DB call
+    if (adjustType === "remove") {
+      const currentRow = rows.find((r) => r.product_id === adjustProductId);
+      if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
+        toast.error(t("stock_insufficient"), {
+          description: `${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`,
+          duration: 6000,
+        });
+        return;
+      }
+    }
+
     setAdjustSaving(true);
 
     await supabase.from("stock_balances").upsert(
       { client_id: clientId!, product_id: adjustProductId, quantity_available: 0 },
       { onConflict: "client_id,product_id", ignoreDuplicates: true }
     );
-
-    // Check if removal would go negative when not allowed
-    if (adjustType === "remove") {
-      const currentRow = rows.find((r) => r.product_id === adjustProductId);
-      if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
-        setAdjustSaving(false);
-        toast.error(t("stock_insufficient"), {
-          description: `${t("stock_qty")}: ${currentRow.quantity_available}`,
-        });
-        return;
-      }
-    }
 
     const { error } = await supabase.from("stock_entries").insert({
       client_id: clientId!,
@@ -195,32 +222,32 @@ export default function GestorEstoque() {
     setAdjustSaving(false);
 
     if (error) {
-      const msg = error.message.includes("negativ") || error.message.includes("Cannot remove") || error.message.includes("insufficient")
-        ? t("stock_negative_not_allowed")
-        : t("stock_adjust_error");
-      toast.error(msg);
+      // DB trigger may also reject — catch its message
+      if (error.message.includes("negativ") || error.message.includes("Disponível")) {
+        toast.error(t("stock_negative_not_allowed"), { duration: 6000 });
+      } else {
+        toast.error(t("stock_adjust_error"));
+      }
       return;
     }
 
     toast.success(t("stock_adjusted_ok"));
     setAdjustOpen(false);
-
-    // Re-fetch and check low stock warning
     await fetchData();
-    const updatedRow = rows.find((r) => r.product_id === adjustProductId);
-    if (updatedRow && updatedRow.is_enabled && updatedRow.low_stock_threshold > 0) {
-      // We need fresh data — read from state after fetchData settles
-      const { data: freshBalance } = await supabase
-        .from("stock_balances")
-        .select("quantity_available, low_stock_threshold")
-        .eq("client_id", clientId!)
-        .eq("product_id", adjustProductId)
-        .single();
-      if (freshBalance && freshBalance.quantity_available <= freshBalance.low_stock_threshold) {
-        toast.warning(t("stock_low_warning"), {
-          description: `${updatedRow.product_name}: ${freshBalance.quantity_available} ${t("stock_units_remaining")}`,
-        });
-      }
+
+    // Check low stock warning after successful adjustment
+    const { data: freshBalance } = await supabase
+      .from("stock_balances")
+      .select("quantity_available, low_stock_threshold, is_enabled")
+      .eq("client_id", clientId!)
+      .eq("product_id", adjustProductId)
+      .single();
+    if (freshBalance && freshBalance.is_enabled && freshBalance.low_stock_threshold > 0 && freshBalance.quantity_available <= freshBalance.low_stock_threshold) {
+      const prodName = products.find((p) => p.id === adjustProductId)?.name ?? "";
+      toast.warning(t("stock_low_warning"), {
+        description: `${prodName}: ${freshBalance.quantity_available} ${t("stock_units_remaining")}`,
+        duration: 8000,
+      });
     }
   };
 
@@ -287,6 +314,72 @@ export default function GestorEstoque() {
     );
     if (error) { toast.error(t("stock_toggle_error")); return; }
     toast.success(row.allow_negative ? t("stock_allow_negative_off") : t("stock_allow_negative_on"));
+    fetchData();
+  };
+
+  // ---- Edit entry ----
+  const openEditEntry = (entry: HistoryEntry) => {
+    setEditEntry(entry);
+    setEditEntryQty(String(entry.quantity));
+    setEditEntryReason(entry.reason ?? "");
+    setEditEntryOpen(true);
+  };
+
+  const handleEditEntrySave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEntry) return;
+    const qty = parseInt(editEntryQty, 10);
+    if (isNaN(qty) || qty < 0) { toast.error(t("stock_invalid_qty")); return; }
+
+    setEditEntrySaving(true);
+    const { error } = await supabase.rpc("update_stock_entry", {
+      p_entry_id: editEntry.id,
+      p_new_quantity: qty,
+      p_new_reason: editEntryReason || null,
+    });
+    setEditEntrySaving(false);
+
+    if (error) {
+      if (error.message.includes("negativ") || error.message.includes("Disponível") || error.message.includes("ajustes")) {
+        toast.error(error.message, { duration: 6000 });
+      } else {
+        toast.error(t("stock_entry_edit_error"));
+      }
+      return;
+    }
+
+    toast.success(t("stock_entry_edited_ok"));
+    setEditEntryOpen(false);
+    fetchData();
+  };
+
+  // ---- Delete entry ----
+  const openDeleteEntry = (entry: HistoryEntry) => {
+    setDeleteEntryTarget(entry);
+    setDeleteEntryOpen(true);
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!deleteEntryTarget) return;
+    setDeleteEntryLoading(true);
+
+    const { error } = await supabase.rpc("delete_stock_entry", {
+      p_entry_id: deleteEntryTarget.id,
+    });
+    setDeleteEntryLoading(false);
+
+    if (error) {
+      if (error.message.includes("negativ") || error.message.includes("Disponível") || error.message.includes("ajustes")) {
+        toast.error(error.message, { duration: 6000 });
+      } else {
+        toast.error(t("stock_entry_delete_error"));
+      }
+      return;
+    }
+
+    toast.success(t("stock_entry_deleted_ok"));
+    setDeleteEntryOpen(false);
+    setDeleteEntryTarget(null);
     fetchData();
   };
 
@@ -429,6 +522,7 @@ export default function GestorEstoque() {
                   <TableHead className="text-center">{t("stock_history_qty")}</TableHead>
                   <TableHead>{t("stock_history_reason")}</TableHead>
                   <TableHead>{t("stock_history_by")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -451,6 +545,29 @@ export default function GestorEstoque() {
                       {h.reason || "—"}
                     </TableCell>
                     <TableCell className="text-sm">{h.created_by_name}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openEditEntry(h)}
+                          title={t("edit")}
+                          disabled={h.entry_type === "adjust"}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => openDeleteEntry(h)}
+                          title={t("delete")}
+                          disabled={h.entry_type === "adjust"}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -480,6 +597,28 @@ export default function GestorEstoque() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Show current stock info when product is selected */}
+          {selectedProductRow && (
+            <Alert variant={
+              selectedProductRow.quantity_available <= 0 ? "destructive" :
+              (selectedProductRow.low_stock_threshold > 0 && selectedProductRow.quantity_available <= selectedProductRow.low_stock_threshold) ? "default" : "default"
+            } className={
+              selectedProductRow.low_stock_threshold > 0 && selectedProductRow.quantity_available <= selectedProductRow.low_stock_threshold && selectedProductRow.quantity_available > 0
+                ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                : ""
+            }>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="flex flex-col gap-0.5">
+                <span>
+                  {t("stock_available")}: <strong className="font-mono">{selectedProductRow.quantity_available}</strong>
+                </span>
+                {!selectedProductRow.allow_negative && (
+                  <span className="text-xs opacity-80">{t("stock_negative_not_allowed_hint")}</span>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-2">
             <Label>{t("stock_entry_type")}</Label>
@@ -539,6 +678,70 @@ export default function GestorEstoque() {
           </div>
         </div>
       </ModalForm>
+
+      {/* Edit Entry Modal */}
+      <ModalForm
+        open={editEntryOpen}
+        onOpenChange={setEditEntryOpen}
+        title={t("stock_entry_edit")}
+        onSubmit={handleEditEntrySave}
+        saving={editEntrySaving}
+        submitLabel={t("save")}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{editEntry?.product_name}</span>
+            <span>•</span>
+            <Badge variant={entryTypeBadgeVariant(editEntry?.entry_type ?? "")}>
+              {entryTypeLabel(editEntry?.entry_type ?? "")}
+            </Badge>
+          </div>
+          <div className="space-y-2">
+            <Label>{t("stock_qty")}</Label>
+            <Input
+              type="number"
+              min={0}
+              value={editEntryQty}
+              onChange={(e) => setEditEntryQty(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t("stock_reason")}</Label>
+            <Textarea
+              value={editEntryReason}
+              onChange={(e) => setEditEntryReason(e.target.value)}
+              placeholder={t("stock_reason_placeholder")}
+              rows={2}
+            />
+          </div>
+        </div>
+      </ModalForm>
+
+      {/* Delete Entry Confirmation */}
+      <AlertDialog open={deleteEntryOpen} onOpenChange={setDeleteEntryOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("stock_entry_delete_title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("stock_entry_delete_desc")}
+              <br />
+              <span className="font-medium">
+                {deleteEntryTarget?.product_name} — {entryTypeLabel(deleteEntryTarget?.entry_type ?? "")}: {deleteEntryTarget?.quantity}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteEntryLoading}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteEntry}
+              disabled={deleteEntryLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteEntryLoading ? t("deleting") : t("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </GestorClientGuard>
   );
