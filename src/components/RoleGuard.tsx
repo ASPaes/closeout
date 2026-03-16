@@ -8,7 +8,7 @@ type Area = "admin" | "gestor";
 
 const areaRoles: Record<Area, string[]> = {
   admin: ["super_admin"],
-  gestor: ["super_admin", "client_admin"],
+  gestor: ["super_admin", "client_admin", "client_manager"],
 };
 
 const redirectForUnauthorized: Record<Area, string> = {

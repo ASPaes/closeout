@@ -27,10 +27,12 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
   client_admin: "Admin do Cliente",
+  client_manager: "Gestor do Cliente",
   venue_manager: "Gerente de Local",
   event_manager: "Gerente de Evento",
   event_organizer: "Organizador",
   staff: "Equipe",
+  bar_staff: "Equipe de Bar",
   waiter: "Garçom",
   cashier: "Caixa",
   consumer: "Consumidor",

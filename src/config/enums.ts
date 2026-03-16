@@ -1,10 +1,12 @@
 export const APP_ROLE = {
   SUPER_ADMIN: 'super_admin',
   CLIENT_ADMIN: 'client_admin',
+  CLIENT_MANAGER: 'client_manager',
   VENUE_MANAGER: 'venue_manager',
   EVENT_MANAGER: 'event_manager',
   EVENT_ORGANIZER: 'event_organizer',
   STAFF: 'staff',
+  BAR_STAFF: 'bar_staff',
   WAITER: 'waiter',
   CASHIER: 'cashier',
   CONSUMER: 'consumer',
