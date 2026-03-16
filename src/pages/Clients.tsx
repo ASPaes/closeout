@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, Pencil, Building2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +17,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
+import { ClientBillingRules } from "@/components/ClientBillingRules";
 
 type Client = {
   id: string; name: string; slug: string; logo_url: string | null;
