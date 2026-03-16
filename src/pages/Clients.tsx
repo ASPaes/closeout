@@ -33,7 +33,6 @@ type FormState = {
   address: string; status: string;
   owner_name: string; owner_cpf: string; owner_phone: string;
   contact_name: string; contact_phone: string;
-  default_fee_percent: string;
 };
 
 const emptyForm = (): FormState => ({
