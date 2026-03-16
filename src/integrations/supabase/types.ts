@@ -999,6 +999,7 @@ export type Database = {
     }
     Functions: {
       bootstrap_super_admin: { Args: never; Returns: boolean }
+      delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_clients_for_user_events: {
         Args: { _user_id: string }
         Returns: string[]
@@ -1043,6 +1044,14 @@ export type Database = {
           p_new_data?: Json
           p_old_data?: Json
           p_user_id: string
+        }
+        Returns: undefined
+      }
+      update_stock_entry: {
+        Args: {
+          p_entry_id: string
+          p_new_quantity: number
+          p_new_reason?: string
         }
         Returns: undefined
       }
