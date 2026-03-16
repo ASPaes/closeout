@@ -617,38 +617,114 @@ export type Database = {
         }
         Relationships: []
       }
+      product_recipes: {
+        Row: {
+          base_unit: string
+          client_id: string
+          created_at: string
+          id: string
+          ingredient_product_id: string
+          is_active: boolean
+          product_id: string
+          quantity_base: number
+          updated_at: string
+        }
+        Insert: {
+          base_unit: string
+          client_id: string
+          created_at?: string
+          id?: string
+          ingredient_product_id: string
+          is_active?: boolean
+          product_id: string
+          quantity_base: number
+          updated_at?: string
+        }
+        Update: {
+          base_unit?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          ingredient_product_id?: string
+          is_active?: boolean
+          product_id?: string
+          quantity_base?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recipes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipes_ingredient_product_id_fkey"
+            columns: ["ingredient_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          base_per_stock_unit: number | null
+          base_unit: string | null
           category_id: string | null
           client_id: string
           created_at: string
           description: string | null
           id: string
           is_active: boolean
+          is_ingredient: boolean
+          is_sellable: boolean
+          is_stock_tracked: boolean
           name: string
           price: number
+          stock_unit: string | null
           updated_at: string
         }
         Insert: {
+          base_per_stock_unit?: number | null
+          base_unit?: string | null
           category_id?: string | null
           client_id: string
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
+          is_ingredient?: boolean
+          is_sellable?: boolean
+          is_stock_tracked?: boolean
           name: string
           price: number
+          stock_unit?: string | null
           updated_at?: string
         }
         Update: {
+          base_per_stock_unit?: number | null
+          base_unit?: string | null
           category_id?: string | null
           client_id?: string
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
+          is_ingredient?: boolean
+          is_sellable?: boolean
+          is_stock_tracked?: boolean
           name?: string
           price?: number
+          stock_unit?: string | null
           updated_at?: string
         }
         Relationships: [
