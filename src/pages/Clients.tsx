@@ -299,7 +299,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("phone")}</Label>
-                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                    <Input value={maskPhone(form.phone)} onChange={(e) => setForm({ ...form, phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
