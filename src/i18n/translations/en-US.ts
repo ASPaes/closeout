@@ -561,6 +561,17 @@ const enUS: Record<TranslationKey, string> = {
   br_val_activation_positive: "Activation amount must be greater than zero",
   br_tab_billing: "Billing",
 
+  // Event Billing Overrides
+  ebo_section_title: "Event Billing",
+  ebo_helper: "By default, the event uses client billing rules. Override only if there's a specific deal.",
+  ebo_default: "Client default",
+  ebo_override_toggle: "Override",
+  ebo_override_enabled: "Billing override enabled",
+  ebo_override_disabled: "Billing override removed (using client default)",
+  ebo_saved: "Event billing value saved",
+  ebo_no_rules: "No billing rules configured for this client.",
+  ebo_tab: "Billing",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",
