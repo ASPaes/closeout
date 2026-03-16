@@ -162,13 +162,16 @@ const enUS: Record<TranslationKey, string> = {
   no_scope: "None (no scope)",
   role_super_admin: "Super Admin",
   role_client_admin: "Client Admin",
+  role_client_manager: "Client Manager",
   role_venue_manager: "Venue Manager",
   role_event_manager: "Event Manager",
   role_event_organizer: "Event Organizer",
   role_staff: "Staff",
+  role_bar_staff: "Bar Staff",
   role_waiter: "Waiter",
   role_cashier: "Cashier",
   role_consumer: "Consumer",
+  gestor_invite_team: "Invite Team",
 
   // Audit Logs
   audit_logs: "Audit Logs",
