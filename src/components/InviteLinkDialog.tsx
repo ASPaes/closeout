@@ -21,9 +21,24 @@ interface Props {
   clients: Client[];
   venues: Venue[];
   events: Event[];
+  /** When set, locks the dialog to client_manager mode */
+  clientManagerMode?: {
+    clientId: string;
+    clientName: string;
+  };
 }
 
-export default function InviteLinkDialog({ open, onOpenChange, clients, venues, events }: Props) {
+/** Roles that a client_manager can invite */
+const CLIENT_MANAGER_ALLOWED_ROLES = [
+  APP_ROLE.VENUE_MANAGER,
+  APP_ROLE.EVENT_MANAGER,
+  APP_ROLE.STAFF,
+  APP_ROLE.BAR_STAFF,
+  APP_ROLE.WAITER,
+  APP_ROLE.CASHIER,
+];
+
+export default function InviteLinkDialog({ open, onOpenChange, clients, venues, events, clientManagerMode }: Props) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>(APP_ROLE.STAFF);
@@ -35,10 +50,13 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
   const [generatedUrl, setGeneratedUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const isManagerMode = !!clientManagerMode;
+  const effectiveClientId = isManagerMode ? clientManagerMode!.clientId : clientId;
+
   const filteredVenues = useMemo(() => {
-    if (!clientId) return [];
-    return venues.filter((v) => v.client_id === clientId);
-  }, [clientId, venues]);
+    if (!effectiveClientId) return [];
+    return venues.filter((v) => v.client_id === effectiveClientId);
+  }, [effectiveClientId, venues]);
 
   const filteredEvents = useMemo(() => {
     if (!venueId) return [];
@@ -60,7 +78,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
         expiresInMinutes: parseInt(expiresInMinutes) || 1440,
       };
       if (email.trim()) payload.email = email.trim();
-      if (clientId) payload.clientId = clientId;
+      if (effectiveClientId) payload.clientId = effectiveClientId;
       if (venueId) payload.venueId = venueId;
       if (eventId) payload.eventId = eventId;
 
@@ -109,6 +127,15 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
     onOpenChange(v);
   };
 
+  const roleOptions = isManagerMode
+    ? CLIENT_MANAGER_ALLOWED_ROLES
+    : Object.values(APP_ROLE);
+
+  const roleLabel = (r: string) => {
+    const key = `role_${r}` as any;
+    return t(key) || r;
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -124,11 +151,11 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
             <p className="text-sm text-muted-foreground">{t("invite_link_ready")}</p>
             <div className="flex items-center gap-2">
               <Input readOnly value={generatedUrl} className="text-xs" />
-              <Button size="icon" variant="outline" onClick={handleCopy}>
+              <Button type="button" size="icon" variant="outline" onClick={handleCopy}>
                 {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setGeneratedUrl("")}>
+            <Button type="button" variant="outline" className="w-full" onClick={() => setGeneratedUrl("")}>
               {t("invite_generate_another")}
             </Button>
           </div>
@@ -144,31 +171,32 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={APP_ROLE.SUPER_ADMIN}>{t("role_super_admin")}</SelectItem>
-                  <SelectItem value={APP_ROLE.CLIENT_ADMIN}>{t("role_client_admin")}</SelectItem>
-                  <SelectItem value={APP_ROLE.VENUE_MANAGER}>{t("role_venue_manager")}</SelectItem>
-                  <SelectItem value={APP_ROLE.EVENT_MANAGER}>{t("role_event_manager")}</SelectItem>
-                  <SelectItem value={APP_ROLE.EVENT_ORGANIZER}>{t("role_event_organizer")}</SelectItem>
-                  <SelectItem value={APP_ROLE.STAFF}>{t("role_staff")}</SelectItem>
-                  <SelectItem value={APP_ROLE.WAITER}>{t("role_waiter")}</SelectItem>
-                  <SelectItem value={APP_ROLE.CASHIER}>{t("role_cashier")}</SelectItem>
-                  <SelectItem value={APP_ROLE.CONSUMER}>{t("role_consumer")}</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={r}>{roleLabel(r)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>{t("client_optional_scope")}</Label>
-              <Select value={clientId || "__none__"} onValueChange={(v) => { setClientId(v === "__none__" ? "" : v); setVenueId(""); setEventId(""); }}>
-                <SelectTrigger><SelectValue placeholder={t("global_no_scope")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">{t("global")}</SelectItem>
-                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {isManagerMode ? (
+              <div className="space-y-2">
+                <Label>{t("client")}</Label>
+                <Input readOnly value={clientManagerMode!.clientName} className="bg-muted/50" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{t("client_optional_scope")}</Label>
+                <Select value={clientId || "__none__"} onValueChange={(v) => { setClientId(v === "__none__" ? "" : v); setVenueId(""); setEventId(""); }}>
+                  <SelectTrigger><SelectValue placeholder={t("global_no_scope")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{t("global")}</SelectItem>
+                    {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            {clientId && (
+            {effectiveClientId && (
               <div className="space-y-2">
                 <Label>{t("venue_optional_scope")}</Label>
                 <Select value={venueId || "__none__"} onValueChange={(v) => { setVenueId(v === "__none__" ? "" : v); setEventId(""); }}>
@@ -208,7 +236,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
               </Select>
             </div>
 
-            <Button className="w-full" onClick={handleGenerate} disabled={loading}>
+            <Button type="button" className="w-full" onClick={handleGenerate} disabled={loading}>
               {loading ? t("invite_generating") : t("invite_generate_link")}
             </Button>
           </div>

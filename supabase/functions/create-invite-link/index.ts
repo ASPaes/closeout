@@ -7,19 +7,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALL_ROLES = [
+  "super_admin", "client_admin", "client_manager",
+  "venue_manager", "event_manager", "event_organizer",
+  "staff", "bar_staff", "waiter", "cashier", "consumer",
+] as const;
+
+const CLIENT_MANAGER_ALLOWED_ROLES = [
+  "cashier", "bar_staff", "waiter", "staff",
+  "venue_manager", "event_manager",
+];
+
 const InputSchema = z.object({
   email: z.string().email().optional(),
-  roleName: z.enum([
-    "super_admin",
-    "client_admin",
-    "venue_manager",
-    "event_manager",
-    "event_organizer",
-    "staff",
-    "waiter",
-    "cashier",
-    "consumer",
-  ]),
+  roleName: z.enum(ALL_ROLES),
   clientId: z.string().uuid().optional(),
   venueId: z.string().uuid().optional(),
   eventId: z.string().uuid().optional(),
@@ -59,16 +60,18 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userErr } = await supabaseUser.auth.getUser();
     if (userErr || !user) return problem(401, "Unauthorized", "Invalid token", requestId);
 
-    // Check super_admin
-    const { data: roleCheck } = await supabaseAdmin
+    // Check caller roles
+    const { data: callerRoles } = await supabaseAdmin
       .from("user_roles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("role", "super_admin")
-      .limit(1);
+      .select("role, client_id")
+      .eq("user_id", user.id);
 
-    if (!roleCheck || roleCheck.length === 0) {
-      return problem(403, "Forbidden", "Only super_admin can create invites", requestId);
+    const isSuperAdmin = callerRoles?.some((r: any) => r.role === "super_admin") ?? false;
+    const clientManagerRole = callerRoles?.find((r: any) => r.role === "client_manager");
+    const isClientManager = !!clientManagerRole;
+
+    if (!isSuperAdmin && !isClientManager) {
+      return problem(403, "Forbidden", "Only super_admin or client_manager can create invites", requestId);
     }
 
     const body = await req.json();
@@ -77,7 +80,22 @@ Deno.serve(async (req) => {
       return problem(422, "Validation Error", parsed.error.issues.map((i) => i.message).join("; "), requestId);
     }
 
-    const input = parsed.data;
+    let input = parsed.data;
+
+    // client_manager restrictions
+    if (isClientManager && !isSuperAdmin) {
+      // Force client_id to their own
+      const managerClientId = clientManagerRole!.client_id;
+      if (!managerClientId) {
+        return problem(403, "Forbidden", "Client manager has no client scope", requestId);
+      }
+      input = { ...input, clientId: managerClientId };
+
+      // Validate role is allowed
+      if (!CLIENT_MANAGER_ALLOWED_ROLES.includes(input.roleName)) {
+        return problem(403, "Forbidden", `Role "${input.roleName}" is not allowed for client_manager invites`, requestId);
+      }
+    }
 
     // Generate secure token (32 bytes = 64 hex chars)
     const tokenBytes = new Uint8Array(32);
@@ -117,11 +135,11 @@ Deno.serve(async (req) => {
       p_action: "user_invite_link_created",
       p_entity_type: "user_invite",
       p_entity_id: invite.id,
-      p_metadata: { email: input.email || null, role: input.roleName },
+      p_metadata: { email: input.email || null, role: input.roleName, client_id: input.clientId || null },
       p_new_data: { role: input.roleName, client_id: input.clientId, venue_id: input.venueId, event_id: input.eventId },
     });
 
-    // Build invite URL using Origin header or fallback
+    // Build invite URL
     const origin = req.headers.get("Origin") || req.headers.get("Referer")?.replace(/\/$/, "") || "https://closeout.lovable.app";
     const inviteUrl = `${origin}/invite?token=${token}`;
 

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, LogOut, ArrowRightLeft, BookOpen, MapPin } from "lucide-react";
+import { LayoutDashboard, Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, LogOut, ArrowRightLeft, BookOpen, MapPin, UserPlus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,15 +22,18 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
   { titleKey: "gestor_venues", url: "/gestor/locais", icon: MapPin },
   { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
+  { titleKey: "gestor_invite_team", url: "/gestor/equipe", icon: UserPlus },
 ];
 
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
   client_admin: "Admin do Cliente",
+  client_manager: "Gestor do Cliente",
   venue_manager: "Gerente de Local",
   event_manager: "Gerente de Evento",
   event_organizer: "Organizador",
   staff: "Equipe",
+  bar_staff: "Equipe de Bar",
   waiter: "Garçom",
   cashier: "Caixa",
   consumer: "Consumidor",

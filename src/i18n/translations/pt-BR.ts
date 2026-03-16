@@ -160,13 +160,18 @@ const ptBR = {
   no_scope: "Nenhum (sem escopo)",
   role_super_admin: "Super Admin",
   role_client_admin: "Admin do Cliente",
+  role_client_manager: "Gestor do Cliente",
   role_venue_manager: "Gerente de Local",
   role_event_manager: "Gerente de Evento",
   role_event_organizer: "Organizador de Evento",
   role_staff: "Equipe",
+  role_bar_staff: "Equipe de Bar",
   role_waiter: "Garçom",
   role_cashier: "Operador de Caixa",
   role_consumer: "Consumidor",
+  gestor_invite_team: "Convidar Equipe",
+  gestor_invite_team_desc: "Convide membros da equipe para sua organização",
+  gestor_invite_team_help: "Use o botão acima para gerar um link de convite. Os convidados receberão o papel selecionado automaticamente ao aceitar.",
 
   // Audit Logs
   audit_logs: "Logs de Auditoria",

@@ -28,10 +28,12 @@ type FlatRow = { rowKey: string; profile: Profile; userRole: UserRole | null; is
 const roleKeys: Record<string, string> = {
   [APP_ROLE.SUPER_ADMIN]: "role_super_admin",
   [APP_ROLE.CLIENT_ADMIN]: "role_client_admin",
+  [APP_ROLE.CLIENT_MANAGER]: "role_client_manager",
   [APP_ROLE.VENUE_MANAGER]: "role_venue_manager",
   [APP_ROLE.EVENT_MANAGER]: "role_event_manager",
   [APP_ROLE.EVENT_ORGANIZER]: "role_event_organizer",
   [APP_ROLE.STAFF]: "role_staff",
+  [APP_ROLE.BAR_STAFF]: "role_bar_staff",
   [APP_ROLE.WAITER]: "role_waiter",
   [APP_ROLE.CASHIER]: "role_cashier",
   [APP_ROLE.CONSUMER]: "role_consumer",
