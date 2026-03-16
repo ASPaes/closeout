@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Plus, Pencil, CheckCircle, CalendarDays } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
+import { EventBillingOverrides } from "@/components/EventBillingOverrides";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
@@ -172,47 +174,77 @@ export default function Events() {
       />
 
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={editing ? t("edit_event") : t("new_event")}
-        onSubmit={handleSubmit} saving={saving} submitLabel={editing ? t("update") : t("create")}>
-        <div className="space-y-2">
-          <Label>{t("client")}</Label>
-          <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v, venue_id: "" })}>
-            <SelectTrigger><SelectValue placeholder={t("select_client")} /></SelectTrigger>
-            <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>{t("venue")}</Label>
-          <Select value={form.venue_id} onValueChange={(v) => setForm({ ...form, venue_id: v })} disabled={!form.client_id}>
-            <SelectTrigger><SelectValue placeholder={form.client_id ? t("select_venue") : t("select_client_first")} /></SelectTrigger>
-            <SelectContent>{filteredVenuesByClient.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-        <div className="space-y-2"><Label>{t("description")}</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2"><Label>{t("start")}</Label><Input type="datetime-local" value={form.start_at} onChange={(e) => setForm({ ...form, start_at: e.target.value })} required /></div>
-          <div className="space-y-2"><Label>{t("end")}</Label><Input type="datetime-local" value={form.end_at} onChange={(e) => setForm({ ...form, end_at: e.target.value })} /></div>
-        </div>
-        <div className="space-y-2">
-          <Label>{t("status")}</Label>
-          <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EVENT_STATUS.DRAFT}>{t("draft")}</SelectItem>
-              <SelectItem value={EVENT_STATUS.ACTIVE}>{t("active")}</SelectItem>
-              <SelectItem value={EVENT_STATUS.COMPLETED}>{t("completed")}</SelectItem>
-              <SelectItem value={EVENT_STATUS.CANCELLED}>{t("cancelled")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2"><Label>{t("geo_radius_meters")}</Label><Input type="number" value={form.geo_radius_meters} onChange={(e) => setForm({ ...form, geo_radius_meters: e.target.value })} placeholder="500" /></div>
-        <div className="space-y-2"><Label>{t("max_order_value")}</Label><Input type="number" step="0.01" value={form.max_order_value} onChange={(e) => setForm({ ...form, max_order_value: e.target.value })} placeholder="100.00" /></div>
-        <div className="space-y-2"><Label>{t("unretrieved_order_alert")}</Label><Input type="number" value={form.unretrieved_order_alert_minutes} onChange={(e) => setForm({ ...form, unretrieved_order_alert_minutes: e.target.value })} placeholder="15" /></div>
-        <div className="flex items-center justify-between">
-          <Label>{t("stock_control")}</Label>
-          <Switch checked={form.stock_control_enabled} onCheckedChange={(v) => setForm({ ...form, stock_control_enabled: v })} />
-        </div>
+        onSubmit={handleSubmit} saving={saving} submitLabel={editing ? t("update") : t("create")}
+        size={editing && isSuperAdmin ? "wide" : "default"}>
+        {editing && isSuperAdmin ? (
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
+              <TabsTrigger value="billing">{t("ebo_tab")}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+              <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
+            </TabsContent>
+            <TabsContent value="billing">
+              <EventBillingOverrides eventId={editing.id} clientId={form.client_id} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
+        )}
       </ModalForm>
+    </div>
+  );
+}
+
+function EventFormFields({ form, setForm, clients, filteredVenuesByClient, t }: {
+  form: any;
+  setForm: (f: any) => void;
+  clients: Client[];
+  filteredVenuesByClient: Venue[];
+  t: (key: any) => string;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>{t("client")}</Label>
+        <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v, venue_id: "" })}>
+          <SelectTrigger><SelectValue placeholder={t("select_client")} /></SelectTrigger>
+          <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>{t("venue")}</Label>
+        <Select value={form.venue_id} onValueChange={(v) => setForm({ ...form, venue_id: v })} disabled={!form.client_id}>
+          <SelectTrigger><SelectValue placeholder={form.client_id ? t("select_venue") : t("select_client_first")} /></SelectTrigger>
+          <SelectContent>{filteredVenuesByClient.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2"><Label>{t("name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+      <div className="space-y-2"><Label>{t("description")}</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2"><Label>{t("start")}</Label><Input type="datetime-local" value={form.start_at} onChange={(e) => setForm({ ...form, start_at: e.target.value })} required /></div>
+        <div className="space-y-2"><Label>{t("end")}</Label><Input type="datetime-local" value={form.end_at} onChange={(e) => setForm({ ...form, end_at: e.target.value })} /></div>
+      </div>
+      <div className="space-y-2">
+        <Label>{t("status")}</Label>
+        <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={EVENT_STATUS.DRAFT}>{t("draft")}</SelectItem>
+            <SelectItem value={EVENT_STATUS.ACTIVE}>{t("active")}</SelectItem>
+            <SelectItem value={EVENT_STATUS.COMPLETED}>{t("completed")}</SelectItem>
+            <SelectItem value={EVENT_STATUS.CANCELLED}>{t("cancelled")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2"><Label>{t("geo_radius_meters")}</Label><Input type="number" value={form.geo_radius_meters} onChange={(e) => setForm({ ...form, geo_radius_meters: e.target.value })} placeholder="500" /></div>
+      <div className="space-y-2"><Label>{t("max_order_value")}</Label><Input type="number" step="0.01" value={form.max_order_value} onChange={(e) => setForm({ ...form, max_order_value: e.target.value })} placeholder="100.00" /></div>
+      <div className="space-y-2"><Label>{t("unretrieved_order_alert")}</Label><Input type="number" value={form.unretrieved_order_alert_minutes} onChange={(e) => setForm({ ...form, unretrieved_order_alert_minutes: e.target.value })} placeholder="15" /></div>
+      <div className="flex items-center justify-between">
+        <Label>{t("stock_control")}</Label>
+        <Switch checked={form.stock_control_enabled} onCheckedChange={(v) => setForm({ ...form, stock_control_enabled: v })} />
+      </div>
     </div>
   );
 }

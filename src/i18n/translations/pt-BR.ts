@@ -559,6 +559,17 @@ const ptBR = {
   br_val_activation_positive: "O valor de ativação deve ser maior que zero",
   br_tab_billing: "Cobrança",
 
+  // Event Billing Overrides
+  ebo_section_title: "Cobrança do evento",
+  ebo_helper: "Por padrão, o evento usa as cobranças do cliente. Sobrescreva apenas se houver negociação específica.",
+  ebo_default: "Padrão do cliente",
+  ebo_override_toggle: "Sobrescrever",
+  ebo_override_enabled: "Sobrescrita de cobrança ativada",
+  ebo_override_disabled: "Sobrescrita de cobrança removida (usando padrão do cliente)",
+  ebo_saved: "Valor de cobrança do evento salvo",
+  ebo_no_rules: "Nenhuma regra de cobrança cadastrada para este cliente.",
+  ebo_tab: "Cobrança",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",
