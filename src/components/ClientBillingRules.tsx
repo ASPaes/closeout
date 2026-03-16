@@ -342,109 +342,118 @@ export function ClientBillingRules({ clientId }: ClientBillingRulesProps) {
         emptyMessage={t("br_empty")}
       />
 
-      <ModalForm
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        title={editing ? t("br_edit") : t("br_new")}
-        onSubmit={handleSubmit}
-        saving={saving}
-        submitLabel={editing ? t("update") : t("create")}
-      >
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>{t("br_col_type")} *</Label>
-            <Select
-              value={form.rule_type}
-              onValueChange={(v) => setForm({ ...form, rule_type: v })}
-              disabled={!!editing}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transaction_fee">{t("br_type_transaction_fee")}</SelectItem>
-                <SelectItem value="monthly_saas">{t("br_type_monthly_saas")}</SelectItem>
-                <SelectItem value="activation_fee">{t("br_type_activation_fee")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {form.rule_type === "transaction_fee" && (
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-sm border-border/60"
+          onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{editing ? t("br_edit") : t("br_new")}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t("br_fee_percent")} *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={form.fee_percent}
-                onChange={(e) => setForm({ ...form, fee_percent: e.target.value })}
-                placeholder="10.00"
-              />
-              <p className="text-xs text-muted-foreground">{t("br_fee_percent_help")}</p>
+              <Label>{t("br_col_type")} *</Label>
+              <Select
+                value={form.rule_type}
+                onValueChange={(v) => setForm({ ...form, rule_type: v })}
+                disabled={!!editing}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="transaction_fee">{t("br_type_transaction_fee")}</SelectItem>
+                  <SelectItem value="monthly_saas">{t("br_type_monthly_saas")}</SelectItem>
+                  <SelectItem value="activation_fee">{t("br_type_activation_fee")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {form.rule_type === "monthly_saas" && (
-            <>
+            {form.rule_type === "transaction_fee" && (
               <div className="space-y-1.5">
-                <Label>{t("br_monthly_amount")} *</Label>
+                <Label>{t("br_fee_percent")} *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={form.fee_percent}
+                  onChange={(e) => setForm({ ...form, fee_percent: e.target.value })}
+                  placeholder="10.00"
+                />
+                <p className="text-xs text-muted-foreground">{t("br_fee_percent_help")}</p>
+              </div>
+            )}
+
+            {form.rule_type === "monthly_saas" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>{t("br_monthly_amount")} *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={form.monthly_amount}
+                    onChange={(e) => setForm({ ...form, monthly_amount: e.target.value })}
+                    placeholder="500.00"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("br_billing_day")}</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={form.billing_day}
+                    onChange={(e) => setForm({ ...form, billing_day: e.target.value })}
+                    placeholder="1-28"
+                  />
+                  <p className="text-xs text-muted-foreground">{t("br_billing_day_help")}</p>
+                </div>
+              </>
+            )}
+
+            {form.rule_type === "activation_fee" && (
+              <div className="space-y-1.5">
+                <Label>{t("br_activation_amount")} *</Label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={form.monthly_amount}
-                  onChange={(e) => setForm({ ...form, monthly_amount: e.target.value })}
-                  placeholder="500.00"
+                  value={form.activation_amount}
+                  onChange={(e) => setForm({ ...form, activation_amount: e.target.value })}
+                  placeholder="1000.00"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>{t("br_billing_day")}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="28"
-                  value={form.billing_day}
-                  onChange={(e) => setForm({ ...form, billing_day: e.target.value })}
-                  placeholder="1-28"
-                />
-                <p className="text-xs text-muted-foreground">{t("br_billing_day_help")}</p>
-              </div>
-            </>
-          )}
+            )}
 
-          {form.rule_type === "activation_fee" && (
             <div className="space-y-1.5">
-              <Label>{t("br_activation_amount")} *</Label>
+              <Label>{t("br_currency")}</Label>
               <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={form.activation_amount}
-                onChange={(e) => setForm({ ...form, activation_amount: e.target.value })}
-                placeholder="1000.00"
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                placeholder="BRL"
               />
             </div>
-          )}
 
-          <div className="space-y-1.5">
-            <Label>{t("br_currency")}</Label>
-            <Input
-              value={form.currency}
-              onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              placeholder="BRL"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label>{t("br_notes")}</Label>
+              <Textarea
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder={t("br_notes_placeholder")}
+                rows={2}
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label>{t("br_notes")}</Label>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder={t("br_notes_placeholder")}
-              rows={2}
-            />
-          </div>
-        </div>
-      </ModalForm>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setModalOpen(false)} disabled={saving}>
+                {t("cancel")}
+              </Button>
+              <Button type="submit" className="flex-1 glow-hover" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editing ? t("update") : t("create")}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
