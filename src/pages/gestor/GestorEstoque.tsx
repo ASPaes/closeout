@@ -600,12 +600,11 @@ export default function GestorEstoque() {
           </div>
 
           {/* Show current stock info when product is selected */}
-          {selectedProductRow && (
+          {selectedProductRow && adjustType === "remove" && (
             <Alert variant={
-              selectedProductRow.quantity_available <= 0 ? "destructive" :
-              (selectedProductRow.low_stock_threshold > 0 && selectedProductRow.quantity_available <= selectedProductRow.low_stock_threshold) ? "default" : "default"
+              selectedProductRow.quantity_available <= 0 ? "destructive" : "default"
             } className={
-              selectedProductRow.low_stock_threshold > 0 && selectedProductRow.quantity_available <= selectedProductRow.low_stock_threshold && selectedProductRow.quantity_available > 0
+              selectedProductRow.quantity_available > 0 && selectedProductRow.low_stock_threshold > 0 && selectedProductRow.quantity_available <= selectedProductRow.low_stock_threshold
                 ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                 : ""
             }>
