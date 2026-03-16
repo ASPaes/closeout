@@ -317,7 +317,7 @@ export function ClientBillingRules({ clientId }: ClientBillingRulesProps) {
       header: t("actions"),
       className: "w-16",
       render: (r) => (
-        <Button variant="ghost" size="icon" onClick={() => openEdit(r)}>
+        <Button type="button" variant="ghost" size="icon" onClick={() => openEdit(r)}>
           <Pencil className="h-4 w-4" />
         </Button>
       ),
