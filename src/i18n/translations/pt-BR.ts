@@ -506,6 +506,28 @@ const ptBR = {
   recipe_select_ingredient: "Selecionar insumo",
   recipe_no_ingredients_available: "Nenhum insumo disponível. Cadastre produtos com a flag 'Pode ser insumo'.",
 
+  // Client form sections
+  cl_section_data: "Dados do Cliente",
+  cl_section_owner: "Proprietário",
+  cl_section_contact: "Contato no Estabelecimento",
+  cl_section_logo: "Logo do Cliente",
+  cl_section_fee: "Fee padrão",
+  cl_owner_name: "Nome do proprietário",
+  cl_owner_cpf: "CPF do proprietário",
+  cl_owner_phone: "Telefone do proprietário",
+  cl_contact_name: "Nome do contato",
+  cl_contact_phone: "Telefone do contato",
+  cl_default_fee: "Taxa padrão (%)",
+  cl_default_fee_help: "Percentual de taxa padrão aplicado ao cliente",
+  cl_fee_validation: "A taxa deve ser entre 0 e 100",
+  cl_logo_upload: "Enviar logo (PNG, máx 512KB)",
+  cl_logo_uploading: "Enviando logo...",
+  cl_logo_upload_error: "Erro ao enviar logo",
+  cl_logo_upload_success: "Logo enviado com sucesso",
+  cl_logo_too_large: "O arquivo deve ter no máximo 512KB",
+  cl_logo_png_only: "Apenas arquivos PNG são aceitos",
+  cl_slug_auto: "Gerado automaticamente",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",

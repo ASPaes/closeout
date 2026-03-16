@@ -1,8 +1,10 @@
 import { type ReactNode } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ModalFormProps {
   open: boolean;
@@ -13,6 +15,8 @@ interface ModalFormProps {
   saving?: boolean;
   submitLabel?: string;
   disabled?: boolean;
+  /** "default" = right side sheet (~md), "wide" = centered dialog (~1000px) */
+  size?: "default" | "wide";
 }
 
 export function ModalForm({
@@ -24,8 +28,49 @@ export function ModalForm({
   saving = false,
   submitLabel,
   disabled = false,
+  size = "default",
 }: ModalFormProps) {
   const { t } = useTranslation();
+
+  const formContent = (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {children}
+      <div className="flex gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {t("cancel")}
+        </Button>
+        <Button
+          type="submit"
+          className="flex-1 glow-hover"
+          disabled={saving || disabled}
+        >
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {submitLabel ?? t("save")}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (size === "wide") {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-[1000px] w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60">
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(90vh-80px)] px-6 pb-6">
+            {formContent}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -33,28 +78,9 @@ export function ModalForm({
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          {children}
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 glow-hover"
-              disabled={saving || disabled}
-            >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {submitLabel ?? t("save")}
-            </Button>
-          </div>
-        </form>
+        <div className="mt-6">
+          {formContent}
+        </div>
       </SheetContent>
     </Sheet>
   );
