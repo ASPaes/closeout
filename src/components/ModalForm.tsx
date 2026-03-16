@@ -1,5 +1,4 @@
 import { type ReactNode } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -14,8 +13,8 @@ interface ModalFormProps {
   saving?: boolean;
   submitLabel?: string;
   disabled?: boolean;
-  /** "default" = right side sheet (~md), "wide" = centered dialog (~1000px) */
-  size?: "default" | "wide";
+  /** "wide" = centered dialog (default), "compact" = narrower centered dialog */
+  size?: "wide" | "compact";
 }
 
 export function ModalForm({
@@ -27,7 +26,7 @@ export function ModalForm({
   saving = false,
   submitLabel,
   disabled = false,
-  size = "default",
+  size = "wide",
 }: ModalFormProps) {
   const { t } = useTranslation();
 
@@ -56,31 +55,18 @@ export function ModalForm({
     </form>
   );
 
-  if (size === "wide") {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[1000px] w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
-            <DialogTitle>{title}</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto flex-1 px-6 pb-6 pt-2">
-            {formContent}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const maxWidthClass = size === "compact" ? "max-w-lg" : "max-w-[1000px]";
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md overflow-y-auto bg-card/95 backdrop-blur-sm border-border/60">
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <div className="mt-6">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={`${maxWidthClass} w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60 flex flex-col`}>
+        <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-y-auto flex-1 px-6 pb-6 pt-2">
           {formContent}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -233,7 +233,6 @@ export default function Clients() {
         onSubmit={handleSubmit}
         saving={saving}
         submitLabel={editing ? t("update") : t("create")}
-        size="wide"
       >
         {editing ? (
           <Tabs defaultValue="dados" className="w-full">
