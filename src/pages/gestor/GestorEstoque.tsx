@@ -653,8 +653,14 @@ export default function GestorEstoque() {
               rows={2}
             />
           </div>
+
+          {adjustError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{adjustError}</AlertDescription>
+            </Alert>
+          )}
         </div>
-      </ModalForm>
 
       {/* Threshold Modal */}
       <ModalForm
