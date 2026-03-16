@@ -336,7 +336,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t("cl_owner_phone")}</Label>
-                    <Input value={form.owner_phone} onChange={(e) => setForm({ ...form, owner_phone: e.target.value })} />
+                    <Input value={maskPhone(form.owner_phone)} onChange={(e) => setForm({ ...form, owner_phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
                   </div>
                 </div>
               </div>
