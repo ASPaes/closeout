@@ -639,7 +639,7 @@ export default function GestorEstoque() {
               type="number"
               min={0}
               value={adjustQty}
-              onChange={(e) => setAdjustQty(e.target.value)}
+              onChange={(e) => { setAdjustQty(e.target.value); setAdjustError(""); }}
               placeholder="0"
             />
           </div>
