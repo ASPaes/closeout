@@ -33,7 +33,6 @@ type FormState = {
   address: string; status: string;
   owner_name: string; owner_cpf: string; owner_phone: string;
   contact_name: string; contact_phone: string;
-  default_fee_percent: string;
 };
 
 const emptyForm = (): FormState => ({
@@ -41,7 +40,6 @@ const emptyForm = (): FormState => ({
   status: ENTITY_STATUS.ACTIVE as string,
   owner_name: "", owner_cpf: "", owner_phone: "",
   contact_name: "", contact_phone: "",
-  default_fee_percent: "",
 });
 
 export default function Clients() {
@@ -71,19 +69,9 @@ export default function Clients() {
 
   useEffect(() => { fetchClients(); }, []);
 
-  const fetchDefaultFee = async (): Promise<string> => {
-    const { data } = await supabase.from("platform_settings").select("default_fee_percent").limit(1).single();
-    if (data && (data as any).default_fee_percent != null) {
-      return (data as any).default_fee_percent.toString();
-    }
-    return "";
-  };
-
-  const openCreate = async () => {
+  const openCreate = () => {
     setEditing(null);
-    const f = emptyForm();
-    f.default_fee_percent = await fetchDefaultFee();
-    setForm(f);
+    setForm(emptyForm());
     setLogoFile(null);
     setLogoPreview(null);
     setSheetOpen(true);
@@ -99,7 +87,6 @@ export default function Clients() {
       owner_name: client.owner_name || "", owner_cpf: client.owner_cpf || "",
       owner_phone: client.owner_phone || "",
       contact_name: client.contact_name || "", contact_phone: client.contact_phone || "",
-      default_fee_percent: client.default_fee_percent?.toString() || "",
     });
     setLogoFile(null);
     if (client.logo_path) {
@@ -150,13 +137,6 @@ export default function Clients() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validate fee
-    const feeVal = form.default_fee_percent ? parseFloat(form.default_fee_percent) : null;
-    if (feeVal != null && (feeVal < 0 || feeVal > 100)) {
-      toast.error(t("cl_fee_validation"));
-      return;
-    }
-
     setSaving(true);
     const payload: Record<string, any> = {
       name: form.name, email: form.email || null, phone: form.phone || null,
@@ -164,7 +144,6 @@ export default function Clients() {
       owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
       owner_phone: form.owner_phone || null,
       contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
-      default_fee_percent: feeVal,
     };
 
     if (editing) {
@@ -212,13 +191,6 @@ export default function Clients() {
     { key: "name", header: t("name"), render: (c) => <span className="font-medium">{c.name}</span> },
     { key: "slug", header: t("slug"), render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.slug}</span> },
     { key: "email", header: t("email"), render: (c) => <span className="text-muted-foreground">{c.email || "—"}</span> },
-    { key: "fee", header: "Fee %", className: "w-20 text-right", render: (c) => (
-      <span className="text-muted-foreground text-sm font-mono">
-        {c.default_fee_percent != null
-          ? c.default_fee_percent.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"
-          : "—"}
-      </span>
-    )},
     { key: "status", header: t("status"), render: (c) => (
       <StatusBadge
         status={c.status === ENTITY_STATUS.ACTIVE ? "active" : "inactive"}
@@ -439,26 +411,6 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                     {t("cl_logo_upload")}
                   </Button>
                 )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Section: Fee */}
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_fee")}</h3>
-              <div className="space-y-1.5">
-                <Label>{t("cl_default_fee")}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={form.default_fee_percent}
-                  onChange={(e) => setForm({ ...form, default_fee_percent: e.target.value })}
-                  placeholder="10.00"
-                />
-                <p className="text-xs text-muted-foreground">{t("cl_default_fee_help")}</p>
               </div>
             </div>
           </div>
