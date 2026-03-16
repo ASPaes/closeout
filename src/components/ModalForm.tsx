@@ -56,31 +56,18 @@ export function ModalForm({
     </form>
   );
 
-  if (size === "wide") {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[1000px] w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
-            <DialogTitle>{title}</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto flex-1 px-6 pb-6 pt-2">
-            {formContent}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const maxWidthClass = size === "compact" ? "max-w-lg" : "max-w-[1000px]";
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md overflow-y-auto bg-card/95 backdrop-blur-sm border-border/60">
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <div className="mt-6">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={`${maxWidthClass} w-[95vw] max-h-[90vh] p-0 bg-card/95 backdrop-blur-sm border-border/60 flex flex-col`}>
+        <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-y-auto flex-1 px-6 pb-6 pt-2">
           {formContent}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
