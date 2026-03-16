@@ -14,8 +14,8 @@ interface ModalFormProps {
   saving?: boolean;
   submitLabel?: string;
   disabled?: boolean;
-  /** "default" = right side sheet (~md), "wide" = centered dialog (~1000px) */
-  size?: "default" | "wide";
+  /** "wide" = centered dialog (default), "compact" = narrower centered dialog */
+  size?: "wide" | "compact";
 }
 
 export function ModalForm({
