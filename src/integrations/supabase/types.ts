@@ -1296,6 +1296,8 @@ export type Database = {
         | "cashier"
         | "consumer"
         | "event_organizer"
+        | "client_manager"
+        | "bar_staff"
       campaign_status: "scheduled" | "active" | "paused" | "ended"
       cash_register_status: "open" | "closed"
       event_status: "draft" | "active" | "completed" | "cancelled"
@@ -1458,6 +1460,8 @@ export const Constants = {
         "cashier",
         "consumer",
         "event_organizer",
+        "client_manager",
+        "bar_staff",
       ],
       campaign_status: ["scheduled", "active", "paused", "ended"],
       cash_register_status: ["open", "closed"],
