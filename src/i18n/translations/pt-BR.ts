@@ -366,6 +366,8 @@ const ptBR = {
   stock_allow_negative_label: "Negativo",
   stock_negative: "Negativo",
   stock_negative_not_allowed: "Não é permitido saldo negativo para este produto.",
+  stock_low_warning: "Atenção: estoque baixo!",
+  stock_units_remaining: "unidades restantes",
   stock_history: "Histórico de movimentações",
   stock_history_empty: "Nenhuma movimentação registrada",
   stock_history_date: "Data",
