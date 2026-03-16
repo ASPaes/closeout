@@ -290,7 +290,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("document")}</Label>
-                  <Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} placeholder="CNPJ ou CPF" />
+                  <Input value={maskDocument(form.document)} onChange={(e) => setForm({ ...form, document: unmask(e.target.value) })} placeholder="00.000.000/0000-00" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
