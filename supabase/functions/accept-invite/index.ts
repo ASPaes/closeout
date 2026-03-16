@@ -55,14 +55,20 @@ Deno.serve(async (req) => {
     const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(parsed.data.token));
     const tokenHash = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
-    // Find the invite
-    const { data: invite, error: findErr } = await supabaseAdmin
+    // Find the invite: valid if not used AND (no expiration OR not yet expired)
+    let query = supabaseAdmin
       .from("user_invites")
       .select("*")
       .eq("token_hash", tokenHash)
-      .is("used_at", null)
-      .gt("expires_at", new Date().toISOString())
-      .single();
+      .is("used_at", null);
+
+    // We can't combine is-null OR gt in one query easily, so fetch and filter
+    const { data: candidates, error: findErr } = await query;
+
+    const now = new Date();
+    const invite = candidates?.find((inv: any) =>
+      inv.expires_at === null || new Date(inv.expires_at) > now
+    ) ?? null;
 
     if (findErr || !invite) {
       console.log(`[accept-invite][${requestId}] invite not found or expired`, findErr);
@@ -79,7 +85,7 @@ Deno.serve(async (req) => {
       if (anyInvite.used_at) {
         return problem(410, "Gone", "INVITE_ALREADY_USED", requestId);
       }
-      if (new Date(anyInvite.expires_at) <= new Date()) {
+      if (anyInvite.expires_at && new Date(anyInvite.expires_at) <= new Date()) {
         return problem(410, "Gone", "INVITE_EXPIRED", requestId);
       }
       return problem(404, "Not Found", "INVITE_NOT_FOUND", requestId);

@@ -75,7 +75,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
       const payload: Record<string, unknown> = {
         roleName: role,
-        expiresInMinutes: parseInt(expiresInMinutes) || 1440,
+        expiresInMinutes: expiresInMinutes === "0" ? 0 : (parseInt(expiresInMinutes) || 1440),
       };
       if (email.trim()) payload.email = email.trim();
       if (effectiveClientId) payload.clientId = effectiveClientId;
@@ -232,6 +232,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
                   <SelectItem value="4320">3 {t("invite_days")}</SelectItem>
                   <SelectItem value="10080">7 {t("invite_days")}</SelectItem>
                   <SelectItem value="43200">30 {t("invite_days")}</SelectItem>
+                  <SelectItem value="0">{t("invite_lifetime")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

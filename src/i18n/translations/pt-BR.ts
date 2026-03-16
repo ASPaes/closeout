@@ -237,6 +237,7 @@ const ptBR = {
   invite_hour: "hora",
   invite_hours: "horas",
   invite_days: "dias",
+  invite_lifetime: "Vitalício (sem expiração)",
   invite_error_session: "Sessão expirada. Faça login novamente.",
   invite_error_generic: "Erro ao gerar link de convite.",
   invite_page_title: "Convite",

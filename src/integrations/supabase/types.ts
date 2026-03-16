@@ -1037,7 +1037,7 @@ export type Database = {
           created_by: string
           email: string | null
           event_id: string | null
-          expires_at: string
+          expires_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           token_hash: string
@@ -1051,7 +1051,7 @@ export type Database = {
           created_by: string
           email?: string | null
           event_id?: string | null
-          expires_at: string
+          expires_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           token_hash: string
@@ -1065,7 +1065,7 @@ export type Database = {
           created_by?: string
           email?: string | null
           event_id?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           token_hash?: string
