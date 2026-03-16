@@ -160,9 +160,9 @@ export default function GestorUsuarios() {
 
   const columns = [
     {
+      key: "profile_name",
       header: t("name"),
-      accessorKey: "profile_name" as const,
-      cell: (row: UserRow) => (
+      render: (row: UserRow) => (
         <div className="flex items-center gap-2">
           <span className="font-medium">{row.profile_name}</span>
           {row.profile_status === "inactive" && (
@@ -172,9 +172,9 @@ export default function GestorUsuarios() {
       ),
     },
     {
+      key: "roles",
       header: t("role"),
-      accessorKey: "roles" as const,
-      cell: (row: UserRow) => (
+      render: (row: UserRow) => (
         <div className="flex flex-wrap gap-1">
           {row.roles.map((r) => (
             <Badge key={r.id} variant="outline" className="text-[10px]">
@@ -189,9 +189,9 @@ export default function GestorUsuarios() {
     ...(canManage
       ? [
           {
+            key: "actions",
             header: t("actions"),
-            accessorKey: "user_id" as const,
-            cell: (row: UserRow) => (
+            render: (row: UserRow) => (
               <div className="flex items-center gap-1">
                 <Button
                   size="sm"
@@ -251,13 +251,13 @@ export default function GestorUsuarios() {
         <DataTable
           data={filteredUsers}
           columns={columns}
-          searchValue={search}
+          keyExtractor={(row) => row.user_id}
+          search={search}
           onSearchChange={setSearch}
           searchPlaceholder={t("gusr_search")}
-          emptyIcon={Users}
-          emptyTitle={t("gusr_empty")}
-          emptyDescription={t("gusr_empty_hint")}
-          isLoading={loading}
+          emptyMessage={t("gusr_empty")}
+          emptyHint={t("gusr_empty_hint")}
+          loading={loading}
         />
 
         {/* Invite dialog */}

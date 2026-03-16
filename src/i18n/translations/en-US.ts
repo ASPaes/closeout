@@ -175,6 +175,20 @@ const enUS: Record<TranslationKey, string> = {
   gestor_invite_team_desc: "Invite team members to your organization",
   gestor_invite_team_help: "Use the button above to generate an invite link. Invitees will receive the selected role automatically upon acceptance.",
 
+  // Gestor Users
+  gusr_title: "Users",
+  gusr_subtitle: "Manage your organization's users",
+  gusr_invite: "Invite user",
+  gusr_search: "Search users...",
+  gusr_empty: "No users found",
+  gusr_empty_hint: "Invite team members so they appear here.",
+  gusr_add_role: "Add role",
+  gusr_revoke: "Revoke",
+  gusr_revoke_title: "Revoke role",
+  gusr_revoke_desc: "Are you sure you want to revoke the {role} role from {name}?",
+  gusr_revoke_error: "Error revoking role",
+  gusr_assign_error: "Error assigning role",
+
   // Audit Logs
   audit_logs: "Audit Logs",
   audit_logs_desc: "System activity log (read-only)",
