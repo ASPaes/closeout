@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { maskPhone, maskCPF, maskDocument, unmask } from "@/lib/masks";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
