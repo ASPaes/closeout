@@ -171,6 +171,20 @@ const ptBR = {
   role_consumer: "Consumidor",
   gestor_invite_team: "Convidar Equipe",
   gestor_invite_team_desc: "Convide membros da equipe para sua organização",
+
+  // Gestor Users
+  gusr_title: "Usuários",
+  gusr_subtitle: "Gerenciar usuários da sua organização",
+  gusr_invite: "Convidar usuário",
+  gusr_search: "Buscar usuários...",
+  gusr_empty: "Nenhum usuário encontrado",
+  gusr_empty_hint: "Convide membros da equipe para que apareçam aqui.",
+  gusr_add_role: "Adicionar papel",
+  gusr_revoke: "Revogar",
+  gusr_revoke_title: "Revogar papel",
+  gusr_revoke_desc: "Tem certeza que deseja revogar o papel {role} de {name}?",
+  gusr_revoke_error: "Erro ao revogar papel",
+  gusr_assign_error: "Erro ao atribuir papel",
   gestor_invite_team_help: "Use o botão acima para gerar um link de convite. Os convidados receberão o papel selecionado automaticamente ao aceitar.",
 
   // Audit Logs

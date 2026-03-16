@@ -30,6 +30,7 @@ import GestorEventos from "@/pages/gestor/GestorEventos";
 import GestorCatalogos from "@/pages/gestor/GestorCatalogos";
 import GestorLocais from "@/pages/gestor/GestorLocais";
 import GestorEquipe from "@/pages/gestor/GestorEquipe";
+import GestorUsuarios from "@/pages/gestor/GestorUsuarios";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="locais" element={<GestorLocais />} />
               <Route path="eventos" element={<GestorEventos />} />
               <Route path="equipe" element={<GestorEquipe />} />
+              <Route path="usuarios" element={<GestorUsuarios />} />
             </Route>
 
             {/* Legacy redirects */}
