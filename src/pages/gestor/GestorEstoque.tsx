@@ -133,9 +133,10 @@ export default function GestorEstoque() {
         .eq("client_id", clientId),
       supabase
         .from("products")
-        .select("id, name, stock_unit, base_unit, base_per_stock_unit")
+        .select("id, name, is_stock_tracked, stock_unit, base_unit, base_per_stock_unit")
         .eq("client_id", clientId)
         .eq("is_active", true)
+        .eq("is_stock_tracked", true)
         .order("name"),
       supabase
         .from("stock_entries")
