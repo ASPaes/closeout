@@ -75,7 +75,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
       const payload: Record<string, unknown> = {
         roleName: role,
-        expiresInMinutes: parseInt(expiresInMinutes) || 1440,
+        expiresInMinutes: expiresInMinutes === "0" ? 0 : (parseInt(expiresInMinutes) || 1440),
       };
       if (email.trim()) payload.email = email.trim();
       if (effectiveClientId) payload.clientId = effectiveClientId;
