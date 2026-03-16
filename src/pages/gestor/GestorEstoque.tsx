@@ -31,6 +31,14 @@ import {
 import { toast } from "sonner";
 import { Package, Plus, Settings2, History, Pencil, Trash2, AlertTriangle } from "lucide-react";
 
+type ProductInfo = {
+  id: string;
+  name: string;
+  stock_unit: string | null;
+  base_unit: string | null;
+  base_per_stock_unit: number | null;
+};
+
 type StockRow = {
   id: string;
   product_id: string;
@@ -39,6 +47,9 @@ type StockRow = {
   low_stock_threshold: number;
   is_enabled: boolean;
   allow_negative: boolean;
+  stock_unit: string | null;
+  base_unit: string | null;
+  base_per_stock_unit: number | null;
 };
 
 type HistoryEntry = {
@@ -52,13 +63,20 @@ type HistoryEntry = {
   created_by_name: string;
 };
 
+const STOCK_UNIT_LABELS: Record<string, string> = {
+  bottle: "prod_unit_bottle",
+  kg: "prod_unit_kg",
+  unit: "prod_unit_unit",
+  pack: "prod_unit_pack",
+};
+
 export default function GestorEstoque() {
   const { t } = useTranslation();
   const { effectiveClientId: clientId } = useGestor();
   const { user } = useAuth();
 
   const [rows, setRows] = useState<StockRow[]>([]);
-  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [products, setProducts] = useState<ProductInfo[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -90,6 +108,18 @@ export default function GestorEstoque() {
   const [deleteEntryTarget, setDeleteEntryTarget] = useState<HistoryEntry | null>(null);
   const [deleteEntryLoading, setDeleteEntryLoading] = useState(false);
 
+  // ---- Helpers ----
+  const fmtQty = (v: number) => {
+    if (Number.isInteger(v)) return String(v);
+    return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  };
+
+  const stockUnitLabel = (unit: string | null) => {
+    if (!unit) return "";
+    const key = STOCK_UNIT_LABELS[unit];
+    return key ? t(key as any) : unit;
+  };
+
   // ---- Fetch ----
   const fetchData = useCallback(async () => {
     if (!clientId) return;
@@ -102,7 +132,7 @@ export default function GestorEstoque() {
         .eq("client_id", clientId),
       supabase
         .from("products")
-        .select("id, name")
+        .select("id, name, stock_unit, base_unit, base_per_stock_unit")
         .eq("client_id", clientId)
         .eq("is_active", true)
         .order("name"),
@@ -111,12 +141,12 @@ export default function GestorEstoque() {
         .select("id, created_at, product_id, entry_type, quantity, reason, created_by")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false })
-        .limit(50),
+        .limit(20),
     ]);
 
-    const prods = productsRes.data ?? [];
+    const prods = (productsRes.data ?? []) as ProductInfo[];
     setProducts(prods);
-    const prodMap = new Map(prods.map((p) => [p.id, p.name]));
+    const prodMap = new Map(prods.map((p) => [p.id, p]));
 
     const balances = balancesRes.data ?? [];
     const balanceMap = new Map(balances.map((b) => [b.product_id, b]));
@@ -131,6 +161,9 @@ export default function GestorEstoque() {
         low_stock_threshold: b?.low_stock_threshold ?? 0,
         is_enabled: b?.is_enabled ?? true,
         allow_negative: b?.allow_negative ?? false,
+        stock_unit: p.stock_unit,
+        base_unit: p.base_unit,
+        base_per_stock_unit: p.base_per_stock_unit,
       };
     });
     setRows(merged);
@@ -152,7 +185,7 @@ export default function GestorEstoque() {
         id: e.id,
         created_at: e.created_at,
         product_id: e.product_id,
-        product_name: prodMap.get(e.product_id) ?? "—",
+        product_name: prodMap.get(e.product_id)?.name ?? "—",
         entry_type: e.entry_type,
         quantity: e.quantity,
         reason: e.reason,
@@ -169,7 +202,6 @@ export default function GestorEstoque() {
     r.product_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Helper: get current stock info for selected product
   const selectedProductRow = adjustProductId ? rows.find((r) => r.product_id === adjustProductId) : null;
 
   // ---- Adjust stock ----
@@ -186,7 +218,7 @@ export default function GestorEstoque() {
     e.preventDefault();
     setAdjustError("");
     if (!adjustProductId) { toast.error(t("stock_select_product")); return; }
-    const qty = parseInt(adjustQty, 10);
+    const qty = parseFloat(adjustQty);
 
     if (adjustType === "adjust") {
       if (isNaN(qty) || qty < 0) { toast.error(t("stock_invalid_qty")); return; }
@@ -194,11 +226,10 @@ export default function GestorEstoque() {
       if (isNaN(qty) || qty <= 0) { toast.error(t("stock_invalid_qty")); return; }
     }
 
-    // Client-side validation: check insufficient stock BEFORE any DB call
     if (adjustType === "remove") {
       const currentRow = rows.find((r) => r.product_id === adjustProductId);
       if (currentRow && !currentRow.allow_negative && qty > currentRow.quantity_available) {
-        const errorMsg = `${t("stock_insufficient")}. ${t("stock_available")}: ${currentRow.quantity_available} — ${t("stock_requested")}: ${qty}`;
+        const errorMsg = `${t("stock_insufficient")}. ${t("stock_available")}: ${fmtQty(currentRow.quantity_available)} — ${t("stock_requested")}: ${fmtQty(qty)}`;
         setAdjustError(errorMsg);
         return;
       }
@@ -223,7 +254,6 @@ export default function GestorEstoque() {
     setAdjustSaving(false);
 
     if (error) {
-      // DB trigger may also reject — catch its message
       if (error.message.includes("negativ") || error.message.includes("Disponível")) {
         toast.error(t("stock_negative_not_allowed"), { duration: 6000 });
       } else {
@@ -236,7 +266,6 @@ export default function GestorEstoque() {
     setAdjustOpen(false);
     await fetchData();
 
-    // Check low stock warning after successful adjustment
     const { data: freshBalance } = await supabase
       .from("stock_balances")
       .select("quantity_available, low_stock_threshold, is_enabled")
@@ -246,7 +275,7 @@ export default function GestorEstoque() {
     if (freshBalance && freshBalance.is_enabled && freshBalance.low_stock_threshold > 0 && freshBalance.quantity_available <= freshBalance.low_stock_threshold) {
       const prodName = products.find((p) => p.id === adjustProductId)?.name ?? "";
       toast.warning(t("stock_low_warning"), {
-        description: `${prodName}: ${freshBalance.quantity_available} ${t("stock_units_remaining")}`,
+        description: `${prodName}: ${fmtQty(freshBalance.quantity_available)} ${t("stock_units_remaining")}`,
         duration: 8000,
       });
     }
@@ -262,7 +291,7 @@ export default function GestorEstoque() {
   const handleThresholdSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!thresholdRow) return;
-    const val = parseInt(thresholdValue, 10);
+    const val = parseFloat(thresholdValue);
     if (isNaN(val) || val < 0) { toast.error(t("stock_invalid_threshold")); return; }
 
     setThresholdSaving(true);
@@ -329,7 +358,7 @@ export default function GestorEstoque() {
   const handleEditEntrySave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editEntry) return;
-    const qty = parseInt(editEntryQty, 10);
+    const qty = parseFloat(editEntryQty);
     if (isNaN(qty) || qty < 0) { toast.error(t("stock_invalid_qty")); return; }
 
     setEditEntrySaving(true);
@@ -384,13 +413,34 @@ export default function GestorEstoque() {
     fetchData();
   };
 
-  // ---- Status badge logic ----
+  // ---- Render helpers ----
   const renderStatus = (r: StockRow) => {
     if (!r.is_enabled) return <StatusBadge status="inactive" label={t("stock_control_off")} />;
     if (r.quantity_available < 0) return <StatusBadge status="cancelled" label={t("stock_negative")} />;
     if (r.low_stock_threshold > 0 && r.quantity_available <= r.low_stock_threshold)
       return <StatusBadge status="draft" label={t("stock_low")} />;
     return <StatusBadge status="active" label="OK" />;
+  };
+
+  const renderQty = (r: StockRow) => {
+    const negClass = r.quantity_available < 0 ? "text-destructive font-bold" : "";
+    const stockLabel = r.stock_unit ? stockUnitLabel(r.stock_unit) : "";
+    const baseEquiv = r.base_per_stock_unit && r.base_unit
+      ? fmtQty(r.quantity_available * r.base_per_stock_unit) + " " + r.base_unit
+      : null;
+
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        <span className={`font-mono text-sm ${negClass}`}>
+          {fmtQty(r.quantity_available)} {stockLabel}
+        </span>
+        {baseEquiv && (
+          <span className="text-xs text-muted-foreground font-mono">
+            ≈ {baseEquiv}
+          </span>
+        )}
+      </div>
+    );
   };
 
   const entryTypeLabel = (type: string) => {
@@ -415,18 +465,14 @@ export default function GestorEstoque() {
     {
       key: "qty",
       header: t("stock_qty"),
-      className: "text-center w-28",
-      render: (r) => (
-        <span className={`font-mono ${r.quantity_available < 0 ? "text-destructive font-bold" : ""}`}>
-          {r.quantity_available}
-        </span>
-      ),
+      className: "text-center w-40",
+      render: renderQty,
     },
     {
       key: "threshold",
       header: t("stock_threshold"),
       className: "text-center w-28",
-      render: (r) => <span className="font-mono">{r.low_stock_threshold}</span>,
+      render: (r) => <span className="font-mono">{fmtQty(r.low_stock_threshold)}</span>,
     },
     {
       key: "status",
@@ -541,7 +587,7 @@ export default function GestorEstoque() {
                         {entryTypeLabel(h.entry_type)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center font-mono">{h.quantity}</TableCell>
+                    <TableCell className="text-center font-mono">{fmtQty(h.quantity)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
                       {h.reason || "—"}
                     </TableCell>
@@ -599,7 +645,6 @@ export default function GestorEstoque() {
             </Select>
           </div>
 
-          {/* Show current stock info when product is selected */}
           {selectedProductRow && adjustType === "remove" && (
             <Alert variant={
               selectedProductRow.quantity_available <= 0 ? "destructive" : "default"
@@ -611,7 +656,14 @@ export default function GestorEstoque() {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="flex flex-col gap-0.5">
                 <span>
-                  {t("stock_available")}: <strong className="font-mono">{selectedProductRow.quantity_available}</strong>
+                  {t("stock_available")}: <strong className="font-mono">
+                    {fmtQty(selectedProductRow.quantity_available)} {stockUnitLabel(selectedProductRow.stock_unit)}
+                  </strong>
+                  {selectedProductRow.base_per_stock_unit && selectedProductRow.base_unit && (
+                    <span className="text-xs text-muted-foreground ml-1">
+                      (≈ {fmtQty(selectedProductRow.quantity_available * selectedProductRow.base_per_stock_unit)} {selectedProductRow.base_unit})
+                    </span>
+                  )}
                 </span>
                 {!selectedProductRow.allow_negative && (
                   <span className="text-xs opacity-80">{t("stock_negative_not_allowed_hint")}</span>
@@ -637,6 +689,7 @@ export default function GestorEstoque() {
             <Input
               type="number"
               min={0}
+              step="any"
               value={adjustQty}
               onChange={(e) => { setAdjustQty(e.target.value); setAdjustError(""); }}
               placeholder="0"
@@ -679,6 +732,7 @@ export default function GestorEstoque() {
             <Input
               type="number"
               min={0}
+              step="any"
               value={thresholdValue}
               onChange={(e) => setThresholdValue(e.target.value)}
             />
@@ -708,6 +762,7 @@ export default function GestorEstoque() {
             <Input
               type="number"
               min={0}
+              step="any"
               value={editEntryQty}
               onChange={(e) => setEditEntryQty(e.target.value)}
             />
@@ -733,7 +788,7 @@ export default function GestorEstoque() {
               {t("stock_entry_delete_desc")}
               <br />
               <span className="font-medium">
-                {deleteEntryTarget?.product_name} — {entryTypeLabel(deleteEntryTarget?.entry_type ?? "")}: {deleteEntryTarget?.quantity}
+                {deleteEntryTarget?.product_name} — {entryTypeLabel(deleteEntryTarget?.entry_type ?? "")}: {fmtQty(deleteEntryTarget?.quantity ?? 0)}
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
