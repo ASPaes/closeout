@@ -592,6 +592,23 @@ const enUS: Record<TranslationKey, string> = {
   ebo_no_rules: "No billing rules configured for this client.",
   ebo_tab: "Billing",
 
+  // Product Images
+  img_section_title: "Product image",
+  img_no_image: "No image set",
+  img_upload: "Upload image",
+  img_search_web: "Search online",
+  img_invalid_type: "Invalid file type. Use PNG, JPG or WebP.",
+  img_too_large: "Image too large. Max: 5MB.",
+  img_updated_success: "Image updated successfully",
+  img_upload_error: "Error uploading image",
+  img_search_error: "Error searching images",
+  img_attach_error: "Error attaching image",
+  img_search_need_name: "Enter the product name to search images",
+  img_no_results: "No images found",
+  img_save_product_first: "Save the product before adding an image",
+  img_library_reused: "Image reused from library",
+  img_search_results: "Search results",
+
   // Shared UI
   cancel: "Cancel",
   save: "Save",

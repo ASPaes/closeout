@@ -56,23 +56,24 @@ export function ProductImageSection({
     setLibraryHint(imageSource === "library");
   }, [currentImagePath, imageSource]);
 
-  // Auto-check library for new products
+  // Auto-check library for new products (use raw fetch to bypass typed client)
   useEffect(() => {
     if (productId || !productName.trim()) return;
     const normalized = normalizeProductName(productName);
     if (!normalized) return;
 
     const checkLibrary = async () => {
-      const { data } = await supabase
-        .from("product_image_library")
+      const { data, error } = await supabase
+        .from("product_image_library" as any)
         .select("image_path")
         .eq("normalized_name", normalized)
         .maybeSingle();
 
-      if (data?.image_path && data.image_path !== currentImagePath) {
-        setPreviewUrl(getPublicUrl(data.image_path));
+      if (!error && data && (data as any).image_path && (data as any).image_path !== currentImagePath) {
+        const imgPath = (data as any).image_path as string;
+        setPreviewUrl(getPublicUrl(imgPath));
         setLibraryHint(true);
-        onImageUpdated(data.image_path, "library");
+        onImageUpdated(imgPath, "library");
       }
     };
 

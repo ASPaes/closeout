@@ -590,6 +590,23 @@ const ptBR = {
   ebo_no_rules: "Nenhuma regra de cobrança cadastrada para este cliente.",
   ebo_tab: "Cobrança",
 
+  // Product Images
+  img_section_title: "Imagem do produto",
+  img_no_image: "Nenhuma imagem definida",
+  img_upload: "Enviar imagem",
+  img_search_web: "Buscar na internet",
+  img_invalid_type: "Tipo de arquivo inválido. Use PNG, JPG ou WebP.",
+  img_too_large: "Imagem muito grande. Máximo: 5MB.",
+  img_updated_success: "Imagem atualizada com sucesso",
+  img_upload_error: "Erro ao enviar imagem",
+  img_search_error: "Erro ao buscar imagens",
+  img_attach_error: "Erro ao vincular imagem",
+  img_search_need_name: "Preencha o nome do produto para buscar imagens",
+  img_no_results: "Nenhuma imagem encontrada",
+  img_save_product_first: "Salve o produto antes de adicionar imagem",
+  img_library_reused: "Imagem reaproveitada da biblioteca",
+  img_search_results: "Resultados da busca",
+
   // Shared UI
   cancel: "Cancelar",
   save: "Salvar",
