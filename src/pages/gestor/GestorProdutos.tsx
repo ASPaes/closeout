@@ -145,6 +145,7 @@ export default function GestorProdutos() {
       is_sellable: p.is_sellable, is_stock_tracked: p.is_stock_tracked, is_ingredient: p.is_ingredient,
       stock_unit: p.stock_unit ?? "", base_unit: p.base_unit ?? "",
       base_per_stock_unit: p.base_per_stock_unit != null ? String(p.base_per_stock_unit) : "",
+      image_path: p.image_path ?? null, image_source: p.image_source ?? null,
     });
     setSheetOpen(true);
   };
