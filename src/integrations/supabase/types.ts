@@ -761,6 +761,36 @@ export type Database = {
         }
         Relationships: []
       }
+      product_image_library: {
+        Row: {
+          created_at: string
+          id: string
+          image_hash: string
+          image_path: string
+          normalized_name: string
+          source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_hash: string
+          image_path: string
+          normalized_name: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_hash?: string
+          image_path?: string
+          normalized_name?: string
+          source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_recipes: {
         Row: {
           base_unit: string
