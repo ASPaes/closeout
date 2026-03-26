@@ -676,7 +676,28 @@ const ptBR = {
   caixa_debit: "Débito",
   caixa_pix: "PIX",
   caixa_other: "Outro",
-} as const;
+
+  // POS / Venda Rápida
+  pos_search_products: "Buscar produto ou combo...",
+  pos_all_categories: "Todos",
+  pos_cart_empty: "Carrinho vazio",
+  pos_cart_empty_desc: "Adicione produtos do catálogo para iniciar a venda.",
+  pos_cart_title: "Pedido",
+  pos_subtotal: "Subtotal",
+  pos_discount: "Desconto",
+  pos_total: "Total",
+  pos_payment_method: "Forma de Pagamento",
+  pos_finalize: "Finalizar Venda",
+  pos_amount_received: "Valor Recebido",
+  pos_change: "Troco",
+  pos_order_success: "Venda #%s realizada com sucesso!",
+  pos_order_error: "Erro ao registrar a venda",
+  pos_no_items: "Adicione pelo menos um item",
+  pos_no_payment: "Selecione a forma de pagamento",
+  pos_out_of_stock: "Sem estoque",
+  pos_max_order_exceeded: "Valor máximo por pedido excedido (máx: %s)",
+  pos_no_catalog: "Nenhum catálogo vinculado a este evento",
+  pos_no_catalog_desc: "Vincule um catálogo ao evento no painel do Gestor para começar a vender.",
 
 export type TranslationKey = keyof typeof ptBR;
 export default ptBR;

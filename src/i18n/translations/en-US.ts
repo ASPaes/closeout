@@ -678,6 +678,28 @@ const enUS: Record<TranslationKey, string> = {
   caixa_debit: "Debit",
   caixa_pix: "PIX",
   caixa_other: "Other",
+
+  // POS / Quick Sale
+  pos_search_products: "Search product or combo...",
+  pos_all_categories: "All",
+  pos_cart_empty: "Cart is empty",
+  pos_cart_empty_desc: "Add products from the catalog to start a sale.",
+  pos_cart_title: "Order",
+  pos_subtotal: "Subtotal",
+  pos_discount: "Discount",
+  pos_total: "Total",
+  pos_payment_method: "Payment Method",
+  pos_finalize: "Finalize Sale",
+  pos_amount_received: "Amount Received",
+  pos_change: "Change",
+  pos_order_success: "Sale #%s completed successfully!",
+  pos_order_error: "Error creating sale",
+  pos_no_items: "Add at least one item",
+  pos_no_payment: "Select a payment method",
+  pos_out_of_stock: "Out of stock",
+  pos_max_order_exceeded: "Max order value exceeded (max: %s)",
+  pos_no_catalog: "No catalog linked to this event",
+  pos_no_catalog_desc: "Link a catalog to the event in the Manager panel to start selling.",
 };
 
 export default enUS;
