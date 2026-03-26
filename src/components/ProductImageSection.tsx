@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Upload, Search, ImageIcon, Loader2, Check, X } from "lucide-react";
+import { Upload, Search, ImageIcon, Loader2, Check, X, ThumbsUp, RefreshCw } from "lucide-react";
 
 type SearchResult = {
   title: string;
@@ -16,7 +16,7 @@ type SearchResult = {
 };
 
 interface ProductImageSectionProps {
-  productId: string | null; // null when creating
+  productId: string | null;
   productName: string;
   currentImagePath: string | null;
   imageSource: string | null;
@@ -43,22 +43,27 @@ export function ProductImageSection({
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [attaching, setAttaching] = useState<string | null>(null);
-  const [libraryHint, setLibraryHint] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Library suggestion state (pending confirmation)
+  const [librarySuggestion, setLibrarySuggestion] = useState<{ imagePath: string; publicUrl: string } | null>(null);
+  const [libraryConfirmed, setLibraryConfirmed] = useState(false);
 
   // Set preview from current image
   useEffect(() => {
     if (currentImagePath) {
       setPreviewUrl(getPublicUrl(currentImagePath));
+      setLibrarySuggestion(null);
+      setLibraryConfirmed(imageSource === "library");
     } else {
       setPreviewUrl(null);
+      setLibraryConfirmed(false);
     }
-    setLibraryHint(imageSource === "library");
   }, [currentImagePath, imageSource]);
 
-  // Auto-check library for new products (use raw fetch to bypass typed client)
+  // Auto-check library for products without image
   useEffect(() => {
-    if (productId || !productName.trim()) return;
+    if (!productName.trim() || currentImagePath) return;
     const normalized = normalizeProductName(productName);
     if (!normalized) return;
 
@@ -69,17 +74,30 @@ export function ProductImageSection({
         .eq("normalized_name", normalized)
         .maybeSingle();
 
-      if (!error && data && (data as any).image_path && (data as any).image_path !== currentImagePath) {
+      if (!error && data && (data as any).image_path) {
         const imgPath = (data as any).image_path as string;
+        setLibrarySuggestion({ imagePath: imgPath, publicUrl: getPublicUrl(imgPath) });
         setPreviewUrl(getPublicUrl(imgPath));
-        setLibraryHint(true);
-        onImageUpdated(imgPath, "library");
       }
     };
 
     const timer = setTimeout(checkLibrary, 600);
     return () => clearTimeout(timer);
-  }, [productName, productId]);
+  }, [productName, currentImagePath]);
+
+  const handleAcceptLibrary = () => {
+    if (!librarySuggestion) return;
+    onImageUpdated(librarySuggestion.imagePath, "library");
+    setLibraryConfirmed(true);
+    setLibrarySuggestion(null);
+    toast.success(t("img_updated_success"));
+  };
+
+  const handleRejectLibrary = () => {
+    setLibrarySuggestion(null);
+    setPreviewUrl(null);
+    handleSearch();
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,7 +119,7 @@ export function ProductImageSection({
       const base64 = await new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const result = reader.result as string;
-          resolve(result.split(",")[1]); // strip data:...;base64,
+          resolve(result.split(",")[1]);
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);
@@ -119,7 +137,8 @@ export function ProductImageSection({
       if (error) throw error;
       if (data?.data?.publicUrl) {
         setPreviewUrl(data.data.publicUrl);
-        setLibraryHint(false);
+        setLibrarySuggestion(null);
+        setLibraryConfirmed(false);
         onImageUpdated(data.data.imagePath, "upload");
         toast.success(t("img_updated_success"));
       }
@@ -178,7 +197,8 @@ export function ProductImageSection({
       if (error) throw error;
       if (data?.data?.publicUrl) {
         setPreviewUrl(data.data.publicUrl);
-        setLibraryHint(false);
+        setLibrarySuggestion(null);
+        setLibraryConfirmed(false);
         onImageUpdated(data.data.imagePath, "search");
         setShowResults(false);
         setSearchResults([]);
@@ -192,6 +212,8 @@ export function ProductImageSection({
     }
   };
 
+  const showLibraryActions = !!librarySuggestion && !libraryConfirmed;
+
   return (
     <>
       <Separator className="my-2" />
@@ -204,12 +226,37 @@ export function ProductImageSection({
             src={previewUrl}
             alt={productName}
             className="w-full h-40 object-contain"
-            onError={() => setPreviewUrl(null)}
+            onError={() => { setPreviewUrl(null); setLibrarySuggestion(null); }}
           />
-          {libraryHint && (
+          {libraryConfirmed && (
             <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-xs px-3 py-1 flex items-center gap-1">
               <Check className="h-3 w-3" />
               {t("img_library_reused")}
+            </div>
+          )}
+          {showLibraryActions && (
+            <div className="absolute bottom-0 left-0 right-0 bg-background/95 border-t border-border/60 px-3 py-2 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">{t("img_library_found")}</p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={handleAcceptLibrary}
+                >
+                  <ThumbsUp className="mr-1 h-3 w-3" />
+                  {t("img_accept_library")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRejectLibrary}
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  {t("img_search_another")}
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -221,36 +268,38 @@ export function ProductImageSection({
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={handleFileSelect}
-          disabled={!productId}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || !productId}
-        >
-          {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
-          {t("img_upload")}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleSearch}
-          disabled={searching || !productId}
-        >
-          {searching ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
-          {t("img_search_web")}
-        </Button>
-      </div>
+      {!showLibraryActions && (
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={handleFileSelect}
+            disabled={!productId}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || !productId}
+          >
+            {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+            {t("img_upload")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSearch}
+            disabled={searching || !productId}
+          >
+            {searching ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
+            {t("img_search_web")}
+          </Button>
+        </div>
+      )}
 
       {!productId && (
         <p className="text-xs text-muted-foreground">{t("img_save_product_first")}</p>
