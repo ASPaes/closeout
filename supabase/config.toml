@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.accept-invite]
 verify_jwt = false
+
+[functions.upload-product-image]
+verify_jwt = false
+
+[functions.search-product-image]
+verify_jwt = false
+
+[functions.attach-searched-product-image]
+verify_jwt = false
