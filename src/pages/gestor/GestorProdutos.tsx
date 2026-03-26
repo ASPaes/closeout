@@ -176,6 +176,7 @@ export default function GestorProdutos() {
       const payload: Record<string, unknown> = {
         name, description: form.description.trim() || null, price,
         category_id: form.category_id || null,
+        brand: form.brand.trim() || null,
         is_sellable: form.is_sellable,
         is_stock_tracked: form.is_stock_tracked,
         is_ingredient: form.is_ingredient,
