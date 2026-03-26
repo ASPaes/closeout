@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN brand text DEFAULT NULL;

@@ -292,6 +292,8 @@ const enUS: Record<TranslationKey, string> = {
   product_deactivated: "Product deactivated",
   no_products_found: "No products found",
   product_name: "Product name",
+  product_brand: "Brand",
+  product_brand_placeholder: "E.g.: Ambev, Coca-Cola...",
   price: "Price",
   category: "Category",
   select_category: "Select category",

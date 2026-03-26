@@ -40,6 +40,7 @@ type Product = {
   is_sellable: boolean; is_stock_tracked: boolean; is_ingredient: boolean;
   stock_unit: string | null; base_unit: string | null; base_per_stock_unit: number | null;
   image_path: string | null; image_source: string | null;
+  brand: string | null;
 };
 type Recipe = {
   id: string; client_id: string; product_id: string;
@@ -65,6 +66,7 @@ const emptyForm = {
   is_sellable: true, is_stock_tracked: false, is_ingredient: false,
   stock_unit: "", base_unit: "", base_per_stock_unit: "",
   image_path: "" as string | null, image_source: "" as string | null,
+  brand: "",
 };
 
 export default function GestorProdutos() {
@@ -97,7 +99,7 @@ export default function GestorProdutos() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     let q = supabase.from("products")
-      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source" as any)
+      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source, brand" as any)
       .order("name");
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
@@ -116,7 +118,7 @@ export default function GestorProdutos() {
   const fetchIngredients = useCallback(async () => {
     if (!clientId) return;
     const { data } = await supabase.from("products")
-      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source" as any)
+      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source, brand" as any)
       .eq("client_id", clientId)
       .eq("is_ingredient", true)
       .eq("is_active", true)
@@ -146,6 +148,7 @@ export default function GestorProdutos() {
       stock_unit: p.stock_unit ?? "", base_unit: p.base_unit ?? "",
       base_per_stock_unit: p.base_per_stock_unit != null ? String(p.base_per_stock_unit) : "",
       image_path: p.image_path ?? null, image_source: p.image_source ?? null,
+      brand: p.brand ?? "",
     });
     setSheetOpen(true);
   };
@@ -173,6 +176,7 @@ export default function GestorProdutos() {
       const payload: Record<string, unknown> = {
         name, description: form.description.trim() || null, price,
         category_id: form.category_id || null,
+        brand: form.brand.trim() || null,
         is_sellable: form.is_sellable,
         is_stock_tracked: form.is_stock_tracked,
         is_ingredient: form.is_ingredient,
@@ -410,6 +414,7 @@ export default function GestorProdutos() {
         onSubmit={handleSave} saving={saving} submitLabel={editing ? t("update") : t("create")}
         disabled={!form.name.trim() || !form.price}>
         <div className="space-y-2"><Label>{t("product_name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={150} autoFocus /></div>
+        <div className="space-y-2"><Label>{t("product_brand")}</Label><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} maxLength={100} placeholder={t("product_brand_placeholder")} /></div>
         <div className="space-y-2"><Label>{t("description")}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} rows={3} /></div>
         <div className="space-y-2"><Label>{t("price")}</Label><Input type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
         <div className="space-y-2">
