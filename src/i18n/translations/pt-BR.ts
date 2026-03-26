@@ -226,6 +226,7 @@ const ptBR = {
 
   // Invite link
   invite_by_link: "Convidar por link",
+  invite_guest_name: "Nome do convidado",
   invite_optional: "opcional",
   invite_link_ready: "Link de convite gerado com sucesso. Copie e envie ao usuário.",
   invite_link_created: "Link de convite criado",

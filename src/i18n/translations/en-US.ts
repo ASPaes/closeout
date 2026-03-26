@@ -228,6 +228,7 @@ const enUS: Record<TranslationKey, string> = {
 
   // Invite link
   invite_by_link: "Invite by link",
+  invite_guest_name: "Guest name",
   invite_optional: "optional",
   invite_link_ready: "Invite link generated successfully. Copy and send to the user.",
   invite_link_created: "Invite link created",
