@@ -164,6 +164,11 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>{t("invite_guest_name")} ({t("invite_optional")})</Label>
+              <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Nome do convidado" />
+            </div>
+
+            <div className="space-y-2">
               <Label>{t("email")} ({t("invite_optional")})</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="usuario@exemplo.com" />
             </div>
