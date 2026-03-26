@@ -290,6 +290,8 @@ const ptBR = {
   product_deactivated: "Produto desativado",
   no_products_found: "Nenhum produto encontrado",
   product_name: "Nome do produto",
+  product_brand: "Marca",
+  product_brand_placeholder: "Ex: Ambev, Coca-Cola...",
   price: "Preço",
   category: "Categoria",
   select_category: "Selecionar categoria",

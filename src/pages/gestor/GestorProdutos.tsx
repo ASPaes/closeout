@@ -414,6 +414,7 @@ export default function GestorProdutos() {
         onSubmit={handleSave} saving={saving} submitLabel={editing ? t("update") : t("create")}
         disabled={!form.name.trim() || !form.price}>
         <div className="space-y-2"><Label>{t("product_name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={150} autoFocus /></div>
+        <div className="space-y-2"><Label>{t("product_brand")}</Label><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} maxLength={100} placeholder={t("product_brand_placeholder")} /></div>
         <div className="space-y-2"><Label>{t("description")}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} rows={3} /></div>
         <div className="space-y-2"><Label>{t("price")}</Label><Input type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
         <div className="space-y-2">
