@@ -625,25 +625,39 @@ export default function GestorCampanhas() {
 
               {/* Discount preview + validation */}
               <div className="flex items-center gap-2 flex-wrap">
-                {item.promo_price && parseFloat(item.promo_price) > 0 && (
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {t("camp_preview_promo")}
-                  </Badge>
-                )}
-                {item.discount_percent && parseFloat(item.discount_percent) >= 1 && parseFloat(item.discount_percent) <= 100 && (
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {item.discount_percent}% off
-                  </Badge>
-                )}
-                {item.promo_price && parseFloat(item.promo_price) <= 0 && (
-                  <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
-                )}
-                {item.discount_percent && (parseFloat(item.discount_percent) < 1 || parseFloat(item.discount_percent) > 100) && (
-                  <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
-                )}
-                {!item.promo_price && !item.discount_percent && (
-                  <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
-                )}
+                {(() => {
+                  const origPrice = getItemOriginalPrice(item);
+                  const pp = item.promo_price ? parseFloat(item.promo_price) : null;
+                  const dp = item.discount_percent ? parseFloat(item.discount_percent) : null;
+                  return (
+                    <>
+                      {origPrice != null && origPrice > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Original: {formatPrice(origPrice)}
+                        </span>
+                      )}
+                      {pp != null && pp > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          {t("camp_preview_promo")}: {formatPrice(pp)}
+                        </Badge>
+                      )}
+                      {dp != null && dp >= 1 && dp <= 100 && (
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          {item.discount_percent}% off
+                        </Badge>
+                      )}
+                      {pp != null && pp <= 0 && (
+                        <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
+                      )}
+                      {dp != null && (dp < 1 || dp > 100) && (
+                        <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
+                      )}
+                      {!item.promo_price && !item.discount_percent && (
+                        <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}
