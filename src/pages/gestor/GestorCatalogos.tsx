@@ -403,6 +403,14 @@ export default function GestorCatalogos() {
                       <span className="text-sm">{item.name}</span>
                       <Badge variant="outline" className="text-[10px] ml-auto">{item.item_type === "product" ? t("camp_type_product") : t("camp_type_combo")}</Badge>
                       {!item.is_active && <Badge variant="secondary" className="text-[10px]">{t("inactive")}</Badge>}
+                      <Button type="button" size="sm" variant="ghost" onClick={async () => {
+                        await supabase.from("catalog_items").delete().eq("id", item.id);
+                        setEditItems((prev) => prev.filter((i) => i.id !== item.id));
+                        fetchCatalogs();
+                        toast.success(t("ctlg_item_removed"));
+                      }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   ))}
                 </div>
