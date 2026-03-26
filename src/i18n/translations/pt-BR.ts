@@ -621,6 +621,31 @@ const ptBR = {
   close: "Fechar",
   search: "Buscar",
   no_results: "Nenhum resultado encontrado",
+
+  // Caixa module
+  caixa_panel: "Painel do Caixa",
+  caixa_dashboard: "Dashboard",
+  caixa_quick_sale: "Venda Rápida",
+  caixa_movements: "Movimentações",
+  caixa_returns: "Devoluções",
+  caixa_exchanges: "Trocas",
+  caixa_closing: "Fechamento",
+  caixa_select_event: "Selecionar evento",
+  caixa_search_events: "Buscar eventos...",
+  caixa_no_events: "Nenhum evento encontrado",
+  caixa_status_open: "Caixa Aberto",
+  caixa_status_closed: "Caixa Fechado",
+  caixa_no_event_selected: "Nenhum evento selecionado",
+  caixa_no_event_desc: "Selecione um evento no menu superior para começar a operar o caixa.",
+  caixa_no_register: "Caixa não aberto",
+  caixa_no_register_desc: "Você precisa abrir o caixa antes de realizar operações.",
+  caixa_open_register: "Abrir Caixa",
+  caixa_dashboard_placeholder: "Visão geral do caixa será exibida aqui.",
+  caixa_sale_placeholder: "Tela de venda rápida será implementada aqui.",
+  caixa_movements_placeholder: "Movimentações de caixa serão listadas aqui.",
+  caixa_returns_placeholder: "Devoluções serão gerenciadas aqui.",
+  caixa_exchanges_placeholder: "Trocas serão gerenciadas aqui.",
+  caixa_closing_placeholder: "Fechamento de caixa será realizado aqui.",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

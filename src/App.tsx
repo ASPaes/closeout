@@ -82,6 +82,16 @@ const App = () => (
               <Route path="usuarios" element={<GestorUsuarios />} />
             </Route>
 
+            {/* Caixa area */}
+            <Route path="/caixa" element={<CaixaLayout />}>
+              <Route index element={<CaixaDashboard />} />
+              <Route path="venda" element={<CaixaVenda />} />
+              <Route path="movimentacoes" element={<CaixaMovimentacoes />} />
+              <Route path="devolucoes" element={<CaixaDevolucoes />} />
+              <Route path="trocas" element={<CaixaTrocas />} />
+              <Route path="fechamento" element={<CaixaFechamento />} />
+            </Route>
+
             {/* Legacy redirects */}
             <Route path="/" element={<Navigate to="/admin" replace />} />
             <Route path="/clients" element={<Navigate to="/admin/clients" replace />} />

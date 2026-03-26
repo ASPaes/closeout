@@ -30,8 +30,8 @@ export function CaixaEventGuard({ children, requireRegister = false }: { childre
   if (requireRegister && !cashRegisterId) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="h-16 w-16 rounded-full bg-yellow-500/10 flex items-center justify-center">
-          <LockOpen className="h-8 w-8 text-yellow-400" />
+        <div className="h-16 w-16 rounded-full bg-accent/30 flex items-center justify-center">
+          <LockOpen className="h-8 w-8 text-accent-foreground" />
         </div>
         <div className="space-y-1">
           <h2 className="text-lg font-semibold">{t("caixa_no_register")}</h2>
