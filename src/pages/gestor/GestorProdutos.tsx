@@ -21,6 +21,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EmptyState } from "@/components/EmptyState";
+import { ProductImageSection } from "@/components/ProductImageSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,7 @@ type Product = {
   name: string; description: string | null; price: number; is_active: boolean;
   is_sellable: boolean; is_stock_tracked: boolean; is_ingredient: boolean;
   stock_unit: string | null; base_unit: string | null; base_per_stock_unit: number | null;
+  image_path: string | null; image_source: string | null;
 };
 type Recipe = {
   id: string; client_id: string; product_id: string;
@@ -62,6 +64,7 @@ const emptyForm = {
   name: "", description: "", price: "", category_id: "",
   is_sellable: true, is_stock_tracked: false, is_ingredient: false,
   stock_unit: "", base_unit: "", base_per_stock_unit: "",
+  image_path: "" as string | null, image_source: "" as string | null,
 };
 
 export default function GestorProdutos() {
@@ -94,12 +97,12 @@ export default function GestorProdutos() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     let q = supabase.from("products")
-      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit")
+      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source" as any)
       .order("name");
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
-    setProducts((data as Product[]) ?? []);
+    setProducts((data as unknown as Product[]) ?? []);
     setLoading(false);
   }, [clientId]);
 
@@ -113,12 +116,12 @@ export default function GestorProdutos() {
   const fetchIngredients = useCallback(async () => {
     if (!clientId) return;
     const { data } = await supabase.from("products")
-      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit")
+      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source" as any)
       .eq("client_id", clientId)
       .eq("is_ingredient", true)
       .eq("is_active", true)
       .order("name");
-    setIngredients((data as Product[]) ?? []);
+    setIngredients((data as unknown as Product[]) ?? []);
   }, [clientId]);
 
   useEffect(() => { fetchProducts(); fetchCategories(); fetchIngredients(); }, [fetchProducts, fetchCategories, fetchIngredients]);
@@ -142,6 +145,7 @@ export default function GestorProdutos() {
       is_sellable: p.is_sellable, is_stock_tracked: p.is_stock_tracked, is_ingredient: p.is_ingredient,
       stock_unit: p.stock_unit ?? "", base_unit: p.base_unit ?? "",
       base_per_stock_unit: p.base_per_stock_unit != null ? String(p.base_per_stock_unit) : "",
+      image_path: p.image_path ?? null, image_source: p.image_source ?? null,
     });
     setSheetOpen(true);
   };
@@ -476,6 +480,17 @@ export default function GestorProdutos() {
             </Select>
           </div>
         )}
+
+        {/* Product Image */}
+        <ProductImageSection
+          productId={editing?.id ?? null}
+          productName={form.name}
+          currentImagePath={form.image_path}
+          imageSource={form.image_source}
+          onImageUpdated={(imagePath, imageSource) =>
+            setForm((prev) => ({ ...prev, image_path: imagePath, image_source: imageSource }))
+          }
+        />
       </ModalForm>
 
       {/* Recipe ingredient modal */}
