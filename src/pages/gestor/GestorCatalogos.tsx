@@ -305,6 +305,9 @@ export default function GestorCatalogos() {
       className: "w-32 text-right",
       render: (r) => (
         <div className="flex gap-1 justify-end">
+          <Button size="sm" variant="ghost" onClick={() => openItems(r)} title={t("ctlg_items")}>
+            <Plus className="h-4 w-4" />
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t("ctlg_edit")}>
             <BookOpen className="h-4 w-4" />
           </Button>
