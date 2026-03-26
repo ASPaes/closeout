@@ -61,6 +61,9 @@ export default function GestorCatalogos() {
   const [addItemType, setAddItemType] = useState<"product" | "combo">("product");
   const [addItemId, setAddItemId] = useState("");
 
+  // Items shown inside the edit modal (read-only list)
+  const [editItems, setEditItems] = useState<CatalogItem[]>([]);
+
   // Duplicate modal
   const [dupOpen, setDupOpen] = useState(false);
   const [dupName, setDupName] = useState("");
