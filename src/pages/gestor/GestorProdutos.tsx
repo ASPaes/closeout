@@ -480,6 +480,17 @@ export default function GestorProdutos() {
             </Select>
           </div>
         )}
+
+        {/* Product Image */}
+        <ProductImageSection
+          productId={editing?.id ?? null}
+          productName={form.name}
+          currentImagePath={form.image_path}
+          imageSource={form.image_source}
+          onImageUpdated={(imagePath, imageSource) =>
+            setForm((prev) => ({ ...prev, image_path: imagePath, image_source: imageSource }))
+          }
+        />
       </ModalForm>
 
       {/* Recipe ingredient modal */}
