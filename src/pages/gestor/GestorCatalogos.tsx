@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -60,6 +61,9 @@ export default function GestorCatalogos() {
   const [combos, setCombos] = useState<{ id: string; name: string }[]>([]);
   const [addItemType, setAddItemType] = useState<"product" | "combo">("product");
   const [addItemId, setAddItemId] = useState("");
+
+  // Items shown inside the edit modal (read-only list)
+  const [editItems, setEditItems] = useState<CatalogItem[]>([]);
 
   // Duplicate modal
   const [dupOpen, setDupOpen] = useState(false);
@@ -109,12 +113,32 @@ export default function GestorCatalogos() {
     setModalOpen(true);
   };
 
-  const openEdit = (cat: Catalog) => {
+  const openEdit = async (cat: Catalog) => {
     setEditingId(cat.id);
     setCatName(cat.name);
     setCatDesc(cat.description ?? "");
     setCatActive(cat.is_active);
+    setEditItems([]);
     setModalOpen(true);
+
+    // Load items for this catalog
+    const [itemsRes, prodsRes, combosRes] = await Promise.all([
+      supabase.from("catalog_items").select("id, item_type, product_id, combo_id, is_active").eq("catalog_id", cat.id),
+      supabase.from("products").select("id, name").eq("client_id", clientId!).eq("is_active", true).order("name"),
+      supabase.from("combos").select("id, name").eq("client_id", clientId!).eq("is_active", true).order("name"),
+    ]);
+
+    const prods = prodsRes.data ?? [];
+    const cmbs = combosRes.data ?? [];
+    const prodMap = new Map(prods.map((p) => [p.id, p.name]));
+    const comboMap = new Map(cmbs.map((c) => [c.id, c.name]));
+
+    setEditItems((itemsRes.data ?? []).map((i) => ({
+      ...i,
+      name: i.item_type === "product"
+        ? prodMap.get(i.product_id ?? "") ?? "—"
+        : comboMap.get(i.combo_id ?? "") ?? "—",
+    })));
   };
 
   const handleSaveCatalog = async (e: React.FormEvent) => {
@@ -363,6 +387,28 @@ export default function GestorCatalogos() {
             <Label className="cursor-pointer">{t("active")}</Label>
             <Switch checked={catActive} onCheckedChange={setCatActive} />
           </div>
+
+          {/* Items list (edit mode only) */}
+          {editingId && (
+            <div className="space-y-2">
+              <Separator />
+              <Label className="text-sm font-semibold">{t("ctlg_items")} ({editItems.length})</Label>
+              {editItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-3">{t("ctlg_no_items")}</p>
+              ) : (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {editItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
+                      {item.item_type === "product" ? <Package className="h-4 w-4 text-muted-foreground" /> : <Layers className="h-4 w-4 text-muted-foreground" />}
+                      <span className="text-sm">{item.name}</span>
+                      <Badge variant="outline" className="text-[10px] ml-auto">{item.item_type === "product" ? t("camp_type_product") : t("camp_type_combo")}</Badge>
+                      {!item.is_active && <Badge variant="secondary" className="text-[10px]">{t("inactive")}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </ModalForm>
 
