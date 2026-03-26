@@ -112,12 +112,32 @@ export default function GestorCatalogos() {
     setModalOpen(true);
   };
 
-  const openEdit = (cat: Catalog) => {
+  const openEdit = async (cat: Catalog) => {
     setEditingId(cat.id);
     setCatName(cat.name);
     setCatDesc(cat.description ?? "");
     setCatActive(cat.is_active);
+    setEditItems([]);
     setModalOpen(true);
+
+    // Load items for this catalog
+    const [itemsRes, prodsRes, combosRes] = await Promise.all([
+      supabase.from("catalog_items").select("id, item_type, product_id, combo_id, is_active").eq("catalog_id", cat.id),
+      supabase.from("products").select("id, name").eq("client_id", clientId!).eq("is_active", true).order("name"),
+      supabase.from("combos").select("id, name").eq("client_id", clientId!).eq("is_active", true).order("name"),
+    ]);
+
+    const prods = prodsRes.data ?? [];
+    const cmbs = combosRes.data ?? [];
+    const prodMap = new Map(prods.map((p) => [p.id, p.name]));
+    const comboMap = new Map(cmbs.map((c) => [c.id, c.name]));
+
+    setEditItems((itemsRes.data ?? []).map((i) => ({
+      ...i,
+      name: i.item_type === "product"
+        ? prodMap.get(i.product_id ?? "") ?? "—"
+        : comboMap.get(i.combo_id ?? "") ?? "—",
+    })));
   };
 
   const handleSaveCatalog = async (e: React.FormEvent) => {
