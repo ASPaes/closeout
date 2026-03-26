@@ -623,6 +623,31 @@ const enUS: Record<TranslationKey, string> = {
   close: "Close",
   search: "Search",
   no_results: "No results found",
+
+  // Caixa module
+  caixa_panel: "Cash Register Panel",
+  caixa_dashboard: "Dashboard",
+  caixa_quick_sale: "Quick Sale",
+  caixa_movements: "Movements",
+  caixa_returns: "Returns",
+  caixa_exchanges: "Exchanges",
+  caixa_closing: "Closing",
+  caixa_select_event: "Select event",
+  caixa_search_events: "Search events...",
+  caixa_no_events: "No events found",
+  caixa_status_open: "Register Open",
+  caixa_status_closed: "Register Closed",
+  caixa_no_event_selected: "No event selected",
+  caixa_no_event_desc: "Select an event from the top menu to start operating the register.",
+  caixa_no_register: "Register not open",
+  caixa_no_register_desc: "You need to open the register before performing operations.",
+  caixa_open_register: "Open Register",
+  caixa_dashboard_placeholder: "Cash register overview will be displayed here.",
+  caixa_sale_placeholder: "Quick sale screen will be implemented here.",
+  caixa_movements_placeholder: "Cash movements will be listed here.",
+  caixa_returns_placeholder: "Returns will be managed here.",
+  caixa_exchanges_placeholder: "Exchanges will be managed here.",
+  caixa_closing_placeholder: "Register closing will be performed here.",
 };
 
 export default enUS;
