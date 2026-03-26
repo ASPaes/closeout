@@ -1267,6 +1267,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_product_name: { Args: { input: string }; Returns: string }
       update_stock_entry:
         | {
             Args: {
