@@ -611,7 +611,7 @@ export default function GestorCampanhas() {
                     type="number"
                     min="0"
                     max="100"
-                    step="1"
+                    step="0.01"
                     placeholder="0%"
                     value={item.discount_percent}
                     onChange={(e) => updateItem(index, { discount_percent: e.target.value })}
