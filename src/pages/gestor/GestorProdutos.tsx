@@ -39,6 +39,7 @@ type Product = {
   name: string; description: string | null; price: number; is_active: boolean;
   is_sellable: boolean; is_stock_tracked: boolean; is_ingredient: boolean;
   stock_unit: string | null; base_unit: string | null; base_per_stock_unit: number | null;
+  image_path: string | null; image_source: string | null;
 };
 type Recipe = {
   id: string; client_id: string; product_id: string;
