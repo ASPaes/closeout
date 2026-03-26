@@ -322,10 +322,41 @@ export default function GestorCampanhas() {
     }
   };
 
+  const getItemOriginalPrice = (item: CampaignItem): number | null => {
+    if (item.item_type === "product" && item.product_id) {
+      return products.find((p) => p.id === item.product_id)?.price ?? null;
+    }
+    if (item.item_type === "combo" && item.combo_id) {
+      return combos.find((c) => c.id === item.combo_id)?.price ?? null;
+    }
+    return null;
+  };
+
   const updateItem = (index: number, updates: Partial<CampaignItem>) => {
     setItems(items.map((item, i) => {
       if (i !== index) return item;
       const updated = { ...item, ...updates };
+
+      // Auto-calculate promo_price <-> discount_percent
+      const originalPrice = getItemOriginalPrice(updated);
+      if (originalPrice && originalPrice > 0) {
+        if ("discount_percent" in updates && updates.discount_percent !== undefined) {
+          const dp = parseFloat(updates.discount_percent);
+          if (!isNaN(dp) && dp >= 0 && dp <= 100) {
+            updated.promo_price = (originalPrice * (1 - dp / 100)).toFixed(2);
+          } else if (updates.discount_percent === "") {
+            updated.promo_price = "";
+          }
+        } else if ("promo_price" in updates && updates.promo_price !== undefined) {
+          const pp = parseFloat(updates.promo_price);
+          if (!isNaN(pp) && pp >= 0) {
+            updated.discount_percent = ((1 - pp / originalPrice) * 100).toFixed(1).replace(/\.0$/, "");
+          } else if (updates.promo_price === "") {
+            updated.discount_percent = "";
+          }
+        }
+      }
+
       // Reset target when type changes
       if (updates.item_type && updates.item_type !== item.item_type) {
         if (updates.item_type === "product") {
@@ -594,25 +625,39 @@ export default function GestorCampanhas() {
 
               {/* Discount preview + validation */}
               <div className="flex items-center gap-2 flex-wrap">
-                {item.promo_price && parseFloat(item.promo_price) > 0 && (
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {t("camp_preview_promo")}
-                  </Badge>
-                )}
-                {item.discount_percent && parseFloat(item.discount_percent) >= 1 && parseFloat(item.discount_percent) <= 100 && (
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    {item.discount_percent}% off
-                  </Badge>
-                )}
-                {item.promo_price && parseFloat(item.promo_price) <= 0 && (
-                  <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
-                )}
-                {item.discount_percent && (parseFloat(item.discount_percent) < 1 || parseFloat(item.discount_percent) > 100) && (
-                  <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
-                )}
-                {!item.promo_price && !item.discount_percent && (
-                  <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
-                )}
+                {(() => {
+                  const origPrice = getItemOriginalPrice(item);
+                  const pp = item.promo_price ? parseFloat(item.promo_price) : null;
+                  const dp = item.discount_percent ? parseFloat(item.discount_percent) : null;
+                  return (
+                    <>
+                      {origPrice != null && origPrice > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Original: {formatPrice(origPrice)}
+                        </span>
+                      )}
+                      {pp != null && pp > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          {t("camp_preview_promo")}: {formatPrice(pp)}
+                        </Badge>
+                      )}
+                      {dp != null && dp >= 1 && dp <= 100 && (
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                          {item.discount_percent}% off
+                        </Badge>
+                      )}
+                      {pp != null && pp <= 0 && (
+                        <p className="text-xs text-destructive">{t("camp_validation_promo_positive")}</p>
+                      )}
+                      {dp != null && (dp < 1 || dp > 100) && (
+                        <p className="text-xs text-destructive">{t("camp_validation_discount_range")}</p>
+                      )}
+                      {!item.promo_price && !item.discount_percent && (
+                        <p className="text-xs text-destructive">{t("camp_validation_item_pricing")}</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}
