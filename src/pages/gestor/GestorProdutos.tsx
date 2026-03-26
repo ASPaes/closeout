@@ -21,6 +21,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EmptyState } from "@/components/EmptyState";
+import { ProductImageSection } from "@/components/ProductImageSection";
 import {
   AlertDialog,
   AlertDialogAction,
