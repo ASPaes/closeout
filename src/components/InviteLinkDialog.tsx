@@ -40,6 +40,7 @@ const CLIENT_MANAGER_ALLOWED_ROLES = [
 
 export default function InviteLinkDialog({ open, onOpenChange, clients, venues, events, clientManagerMode }: Props) {
   const { t } = useTranslation();
+  const [guestName, setGuestName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>(APP_ROLE.STAFF);
   const [clientId, setClientId] = useState("");
