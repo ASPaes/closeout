@@ -606,6 +606,9 @@ const ptBR = {
   img_save_product_first: "Salve o produto antes de adicionar imagem",
   img_library_reused: "Imagem reaproveitada da biblioteca",
   img_search_results: "Resultados da busca",
+  img_library_found: "Imagem encontrada na biblioteca",
+  img_accept_library: "Gostei da imagem",
+  img_search_another: "Procurar outra",
 
   // Shared UI
   cancel: "Cancelar",

@@ -608,6 +608,9 @@ const enUS: Record<TranslationKey, string> = {
   img_save_product_first: "Save the product before adding an image",
   img_library_reused: "Image reused from library",
   img_search_results: "Search results",
+  img_library_found: "Image found in library",
+  img_accept_library: "I like this image",
+  img_search_another: "Search another",
 
   // Shared UI
   cancel: "Cancel",
