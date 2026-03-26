@@ -494,7 +494,7 @@ export default function CaixaDevolucoes() {
       <PageHeader
         title={t("caixa_returns")}
         icon={RotateCcw}
-        action={
+        actions={
           <Button onClick={() => { resetModal(); setModalOpen(true); }} className="glow-hover">
             <Plus className="mr-2 h-4 w-4" />
             {t("ret_new")}
