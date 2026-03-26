@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/i18n/language-provider";
 import { AdminLayout } from "@/components/AdminLayout";
 import { GestorLayout } from "@/components/GestorLayout";
+import { CaixaLayout } from "@/components/CaixaLayout";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
