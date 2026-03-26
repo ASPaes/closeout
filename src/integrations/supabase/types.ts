@@ -214,6 +214,235 @@ export type Database = {
           },
         ]
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          cash_register_id: string
+          client_id: string
+          created_at: string
+          destination: string
+          direction: string
+          event_id: string
+          id: string
+          movement_type: string
+          notes: string | null
+          operator_id: string
+        }
+        Insert: {
+          amount: number
+          cash_register_id: string
+          client_id: string
+          created_at?: string
+          destination: string
+          direction: string
+          event_id: string
+          id?: string
+          movement_type: string
+          notes?: string | null
+          operator_id: string
+        }
+        Update: {
+          amount?: number
+          cash_register_id?: string
+          client_id?: string
+          created_at?: string
+          destination?: string
+          direction?: string
+          event_id?: string
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          operator_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_order_counters: {
+        Row: {
+          event_id: string
+          next_number: number
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          next_number?: number
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          next_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_order_counters_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_orders: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cash_register_id: string
+          client_id: string
+          created_at: string
+          discount: number
+          event_id: string
+          id: string
+          items: Json
+          operator_id: string
+          order_number: number
+          payment_method: string
+          status: string
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cash_register_id: string
+          client_id: string
+          created_at?: string
+          discount?: number
+          event_id: string
+          id?: string
+          items: Json
+          operator_id: string
+          order_number: number
+          payment_method: string
+          status?: string
+          subtotal: number
+          total: number
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cash_register_id?: string
+          client_id?: string
+          created_at?: string
+          discount?: number
+          event_id?: string
+          id?: string
+          items?: Json
+          operator_id?: string
+          order_number?: number
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_orders_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_registers: {
+        Row: {
+          client_id: string
+          closed_at: string | null
+          closing_balance: number | null
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          opened_at: string
+          opening_balance: number
+          operator_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_balance?: number
+          operator_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_balance?: number
+          operator_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_registers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_registers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalog_items: {
         Row: {
           catalog_id: string
@@ -731,6 +960,77 @@ export type Database = {
           },
         ]
       }
+      exchanges: {
+        Row: {
+          adjustment_direction: string
+          cash_order_id: string
+          cash_register_id: string
+          client_id: string
+          created_at: string
+          event_id: string
+          id: string
+          new_item: Json
+          operator_id: string
+          original_item: Json
+          price_difference: number
+        }
+        Insert: {
+          adjustment_direction: string
+          cash_order_id: string
+          cash_register_id: string
+          client_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          new_item: Json
+          operator_id: string
+          original_item: Json
+          price_difference: number
+        }
+        Update: {
+          adjustment_direction?: string
+          cash_order_id?: string
+          cash_register_id?: string
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          new_item?: Json
+          operator_id?: string
+          original_item?: Json
+          price_difference?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchanges_cash_order_id_fkey"
+            columns: ["cash_order_id"]
+            isOneToOne: false
+            referencedRelation: "cash_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchanges_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchanges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchanges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -962,6 +1262,80 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      returns: {
+        Row: {
+          authorized_by: string
+          cash_order_id: string
+          cash_register_id: string
+          client_id: string
+          created_at: string
+          event_id: string
+          id: string
+          items: Json
+          occurrence_type: string
+          operator_id: string
+          reason: string
+          refund_amount: number
+        }
+        Insert: {
+          authorized_by: string
+          cash_order_id: string
+          cash_register_id: string
+          client_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          items: Json
+          occurrence_type: string
+          operator_id: string
+          reason: string
+          refund_amount: number
+        }
+        Update: {
+          authorized_by?: string
+          cash_order_id?: string
+          cash_register_id?: string
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          items?: Json
+          occurrence_type?: string
+          operator_id?: string
+          reason?: string
+          refund_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "returns_cash_order_id_fkey"
+            columns: ["cash_order_id"]
+            isOneToOne: false
+            referencedRelation: "cash_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "returns_cash_register_id_fkey"
+            columns: ["cash_register_id"]
+            isOneToOne: false
+            referencedRelation: "cash_registers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "returns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "returns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_balances: {
         Row: {
@@ -1258,6 +1632,10 @@ export type Database = {
     }
     Functions: {
       bootstrap_super_admin: { Args: never; Returns: boolean }
+      close_cash_register: {
+        Args: { p_closing_balance: number; p_register_id: string }
+        Returns: Json
+      }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_clients_for_user_events: {
         Args: { _user_id: string }
@@ -1287,13 +1665,22 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+      has_role:
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { p_role: string }; Returns: boolean }
+      has_role_in_client: {
+        Args: { p_client_id: string; p_role: string }
         Returns: boolean
       }
+      is_cashier: { Args: { p_client_id: string }; Returns: boolean }
+      is_client_manager: { Args: { p_client_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       log_audit: {
         Args: {
           p_action: string
@@ -1306,6 +1693,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
       normalize_product_name: { Args: { input: string }; Returns: string }
       update_stock_entry:
         | {
