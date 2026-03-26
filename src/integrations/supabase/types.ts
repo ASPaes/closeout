@@ -853,6 +853,7 @@ export type Database = {
         Row: {
           base_per_stock_unit: number | null
           base_unit: string | null
+          brand: string | null
           category_id: string | null
           client_id: string
           created_at: string
@@ -872,6 +873,7 @@ export type Database = {
         Insert: {
           base_per_stock_unit?: number | null
           base_unit?: string | null
+          brand?: string | null
           category_id?: string | null
           client_id: string
           created_at?: string
@@ -891,6 +893,7 @@ export type Database = {
         Update: {
           base_per_stock_unit?: number | null
           base_unit?: string | null
+          brand?: string | null
           category_id?: string | null
           client_id?: string
           created_at?: string
