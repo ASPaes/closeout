@@ -386,6 +386,28 @@ export default function GestorCatalogos() {
             <Label className="cursor-pointer">{t("active")}</Label>
             <Switch checked={catActive} onCheckedChange={setCatActive} />
           </div>
+
+          {/* Items list (edit mode only) */}
+          {editingId && (
+            <div className="space-y-2">
+              <Separator />
+              <Label className="text-sm font-semibold">{t("ctlg_items")} ({editItems.length})</Label>
+              {editItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-3">{t("ctlg_no_items")}</p>
+              ) : (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {editItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 rounded-md border border-border/40 px-3 py-2">
+                      {item.item_type === "product" ? <Package className="h-4 w-4 text-muted-foreground" /> : <Layers className="h-4 w-4 text-muted-foreground" />}
+                      <span className="text-sm">{item.name}</span>
+                      <Badge variant="outline" className="text-[10px] ml-auto">{item.item_type === "product" ? t("camp_type_product") : t("camp_type_combo")}</Badge>
+                      {!item.is_active && <Badge variant="secondary" className="text-[10px]">{t("inactive")}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </ModalForm>
 
