@@ -66,6 +66,7 @@ const emptyForm = {
   is_sellable: true, is_stock_tracked: false, is_ingredient: false,
   stock_unit: "", base_unit: "", base_per_stock_unit: "",
   image_path: "" as string | null, image_source: "" as string | null,
+  brand: "",
 };
 
 export default function GestorProdutos() {
