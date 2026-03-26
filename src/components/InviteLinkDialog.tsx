@@ -117,6 +117,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
   const handleClose = (v: boolean) => {
     if (!v) {
       setGeneratedUrl("");
+      setGuestName("");
       setEmail("");
       setRole(APP_ROLE.STAFF);
       setClientId("");
