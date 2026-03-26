@@ -97,7 +97,7 @@ export default function GestorProdutos() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     let q = supabase.from("products")
-      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit")
+      .select("id, client_id, category_id, name, description, price, is_active, is_sellable, is_stock_tracked, is_ingredient, stock_unit, base_unit, base_per_stock_unit, image_path, image_source")
       .order("name");
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
