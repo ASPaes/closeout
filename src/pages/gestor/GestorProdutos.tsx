@@ -40,6 +40,7 @@ type Product = {
   is_sellable: boolean; is_stock_tracked: boolean; is_ingredient: boolean;
   stock_unit: string | null; base_unit: string | null; base_per_stock_unit: number | null;
   image_path: string | null; image_source: string | null;
+  brand: string | null;
 };
 type Recipe = {
   id: string; client_id: string; product_id: string;
