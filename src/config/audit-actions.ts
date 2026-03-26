@@ -79,6 +79,11 @@ export const AUDIT_ACTION = {
   CASH_REGISTER_OPENED: 'cash_register.opened',
   CASH_REGISTER_CLOSED: 'cash_register.closed',
   CASH_SANGRIA: 'cash_register.sangria',
+  CASH_ORDER_CREATED: 'cash_order.created',
+  CASH_ORDER_CANCELLED: 'cash_order.cancelled',
+  CASH_MOVEMENT_CREATED: 'cash_movement.created',
+  CASH_RETURN_CREATED: 'cash_return.created',
+  CASH_EXCHANGE_CREATED: 'cash_exchange.created',
 
   // Waiter
   WAITER_SESSION_STARTED: 'waiter_session.started',
