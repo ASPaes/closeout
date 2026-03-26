@@ -700,6 +700,33 @@ const enUS: Record<TranslationKey, string> = {
   pos_max_order_exceeded: "Max order value exceeded (max: %s)",
   pos_no_catalog: "No catalog linked to this event",
   pos_no_catalog_desc: "Link a catalog to the event in the Manager panel to start selling.",
+
+  // Movements
+  mov_new: "New Movement",
+  mov_success: "Movement recorded successfully",
+  mov_error: "Error recording movement",
+  mov_empty: "No movements recorded",
+  mov_empty_hint: "Click 'New Movement' to record a deposit or withdrawal.",
+  mov_total_in: "Total Deposits",
+  mov_total_out: "Total Withdrawals",
+  mov_balance: "Movements Balance",
+  mov_col_datetime: "Date/Time",
+  mov_col_type: "Type",
+  mov_col_direction: "Direction",
+  mov_col_amount: "Amount",
+  mov_col_destination: "Destination",
+  mov_col_notes: "Notes",
+  mov_direction_in: "Deposit",
+  mov_direction_out: "Withdrawal",
+  mov_type_sangria: "Withdrawal",
+  mov_type_suprimento: "Supply",
+  mov_type_pagamento: "Payment",
+  mov_field_type: "Movement type",
+  mov_field_direction: "Direction",
+  mov_field_amount: "Amount",
+  mov_field_destination: "Destination",
+  mov_field_destination_placeholder: "Who/where the money goes",
+  mov_field_notes_placeholder: "Notes about the movement...",
 };
 
 export default enUS;

@@ -698,6 +698,33 @@ const ptBR = {
   pos_max_order_exceeded: "Valor máximo por pedido excedido (máx: %s)",
   pos_no_catalog: "Nenhum catálogo vinculado a este evento",
   pos_no_catalog_desc: "Vincule um catálogo ao evento no painel do Gestor para começar a vender.",
+
+  // Movimentações
+  mov_new: "Nova Movimentação",
+  mov_success: "Movimentação registrada com sucesso",
+  mov_error: "Erro ao registrar movimentação",
+  mov_empty: "Nenhuma movimentação registrada",
+  mov_empty_hint: "Clique em 'Nova Movimentação' para registrar uma entrada ou saída.",
+  mov_total_in: "Total Entradas",
+  mov_total_out: "Total Saídas",
+  mov_balance: "Saldo Movimentações",
+  mov_col_datetime: "Data/Hora",
+  mov_col_type: "Tipo",
+  mov_col_direction: "Direção",
+  mov_col_amount: "Valor",
+  mov_col_destination: "Destino",
+  mov_col_notes: "Observações",
+  mov_direction_in: "Entrada",
+  mov_direction_out: "Saída",
+  mov_type_sangria: "Sangria",
+  mov_type_suprimento: "Suprimento",
+  mov_type_pagamento: "Pagamento",
+  mov_field_type: "Tipo de movimentação",
+  mov_field_direction: "Direção",
+  mov_field_amount: "Valor",
+  mov_field_destination: "Destino",
+  mov_field_destination_placeholder: "Para quem/onde vai o dinheiro",
+  mov_field_notes_placeholder: "Observações sobre a movimentação...",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

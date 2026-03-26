@@ -220,7 +220,7 @@ export default function CaixaMovimentacoes() {
     <CaixaEventGuard requireRegister>
       <PageHeader
         title={t("caixa_movements")}
-        icon={<ArrowUpDown className="h-6 w-6 text-primary" />}
+        icon={ArrowUpDown}
         actions={
           <Button onClick={() => setModalOpen(true)} className="glow-hover">
             <Plus className="h-4 w-4 mr-2" />
