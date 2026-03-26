@@ -698,6 +698,7 @@ const ptBR = {
   pos_max_order_exceeded: "Valor máximo por pedido excedido (máx: %s)",
   pos_no_catalog: "Nenhum catálogo vinculado a este evento",
   pos_no_catalog_desc: "Vincule um catálogo ao evento no painel do Gestor para começar a vender.",
+} as const;
 
 export type TranslationKey = keyof typeof ptBR;
 export default ptBR;
