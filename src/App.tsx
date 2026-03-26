@@ -32,6 +32,12 @@ import GestorCatalogos from "@/pages/gestor/GestorCatalogos";
 import GestorLocais from "@/pages/gestor/GestorLocais";
 import GestorEquipe from "@/pages/gestor/GestorEquipe";
 import GestorUsuarios from "@/pages/gestor/GestorUsuarios";
+import CaixaDashboard from "@/pages/caixa/CaixaDashboard";
+import CaixaVenda from "@/pages/caixa/CaixaVenda";
+import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
+import CaixaDevolucoes from "@/pages/caixa/CaixaDevolucoes";
+import CaixaTrocas from "@/pages/caixa/CaixaTrocas";
+import CaixaFechamento from "@/pages/caixa/CaixaFechamento";
 
 const queryClient = new QueryClient();
 
