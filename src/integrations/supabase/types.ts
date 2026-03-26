@@ -828,6 +828,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_path: string | null
+          image_source: string | null
           is_active: boolean
           is_ingredient: boolean
           is_sellable: boolean
@@ -845,6 +847,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           is_ingredient?: boolean
           is_sellable?: boolean
@@ -862,6 +866,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           is_ingredient?: boolean
           is_sellable?: boolean
