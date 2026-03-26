@@ -64,6 +64,7 @@ const emptyForm = {
   name: "", description: "", price: "", category_id: "",
   is_sellable: true, is_stock_tracked: false, is_ingredient: false,
   stock_unit: "", base_unit: "", base_per_stock_unit: "",
+  image_path: "" as string | null, image_source: "" as string | null,
 };
 
 export default function GestorProdutos() {
