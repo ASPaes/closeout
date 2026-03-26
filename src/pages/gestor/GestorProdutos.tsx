@@ -179,6 +179,8 @@ export default function GestorProdutos() {
         stock_unit: form.is_stock_tracked ? form.stock_unit : null,
         base_unit: form.is_stock_tracked || form.is_ingredient ? (form.base_unit || null) : null,
         base_per_stock_unit: form.is_stock_tracked ? parseFloat(form.base_per_stock_unit) : null,
+        image_path: form.image_path || null,
+        image_source: form.image_source || null,
       };
       if (editing) {
         const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
