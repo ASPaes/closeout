@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -6,11 +6,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, RotateCcw } from "lucide-react";
+import { Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +18,7 @@ import { format } from "date-fns";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
+import type { DataTableColumn } from "@/components/DataTable";
 
 type CashRegisterRow = {
   id: string;
@@ -67,7 +67,6 @@ export default function GestorCaixas() {
   const [closingNotes, setClosingNotes] = useState("");
   const [closing, setClosing] = useState(false);
 
-  // Fetch events for filter
   useEffect(() => {
     if (!effectiveClientId) return;
     supabase
@@ -78,7 +77,6 @@ export default function GestorCaixas() {
       .then(({ data }) => setEvents(data ?? []));
   }, [effectiveClientId]);
 
-  // Fetch cash registers
   const fetchRegisters = async () => {
     if (!effectiveClientId) return;
     setLoading(true);
@@ -96,55 +94,32 @@ export default function GestorCaixas() {
     const { data: regs } = await query;
     if (!regs) { setLoading(false); return; }
 
-    // Fetch operator names
     const operatorIds = [...new Set(regs.map(r => r.operator_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, name")
-      .in("id", operatorIds);
-    const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p.name]));
-
-    // Fetch event names
     const eventIds = [...new Set(regs.map(r => r.event_id))];
-    const { data: evts } = await supabase
-      .from("events")
-      .select("id, name")
-      .in("id", eventIds);
-    const eventMap = Object.fromEntries((evts ?? []).map(e => [e.id, e.name]));
-
-    // Fetch sales totals per register
     const regIds = regs.map(r => r.id);
-    const { data: orders } = await supabase
-      .from("cash_orders")
-      .select("cash_register_id, total, payment_method, status")
-      .in("cash_register_id", regIds)
-      .eq("status", "completed");
 
-    const { data: movements } = await supabase
-      .from("cash_movements")
-      .select("cash_register_id, amount, direction")
-      .in("cash_register_id", regIds);
+    const [profilesRes, evtsRes, ordersRes, movRes, refundsRes] = await Promise.all([
+      operatorIds.length ? supabase.from("profiles").select("id, name").in("id", operatorIds) : { data: [] },
+      eventIds.length ? supabase.from("events").select("id, name").in("id", eventIds) : { data: [] },
+      regIds.length ? supabase.from("cash_orders").select("cash_register_id, total, status").in("cash_register_id", regIds).eq("status", "completed") : { data: [] },
+      regIds.length ? supabase.from("cash_movements").select("cash_register_id, amount, direction").in("cash_register_id", regIds) : { data: [] },
+      regIds.length ? supabase.from("returns").select("cash_register_id, refund_amount").in("cash_register_id", regIds) : { data: [] },
+    ]);
 
-    const { data: refunds } = await supabase
-      .from("returns")
-      .select("cash_register_id, refund_amount")
-      .in("cash_register_id", regIds);
+    const profileMap = Object.fromEntries((profilesRes.data ?? []).map(p => [p.id, p.name]));
+    const eventMap = Object.fromEntries((evtsRes.data ?? []).map(e => [e.id, e.name]));
 
     const salesMap: Record<string, number> = {};
     const movInMap: Record<string, number> = {};
     const movOutMap: Record<string, number> = {};
     const refundMap: Record<string, number> = {};
 
-    (orders ?? []).forEach(o => {
-      salesMap[o.cash_register_id] = (salesMap[o.cash_register_id] || 0) + Number(o.total);
-    });
-    (movements ?? []).forEach(m => {
+    (ordersRes.data ?? []).forEach(o => { salesMap[o.cash_register_id] = (salesMap[o.cash_register_id] || 0) + Number(o.total); });
+    (movRes.data ?? []).forEach(m => {
       if (m.direction === "in") movInMap[m.cash_register_id] = (movInMap[m.cash_register_id] || 0) + Number(m.amount);
       else movOutMap[m.cash_register_id] = (movOutMap[m.cash_register_id] || 0) + Number(m.amount);
     });
-    (refunds ?? []).forEach(r => {
-      refundMap[r.cash_register_id] = (refundMap[r.cash_register_id] || 0) + Number(r.refund_amount);
-    });
+    (refundsRes.data ?? []).forEach(r => { refundMap[r.cash_register_id] = (refundMap[r.cash_register_id] || 0) + Number(r.refund_amount); });
 
     setRegisters(regs.map(r => ({
       ...r,
@@ -160,7 +135,6 @@ export default function GestorCaixas() {
 
   useEffect(() => { fetchRegisters(); }, [effectiveClientId, filterEvent, filterStatus]);
 
-  // Fetch returns
   useEffect(() => {
     if (!effectiveClientId) return;
     setLoadingReturns(true);
@@ -174,21 +148,16 @@ export default function GestorCaixas() {
 
       if (!rets) { setLoadingReturns(false); return; }
 
-      // Get order numbers
       const orderIds = [...new Set(rets.map(r => r.cash_order_id))];
-      const { data: orderData } = await supabase
-        .from("cash_orders")
-        .select("id, order_number")
-        .in("id", orderIds);
-      const orderMap = Object.fromEntries((orderData ?? []).map(o => [o.id, o.order_number]));
-
-      // Get profile names
       const userIds = [...new Set([...rets.map(r => r.authorized_by), ...rets.map(r => r.operator_id)])];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", userIds);
-      const pMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p.name]));
+
+      const [orderRes, profileRes] = await Promise.all([
+        orderIds.length ? supabase.from("cash_orders").select("id, order_number").in("id", orderIds) : { data: [] },
+        userIds.length ? supabase.from("profiles").select("id, name").in("id", userIds) : { data: [] },
+      ]);
+
+      const orderMap = Object.fromEntries((orderRes.data ?? []).map(o => [o.id, o.order_number]));
+      const pMap = Object.fromEntries((profileRes.data ?? []).map(p => [p.id, p.name]));
 
       setReturns(rets.map(r => ({
         id: r.id,
@@ -206,8 +175,11 @@ export default function GestorCaixas() {
   }, [effectiveClientId]);
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const currentBalance = (r: CashRegisterRow) =>
+    r.opening_balance + r.sales_total + r.movements_in - r.movements_out - r.refunds;
 
-  const handleCloseRegister = async () => {
+  const handleCloseRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!closeConfirm || !closingBalance) return;
     setClosing(true);
     try {
@@ -237,69 +209,6 @@ export default function GestorCaixas() {
     }
   };
 
-  const currentBalance = (r: CashRegisterRow) =>
-    r.opening_balance + r.sales_total + r.movements_in - r.movements_out - r.refunds;
-
-  const registerColumns = [
-    { header: t("gcx_col_operator"), accessorKey: "operator_name" as const },
-    { header: t("gcx_col_event"), accessorKey: "event_name" as const },
-    {
-      header: t("gcx_col_opened_at"),
-      accessorKey: "opened_at" as const,
-      cell: (row: CashRegisterRow) => format(new Date(row.opened_at), "dd/MM HH:mm"),
-    },
-    {
-      header: t("status"),
-      accessorKey: "status" as const,
-      cell: (row: CashRegisterRow) => (
-        <StatusBadge
-          status={row.status === "open" ? "active" : "completed"}
-          label={row.status === "open" ? t("caixa_open") : t("caixa_closed")}
-        />
-      ),
-    },
-    {
-      header: t("gcx_col_opening"),
-      accessorKey: "opening_balance" as const,
-      cell: (row: CashRegisterRow) => fmt(row.opening_balance),
-    },
-    {
-      header: t("gcx_col_sales"),
-      accessorKey: "sales_total" as const,
-      cell: (row: CashRegisterRow) => fmt(row.sales_total),
-    },
-    {
-      header: t("gcx_col_withdrawals"),
-      accessorKey: "movements_out" as const,
-      cell: (row: CashRegisterRow) => fmt(row.movements_out),
-    },
-    {
-      header: t("gcx_col_current"),
-      accessorKey: "id" as const,
-      cell: (row: CashRegisterRow) => (
-        <span className="font-semibold">{fmt(currentBalance(row))}</span>
-      ),
-    },
-    {
-      header: t("actions"),
-      accessorKey: "id" as const,
-      cell: (row: CashRegisterRow) => (
-        <div className="flex gap-2">
-          {row.status === "closed" && (
-            <Button size="sm" variant="outline" onClick={() => setDetailModal(row)}>
-              {t("details")}
-            </Button>
-          )}
-          {row.status === "open" && (
-            <Button size="sm" variant="destructive" onClick={() => setCloseConfirm(row)}>
-              {t("gcx_close_register")}
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
-
   const occLabels: Record<string, TranslationKey> = {
     defect: "ret_occ_defect",
     error: "ret_occ_error",
@@ -307,50 +216,77 @@ export default function GestorCaixas() {
     other: "ret_occ_other",
   };
 
-  const returnColumns = [
+  const registerColumns: DataTableColumn<CashRegisterRow>[] = [
+    { key: "operator_name", header: t("gcx_col_operator"), render: (r) => r.operator_name },
+    { key: "event_name", header: t("gcx_col_event"), render: (r) => r.event_name },
+    { key: "opened_at", header: t("gcx_col_opened_at"), render: (r) => format(new Date(r.opened_at), "dd/MM HH:mm") },
     {
-      header: t("timestamp"),
-      accessorKey: "created_at" as const,
-      cell: (row: ReturnRow) => format(new Date(row.created_at), "dd/MM HH:mm"),
+      key: "status", header: t("status"), render: (r) => (
+        <StatusBadge status={r.status === "open" ? "active" : "completed"} label={r.status === "open" ? t("caixa_status_open") : t("caixa_status_closed")} />
+      ),
     },
+    { key: "opening_balance", header: t("gcx_col_opening"), render: (r) => fmt(r.opening_balance) },
+    { key: "sales_total", header: t("gcx_col_sales"), render: (r) => fmt(r.sales_total) },
+    { key: "movements_out", header: t("gcx_col_withdrawals"), render: (r) => fmt(r.movements_out) },
+    { key: "current", header: t("gcx_col_current"), render: (r) => <span className="font-semibold">{fmt(currentBalance(r))}</span> },
     {
-      header: t("ret_col_order"),
-      accessorKey: "order_number" as const,
-      cell: (row: ReturnRow) => row.order_number ? `#${row.order_number}` : "—",
+      key: "actions", header: t("actions"), render: (r) => (
+        <div className="flex gap-2">
+          {r.status === "closed" && (
+            <Button size="sm" variant="outline" onClick={() => setDetailModal(r)}>{t("details")}</Button>
+          )}
+          {r.status === "open" && (
+            <Button size="sm" variant="destructive" onClick={() => setCloseConfirm(r)}>{t("gcx_close_register")}</Button>
+          )}
+        </div>
+      ),
     },
+  ];
+
+  const returnColumns: DataTableColumn<ReturnRow>[] = [
+    { key: "created_at", header: t("timestamp"), render: (r) => format(new Date(r.created_at), "dd/MM HH:mm") },
+    { key: "order_number", header: t("ret_col_order"), render: (r) => r.order_number ? `#${r.order_number}` : "—" },
     {
-      header: t("ret_col_items"),
-      accessorKey: "items" as const,
-      cell: (row: ReturnRow) => {
-        const items = Array.isArray(row.items) ? row.items : [];
+      key: "items", header: t("ret_col_items"), render: (r) => {
+        const items = Array.isArray(r.items) ? r.items : [];
         return items.map((i: any) => `${i.name} x${i.quantity}`).join(", ") || "—";
       },
     },
+    { key: "refund_amount", header: t("ret_col_value"), render: (r) => fmt(r.refund_amount) },
+    { key: "reason", header: t("ret_col_reason"), render: (r) => r.reason },
     {
-      header: t("ret_col_value"),
-      accessorKey: "refund_amount" as const,
-      cell: (row: ReturnRow) => fmt(row.refund_amount),
-    },
-    { header: t("ret_col_reason"), accessorKey: "reason" as const },
-    {
-      header: t("ret_col_occurrence"),
-      accessorKey: "occurrence_type" as const,
-      cell: (row: ReturnRow) => {
-        const key = occLabels[row.occurrence_type];
-        return key ? t(key) : row.occurrence_type;
+      key: "occurrence_type", header: t("ret_col_occurrence"), render: (r) => {
+        const key = occLabels[r.occurrence_type];
+        return key ? t(key) : r.occurrence_type;
       },
     },
-    { header: t("ret_col_authorized_by"), accessorKey: "authorized_by_name" as const },
-    { header: t("gcx_col_operator"), accessorKey: "operator_name" as const },
+    { key: "authorized_by", header: t("ret_col_authorized_by"), render: (r) => r.authorized_by_name },
+    { key: "operator", header: t("gcx_col_operator"), render: (r) => r.operator_name },
   ];
+
+  const filterControls = (
+    <div className="flex flex-wrap gap-3">
+      <Select value={filterEvent} onValueChange={setFilterEvent}>
+        <SelectTrigger className="w-48"><SelectValue placeholder={t("gcx_all_events")} /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t("gcx_all_events")}</SelectItem>
+          {events.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <SelectTrigger className="w-40"><SelectValue placeholder={t("gcx_all_status")} /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t("gcx_all_status")}</SelectItem>
+          <SelectItem value="open">{t("caixa_status_open")}</SelectItem>
+          <SelectItem value="closed">{t("caixa_status_closed")}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t("gcx_title")}
-        description={t("gcx_description")}
-        icon={Banknote}
-      />
+      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} />
 
       <Tabs defaultValue="registers">
         <TabsList>
@@ -359,33 +295,12 @@ export default function GestorCaixas() {
         </TabsList>
 
         <TabsContent value="registers" className="space-y-4">
-          <div className="flex flex-wrap gap-3">
-            <Select value={filterEvent} onValueChange={setFilterEvent}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder={t("gcx_all_events")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("gcx_all_events")}</SelectItem>
-                {events.map(e => (
-                  <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder={t("gcx_all_status")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("gcx_all_status")}</SelectItem>
-                <SelectItem value="open">{t("caixa_open")}</SelectItem>
-                <SelectItem value="closed">{t("caixa_closed")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
+          {filterControls}
           <DataTable
             columns={registerColumns}
             data={registers}
+            keyExtractor={(r) => r.id}
+            loading={loading}
             emptyMessage={t("gcx_empty")}
           />
         </TabsContent>
@@ -394,6 +309,8 @@ export default function GestorCaixas() {
           <DataTable
             columns={returnColumns}
             data={returns}
+            keyExtractor={(r) => r.id}
+            loading={loadingReturns}
             emptyMessage={t("gcx_returns_empty")}
           />
         </TabsContent>
@@ -405,6 +322,8 @@ export default function GestorCaixas() {
           open={!!detailModal}
           onOpenChange={() => setDetailModal(null)}
           title={t("gcx_detail_title")}
+          onSubmit={(e) => { e.preventDefault(); setDetailModal(null); }}
+          submitLabel={t("close")}
         >
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
@@ -414,7 +333,7 @@ export default function GestorCaixas() {
               <div>{detailModal.event_name}</div>
               <div className="text-muted-foreground">{t("gcx_col_opened_at")}</div>
               <div>{format(new Date(detailModal.opened_at), "dd/MM/yyyy HH:mm")}</div>
-              <div className="text-muted-foreground">{t("caixa_closed_at")}</div>
+              <div className="text-muted-foreground">{t("gcx_closed_at")}</div>
               <div>{detailModal.closed_at ? format(new Date(detailModal.closed_at), "dd/MM/yyyy HH:mm") : "—"}</div>
             </div>
             <hr className="border-border" />
@@ -423,20 +342,20 @@ export default function GestorCaixas() {
               <div>{fmt(detailModal.opening_balance)}</div>
               <div className="text-muted-foreground">{t("gcx_col_sales")}</div>
               <div>{fmt(detailModal.sales_total)}</div>
-              <div className="text-muted-foreground">{t("mov_type_supply")}</div>
+              <div className="text-muted-foreground">{t("caixa_total_deposits")}</div>
               <div className="text-success">{fmt(detailModal.movements_in)}</div>
               <div className="text-muted-foreground">{t("gcx_col_withdrawals")}</div>
               <div className="text-destructive">{fmt(detailModal.movements_out)}</div>
-              <div className="text-muted-foreground">{t("ret_title")}</div>
+              <div className="text-muted-foreground">{t("caixa_total_returns")}</div>
               <div className="text-destructive">{fmt(detailModal.refunds)}</div>
             </div>
             <hr className="border-border" />
             <div className="grid grid-cols-2 gap-2">
-              <div className="text-muted-foreground font-semibold">{t("close_expected")}</div>
+              <div className="text-muted-foreground font-semibold">{t("caixa_expected_balance")}</div>
               <div className="font-semibold">{fmt(currentBalance(detailModal))}</div>
-              <div className="text-muted-foreground font-semibold">{t("close_informed")}</div>
+              <div className="text-muted-foreground font-semibold">{t("caixa_physical_balance")}</div>
               <div className="font-semibold">{fmt(detailModal.closing_balance ?? 0)}</div>
-              <div className="text-muted-foreground font-semibold">{t("close_difference")}</div>
+              <div className="text-muted-foreground font-semibold">{t("caixa_difference")}</div>
               <div className={`font-semibold ${(detailModal.closing_balance ?? 0) - currentBalance(detailModal) !== 0 ? "text-destructive" : "text-success"}`}>
                 {fmt((detailModal.closing_balance ?? 0) - currentBalance(detailModal))}
               </div>
@@ -445,7 +364,7 @@ export default function GestorCaixas() {
               <>
                 <hr className="border-border" />
                 <div>
-                  <div className="text-muted-foreground text-xs mb-1">{t("observations")}</div>
+                  <div className="text-muted-foreground text-xs mb-1">{t("caixa_observations")}</div>
                   <div>{detailModal.notes}</div>
                 </div>
               </>
@@ -462,11 +381,11 @@ export default function GestorCaixas() {
           title={t("gcx_close_title")}
           onSubmit={handleCloseRegister}
           submitLabel={t("gcx_close_register")}
-          loading={closing}
+          saving={closing}
         >
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("gcx_close_confirm_msg", { operator: closeConfirm.operator_name })}
+              {t("gcx_close_confirm_msg")}
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="text-muted-foreground">{t("gcx_col_operator")}</div>
@@ -475,7 +394,7 @@ export default function GestorCaixas() {
               <div className="font-semibold">{fmt(currentBalance(closeConfirm))}</div>
             </div>
             <div className="space-y-2">
-              <Label>{t("close_informed")}</Label>
+              <Label>{t("caixa_physical_balance")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -486,11 +405,11 @@ export default function GestorCaixas() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("observations")}</Label>
+              <Label>{t("caixa_observations")}</Label>
               <Textarea
                 value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
-                placeholder={t("gcx_close_notes_placeholder")}
+                placeholder={t("caixa_observations_placeholder")}
               />
             </div>
           </div>
