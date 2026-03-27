@@ -899,6 +899,13 @@ const enUS: Record<TranslationKey, string> = {
   bar_ago: "",
   bar_min: "min",
   bar_sec: "sec",
+  bar_ready_waiting: "orders awaiting pickup",
+  bar_ready_empty: "No orders awaiting pickup",
+  bar_ready_empty_desc: "When an order is ready, it will appear here automatically",
+  bar_ready_since: "Ready for",
+  bar_sound_on: "Sound on",
+  bar_sound_off: "Sound off",
+  bar_unretrieved_alert: "Awaiting pickup for too long",
 };
 
 export default enUS;
