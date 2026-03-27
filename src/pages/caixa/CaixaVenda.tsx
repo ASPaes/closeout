@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { useCaixa } from "@/contexts/CaixaContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import {
   Banknote, CreditCard, Smartphone, Package,
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
+import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 
 type CartItem = {
   id: string;
@@ -319,6 +320,8 @@ export default function CaixaVenda() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [amountReceived, setAmountReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lastSale, setLastSale] = useState<any>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const items = catalogData?.items ?? [];
   const categories = catalogData?.categories ?? [];
@@ -442,6 +445,17 @@ export default function CaixaVenda() {
 
       toast.success(t("pos_order_success").replace("%s", String(order.order_number)));
 
+      // Prepare receipt data and trigger print
+      setLastSale({
+        orderNumber: order.order_number,
+        items: cart.map((i) => ({ name: i.name, qty: i.quantity, unitPrice: i.price, total: i.price * i.quantity })),
+        subtotal,
+        discount: discountValue,
+        total,
+        paymentMethod: paymentMethod,
+      });
+      setTimeout(() => printThermalReceipt(), 300);
+
       // Reset for next sale
       setCart([]);
       setDiscount("");
@@ -505,7 +519,16 @@ export default function CaixaVenda() {
             />
           </div>
         </div>
-      )}
-    </CaixaEventGuard>
+        )}
+
+        {lastSale && (
+          <ThermalReceipt
+            ref={receiptRef}
+            type="sale"
+            data={lastSale}
+            operatorName={session?.user?.email ?? undefined}
+          />
+        )}
+      </CaixaEventGuard>
   );
 }

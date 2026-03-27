@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
@@ -14,7 +14,8 @@ import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Lock, DollarSign, TrendingUp, TrendingDown, RotateCcw, Calculator, AlertTriangle } from "lucide-react";
+import { Loader2, Lock, DollarSign, TrendingUp, TrendingDown, RotateCcw, Calculator, AlertTriangle, Printer } from "lucide-react";
+import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -68,11 +69,13 @@ function useClosingMetrics(cashRegisterId: string | null) {
 export default function CaixaFechamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { cashRegisterId, refreshCashRegister } = useCaixa();
+  const { cashRegisterId, refreshCashRegister, operatorName } = useCaixa();
   const { data: metrics } = useClosingMetrics(cashRegisterId);
   const [physicalBalance, setPhysicalBalance] = useState("");
   const [notes, setNotes] = useState("");
   const [closing, setClosing] = useState(false);
+  const [closingDone, setClosingDone] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -103,8 +106,12 @@ export default function CaixaFechamento() {
       }
 
       toast.success(t("caixa_close_success"));
-      refreshCashRegister();
-      navigate("/caixa");
+      setClosingDone(true);
+      setTimeout(() => printThermalReceipt(), 300);
+      setTimeout(() => {
+        refreshCashRegister();
+        navigate("/caixa");
+      }, 1500);
     } catch {
       toast.error(t("caixa_close_error"));
     } finally {
@@ -213,6 +220,26 @@ export default function CaixaFechamento() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {metrics && (closingDone || difference !== null) && (
+        <ThermalReceipt
+          ref={receiptRef}
+          type="closing"
+          data={{
+            openingBalance: metrics.openingBalance,
+            totalSales: metrics.totalSales,
+            totalDeposits: metrics.totalDeposits,
+            totalWithdrawals: metrics.totalWithdrawals,
+            totalReturns: metrics.totalReturns,
+            expectedBalance: metrics.expectedBalance,
+            physicalBalance: physicalValue || 0,
+            difference: difference ?? 0,
+            byPayment: metrics.byPayment,
+            notes,
+          }}
+          operatorName={operatorName ?? undefined}
+        />
       )}
     </CaixaEventGuard>
   );
