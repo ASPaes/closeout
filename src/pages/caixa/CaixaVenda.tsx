@@ -85,7 +85,8 @@ function CatalogGrid({
           placeholder={t("pos_search_products")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 h-11"
+          autoComplete="off"
         />
       </div>
 
