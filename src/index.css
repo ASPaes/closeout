@@ -121,6 +121,32 @@
   }
 }
 
+/* Touch-friendly global rules */
+html, body {
+  touch-action: manipulation;
+}
+button, [role="button"], a {
+  touch-action: manipulation;
+}
+
+/* Active / pressed feedback for buttons */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.85;
+  transition: transform 0.05s ease, opacity 0.05s ease;
+}
+
+/* Prevent scroll-wheel changing number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 @layer utilities {
   .glow-sm {
     box-shadow: 0 0 8px 0 hsl(var(--primary-glow) / 0.25);

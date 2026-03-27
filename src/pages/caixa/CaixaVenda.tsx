@@ -85,7 +85,8 @@ function CatalogGrid({
           placeholder={t("pos_search_products")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 h-11"
+          autoComplete="off"
         />
       </div>
 
@@ -94,22 +95,22 @@ function CatalogGrid({
         <div className="flex border border-border rounded-md mr-1">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-1.5 rounded-l-md transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`p-2.5 rounded-l-md transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"}`}
             title={t("pos_view_grid")}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-4 w-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-1.5 rounded-r-md transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`p-2.5 rounded-r-md transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"}`}
             title={t("pos_view_list")}
           >
-            <List className="h-3.5 w-3.5" />
+            <List className="h-4 w-4" />
           </button>
         </div>
         <Badge
           variant={selectedCategory === null ? "default" : "outline"}
-          className="cursor-pointer text-xs"
+          className="cursor-pointer text-xs py-1.5 px-3"
           onClick={() => setSelectedCategory(null)}
         >
           {t("pos_all_categories")}
@@ -118,7 +119,7 @@ function CatalogGrid({
           <Badge
             key={cat.id}
             variant={selectedCategory === cat.id ? "default" : "outline"}
-            className="cursor-pointer text-xs"
+            className="cursor-pointer text-xs py-1.5 px-3"
             onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
           >
             {cat.name}
@@ -275,8 +276,8 @@ function CartPanel({
                     <p className="text-xs text-muted-foreground">{fmt(item.price)}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.cartId)}>
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive focus-visible:text-destructive" onClick={() => removeItem(item.cartId)}>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -295,11 +296,13 @@ function CartPanel({
             <Label className="text-sm text-muted-foreground shrink-0">{t("pos_discount")}</Label>
             <Input
               type="number"
+              inputMode="decimal"
               min="0"
               step="0.01"
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
-              className="h-7 text-sm text-right"
+              onWheel={(e) => (e.target as HTMLInputElement).blur()}
+              className="h-11 text-sm text-right"
               placeholder="0,00"
             />
           </div>
@@ -318,10 +321,10 @@ function CartPanel({
                 key={opt.method}
                 variant={paymentMethod === opt.method ? "default" : "outline"}
                 size="sm"
-                className="text-xs flex flex-col gap-0.5 h-auto py-1.5"
+                className="text-xs flex flex-col gap-0.5 h-auto py-2.5 min-h-[44px]"
                 onClick={() => setPaymentMethod(opt.method)}
               >
-                <opt.icon className="h-3.5 w-3.5" />
+                <opt.icon className="h-4 w-4" />
                 {t(opt.labelKey as any)}
               </Button>
             ))}
@@ -335,11 +338,13 @@ function CartPanel({
               <Label className="text-sm text-muted-foreground shrink-0">{t("pos_amount_received")}</Label>
               <Input
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.01"
                 value={amountReceived}
                 onChange={(e) => setAmountReceived(e.target.value)}
-                className="h-7 text-sm text-right"
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                className="h-11 text-sm text-right"
               />
             </div>
             {change > 0 && (
@@ -353,7 +358,7 @@ function CartPanel({
 
         {/* Finalize */}
         <Button
-          className="w-full mt-auto font-semibold text-base h-11 shadow-[0_0_15px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.35)] transition-shadow"
+          className="w-full mt-auto font-semibold text-base h-12 min-h-[48px] shadow-[0_0_15px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.35)] transition-shadow"
           disabled={submitting || cart.length === 0 || !paymentMethod}
           onClick={onFinalize}
         >
