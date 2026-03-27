@@ -78,11 +78,9 @@ export default function CaixaDevolucoes() {
   const [saving, setSaving] = useState(false);
 
   // Step 1
-  const [orderSearch, setOrderSearch] = useState("");
-  const [searchingOrder, setSearchingOrder] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [foundOrder, setFoundOrder] = useState<CashOrder | null>(null);
   const [orderItems, setOrderItems] = useState<SelectedItem[]>([]);
-  const [orderNotFound, setOrderNotFound] = useState(false);
 
   // Step 2
   const [reason, setReason] = useState("");
