@@ -398,20 +398,19 @@ export default function CaixaVenda() {
     if (product.stockAvailable !== null && product.stockAvailable <= 0) return;
 
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        // Check stock limit
-        if (product.stockAvailable !== null && existing.quantity >= product.stockAvailable) return prev;
-        return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      // Stock check: count how many of this product are already in cart
+      if (product.stockAvailable !== null) {
+        const totalInCart = prev.filter((i) => i.id === product.id).reduce((s, i) => s + i.quantity, 0);
+        if (totalInCart >= product.stockAvailable) return prev;
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, type: product.type }];
+      return [...prev, { cartId: nextCartId(), id: product.id, name: product.name, price: product.price, quantity: 1, type: product.type }];
     });
   }, []);
 
-  const updateQty = useCallback((id: string, delta: number) => {
+  const updateQty = useCallback((cartId: string, delta: number) => {
     setCart((prev) => {
       return prev.map((i) => {
-        if (i.id !== id) return i;
+        if (i.cartId !== cartId) return i;
         const newQty = i.quantity + delta;
         if (newQty <= 0) return i;
         // Check stock limit for increase
