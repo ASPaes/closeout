@@ -377,6 +377,7 @@ export default function CaixaVenda() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
+  const [qrModal, setQrModal] = useState<{ token: string; orderNumber: number } | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const items = catalogData?.items ?? [];
