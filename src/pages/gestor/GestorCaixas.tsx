@@ -84,7 +84,7 @@ export default function GestorCaixas() {
 
     let query = supabase
       .from("cash_registers")
-      .select("id, operator_id, opened_at, closed_at, status, opening_balance, closing_balance, event_id, client_id, notes")
+      .select("id, operator_id, opened_at, closed_at, status, opening_balance, closing_balance, event_id, client_id, notes, register_number")
       .eq("client_id", effectiveClientId)
       .order("opened_at", { ascending: false })
       .limit(200);
