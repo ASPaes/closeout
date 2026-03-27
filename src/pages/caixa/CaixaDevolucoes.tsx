@@ -437,7 +437,7 @@ export default function CaixaDevolucoes() {
 
       {/* New Return Modal (steps 1 & 2) */}
       <ModalForm
-        open={modalOpen && step < 3}
+        open={modalOpen}
         onOpenChange={(open) => {
           if (!open) { setModalOpen(false); resetModal(); }
         }}
@@ -451,72 +451,22 @@ export default function CaixaDevolucoes() {
         {step === 2 && renderStep2()}
       </ModalForm>
 
-      {/* Step 3: Manager Auth Dialog */}
-      <Dialog
-        open={modalOpen && step === 3}
+      {/* Step 3: Manager Approval Dialog */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
         onOpenChange={(open) => {
-          if (!open) { setStep(2); }
+          setApprovalOpen(open);
+          if (!open) {
+            setStep(2);
+            setModalOpen(true);
+          }
         }}
-      >
-        <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/60">
-          <DialogHeader>
-            <DialogTitle>{t("ret_step3_title")}</DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAuthorize();
-            }}
-            className="space-y-4"
-          >
-            <p className="text-sm text-muted-foreground">{t("ret_auth_description")}</p>
-            <div className="space-y-2">
-              <Label>{t("email")}</Label>
-              <Input
-                type="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("password")}</Label>
-              <Input
-                type="password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            {authError && <p className="text-sm text-destructive">{authError}</p>}
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => setStep(2)}
-                disabled={authorizing || saving}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 glow-hover"
-                disabled={!authEmail || !authPassword || authorizing || saving}
-              >
-                {authorizing ? (
-                  <span className="animate-pulse">{t("ret_authorizing")}</span>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    {t("ret_confirm")}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+        clientId={clientId}
+        onAuthorized={handleManagerApproved}
+        blockSelfApproval={true}
+        title={t("ret_step3_title")}
+        description={t("ret_auth_description")}
+      />
     </CaixaEventGuard>
   );
 }
