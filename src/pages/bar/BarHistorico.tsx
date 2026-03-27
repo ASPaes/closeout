@@ -238,7 +238,7 @@ export default function BarHistorico() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryCard icon={<History className="h-5 w-5 text-muted-foreground" />} label={t("bar_hist_total")} value={summary.total} />
-          <SummaryCard icon={<CheckCircle2 className="h-5 w-5 text-green-500" />} label={t("bar_hist_valid")} value={summary.valid} />
+          <SummaryCard icon={<CheckCircle2 className="h-5 w-5 text-success" />} label={t("bar_hist_valid")} value={summary.valid} />
           <SummaryCard icon={<XCircle className="h-5 w-5 text-destructive" />} label={t("bar_hist_rejected")} value={summary.rejected} />
           <SummaryCard icon={<Percent className="h-5 w-5 text-primary" />} label={t("bar_hist_success_rate")} value={`${summary.rate}%`} />
         </div>
