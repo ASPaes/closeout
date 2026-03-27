@@ -53,6 +53,7 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   });
   const [clientId, setClientId] = useState<string | null>(null);
   const [eventName, setEventName] = useState<string | null>(null);
+  const [registerNumber, setRegisterNumber] = useState<number | null>(null);
   const [cashRegisterId, setCashRegisterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
