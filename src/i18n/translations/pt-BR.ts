@@ -735,6 +735,7 @@ const ptBR = {
   ret_col_reason: "Motivo",
   ret_col_occurrence: "Tipo de Ocorrência",
   ret_col_authorized_by: "Autorizado por",
+  ret_col_value: "Valor",
   ret_search_order: "Buscar por número do pedido...",
   ret_order_not_found: "Pedido não encontrado ou já cancelado",
   ret_order_label: "Pedido",
