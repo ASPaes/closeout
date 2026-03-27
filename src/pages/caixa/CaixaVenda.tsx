@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { useCaixa } from "@/contexts/CaixaContext";
 import { useAuth } from "@/hooks/useAuth";
