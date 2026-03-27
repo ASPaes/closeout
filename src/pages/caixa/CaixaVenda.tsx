@@ -85,8 +85,24 @@ function CatalogGrid({
         />
       </div>
 
-      {/* Category filter */}
-      <div className="flex gap-1.5 mb-3 flex-wrap">
+      {/* View toggle + Category filter */}
+      <div className="flex gap-1.5 mb-3 flex-wrap items-center">
+        <div className="flex border border-border rounded-md mr-1">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-1.5 rounded-l-md transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            title={t("pos_view_grid")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-1.5 rounded-r-md transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            title={t("pos_view_list")}
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <Badge
           variant={selectedCategory === null ? "default" : "outline"}
           className="cursor-pointer text-xs"
