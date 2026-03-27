@@ -511,10 +511,7 @@ export default function CaixaVenda() {
       setTimeout(() => printThermalReceipt(), 300);
 
       // Reset for next sale
-      setCart([]);
-      setDiscount("");
-      setPaymentMethod(null);
-      setAmountReceived("");
+      clearCart();
     } catch (err) {
       console.error("POS order error:", err);
       toast.error(t("pos_order_error"));
