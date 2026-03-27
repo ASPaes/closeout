@@ -77,6 +77,12 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   const [availableEvents, setAvailableEvents] = useState<CaixaEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const eventFromUrl = params.get("event");
+      if (eventFromUrl) {
+        localStorage.setItem(STORAGE_KEY, eventFromUrl);
+        return eventFromUrl;
+      }
       return localStorage.getItem(STORAGE_KEY) || null;
     }
     return null;
