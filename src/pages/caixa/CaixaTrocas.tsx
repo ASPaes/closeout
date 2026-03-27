@@ -121,30 +121,11 @@ export default function CaixaTrocas() {
     fetchExchanges();
   }, [eventId]);
 
-  // Search order
-  const handleSearchOrder = async () => {
-    const num = parseInt(orderSearch, 10);
-    if (isNaN(num) || !eventId) return;
-    setSearchingOrder(true);
-    setOrderNotFound(false);
-    setFoundOrder(null);
-
-    const { data } = await supabase
-      .from("cash_orders")
-      .select("id, order_number, created_at, items, total, payment_method, status")
-      .eq("event_id", eventId)
-      .eq("order_number", num)
-      .eq("status", "completed")
-      .maybeSingle();
-
-    if (!data) {
-      setOrderNotFound(true);
-    } else {
-      setFoundOrder(data);
-      const items = (Array.isArray(data.items) ? data.items : []) as OrderItem[];
-      setOrderItems(items);
-    }
-    setSearchingOrder(false);
+  // Handle order selection from picker
+  const handleOrderSelected = (order: CashOrder) => {
+    setFoundOrder(order);
+    const items = (Array.isArray(order.items) ? order.items : []) as OrderItem[];
+    setOrderItems(items);
   };
 
   const selectedOriginal = selectedItemIdx !== "" ? orderItems[parseInt(selectedItemIdx, 10)] : null;
