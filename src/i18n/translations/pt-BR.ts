@@ -766,6 +766,18 @@ const ptBR = {
   ret_auth_error: "Erro ao verificar autorização",
   ret_authorizing: "Autorizando...",
   ret_confirm: "Confirmar Devolução",
+
+  // Manager Approval Dialog
+  mgr_approval_title: "Autorização do Gestor",
+  mgr_approval_description: "Esta operação requer autorização de um gestor. Selecione o gestor e informe a senha.",
+  mgr_approval_select_manager: "Gestor responsável",
+  mgr_approval_select_placeholder: "Selecione o gestor...",
+  mgr_approval_password_placeholder: "Senha do gestor",
+  mgr_approval_invalid_password: "Senha incorreta",
+  mgr_approval_error: "Erro ao verificar autorização",
+  mgr_approval_authorize: "Autorizar",
+  mgr_approval_sangria_title: "Autorização para Sangria",
+  mgr_approval_sangria_desc: "A sangria requer autorização de um gestor. Selecione o gestor e informe a senha.",
   ret_save_success: "Devolução registrada com sucesso",
   ret_save_error: "Erro ao registrar devolução",
 

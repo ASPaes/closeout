@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { useTranslation } from "@/i18n/use-translation";
 import { useCaixa } from "@/contexts/CaixaContext";
@@ -66,6 +67,7 @@ export default function CaixaTrocas() {
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Step 1
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -146,6 +148,7 @@ export default function CaixaTrocas() {
     setCatalogSearch("");
     setSelectedCategory(null);
     setNewItem(null);
+    setApprovalOpen(false);
   };
 
   // Filtered catalog
@@ -304,8 +307,15 @@ export default function CaixaTrocas() {
     } else if (step === 2 && selectedOriginal) {
       setStep(3);
     } else if (step === 3 && newItem) {
-      handleConfirm();
+      // Open approval dialog instead of confirming directly
+      setModalOpen(false);
+      setApprovalOpen(true);
     }
+  };
+
+  const handleExchangeApproved = async (_managerId: string) => {
+    setApprovalOpen(false);
+    await handleConfirm();
   };
 
   const stepTitle =
@@ -512,6 +522,18 @@ export default function CaixaTrocas() {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
       </ModalForm>
+
+      {/* Manager Approval Dialog for exchanges */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
+        onOpenChange={(open) => {
+          setApprovalOpen(open);
+          if (!open) setModalOpen(true);
+        }}
+        clientId={clientId}
+        onAuthorized={handleExchangeApproved}
+        blockSelfApproval={true}
+      />
     </CaixaEventGuard>
   );
 }

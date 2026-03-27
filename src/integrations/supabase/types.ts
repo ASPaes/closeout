@@ -1640,6 +1640,14 @@ export type Database = {
         Returns: Json
       }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
+      get_client_managers: {
+        Args: { p_client_id: string }
+        Returns: {
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_clients_for_user_events: {
         Args: { _user_id: string }
         Returns: string[]

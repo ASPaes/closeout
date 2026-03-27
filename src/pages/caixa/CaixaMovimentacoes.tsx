@@ -4,6 +4,7 @@ import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { ModalForm } from "@/components/ModalForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +70,7 @@ export default function CaixaMovimentacoes() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Form state
   const [movType, setMovType] = useState<MovementType>("sangria");
@@ -123,6 +125,22 @@ export default function CaixaMovimentacoes() {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return;
 
+    // Sangria requires manager approval
+    if (movType === "sangria") {
+      setModalOpen(false);
+      setApprovalOpen(true);
+      return;
+    }
+
+    await saveMovement();
+  };
+
+  const saveMovement = async () => {
+    if (!cashRegisterId || !eventId || !clientId || !session?.user?.id) return;
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) return;
+
     setSaving(true);
     try {
       const { data, error } = await supabase.from("cash_movements").insert({
@@ -148,6 +166,47 @@ export default function CaixaMovimentacoes() {
 
       toast.success(t("mov_success"));
       setModalOpen(false);
+      resetForm();
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error(t("mov_error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSangriaApproved = async (managerId: string) => {
+    setApprovalOpen(false);
+    if (!cashRegisterId || !eventId || !clientId || !session?.user?.id) return;
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) return;
+
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.from("cash_movements").insert({
+        cash_register_id: cashRegisterId,
+        event_id: eventId,
+        client_id: clientId,
+        operator_id: session.user.id,
+        movement_type: movType,
+        direction,
+        amount: numAmount,
+        destination,
+        notes: notes ? `${notes} | Autorizado por gestor` : `Autorizado por gestor`,
+      }).select("id").single();
+
+      if (error) throw error;
+
+      await logAudit({
+        action: AUDIT_ACTION.CASH_MOVEMENT_CREATED,
+        entityType: "cash_movement",
+        entityId: data.id,
+        metadata: { movement_type: movType, direction, amount: numAmount, authorized_by: managerId },
+      });
+
+      toast.success(t("mov_success"));
       resetForm();
       fetchData();
     } catch (err) {
@@ -440,6 +499,20 @@ export default function CaixaMovimentacoes() {
           </div>
         </div>
       </ModalForm>
+
+      {/* Sangria approval dialog */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
+        onOpenChange={(open) => {
+          setApprovalOpen(open);
+          if (!open) setModalOpen(true);
+        }}
+        clientId={clientId}
+        onAuthorized={handleSangriaApproved}
+        blockSelfApproval={false}
+        title={t("mgr_approval_sangria_title" as any)}
+        description={t("mgr_approval_sangria_desc" as any)}
+      />
     </CaixaEventGuard>
   );
 }

@@ -10,6 +10,7 @@ import { AUDIT_ACTION } from "@/config/audit-actions";
 import { toast } from "sonner";
 import { RotateCcw, Search, Plus, Check, ShoppingBag } from "lucide-react";
 import { OrderPickerDialog } from "@/components/caixa/OrderPickerDialog";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { ModalForm } from "@/components/ModalForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import type { Json } from "@/integrations/supabase/types";
@@ -86,11 +86,8 @@ export default function CaixaDevolucoes() {
   const [reason, setReason] = useState("");
   const [occurrenceType, setOccurrenceType] = useState("");
 
-  // Step 3 (auth dialog)
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authorizing, setAuthorizing] = useState(false);
+  // Step 3 (manager approval)
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Fetch returns list
   const fetchReturns = async () => {
@@ -163,9 +160,7 @@ export default function CaixaDevolucoes() {
     setOrderItems([]);
     setReason("");
     setOccurrenceType("");
-    setAuthEmail("");
-    setAuthPassword("");
-    setAuthError("");
+    setApprovalOpen(false);
   };
 
   // Format items for display
@@ -222,63 +217,10 @@ export default function CaixaDevolucoes() {
     },
   ];
 
-  // Step 3: authorize and save
-  const handleAuthorize = async () => {
-    if (!authEmail || !authPassword) return;
-    setAuthorizing(true);
-    setAuthError("");
-
-    try {
-      // Create a separate client to avoid swapping session
-      const { createClient } = await import("@supabase/supabase-js");
-      const tempClient = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        { auth: { persistSession: false, autoRefreshToken: false } }
-      );
-
-      const { data: authData, error: authErr } = await tempClient.auth.signInWithPassword({
-        email: authEmail,
-        password: authPassword,
-      });
-
-      if (authErr || !authData.user) {
-        setAuthError(t("ret_auth_invalid_credentials"));
-        setAuthorizing(false);
-        return;
-      }
-
-      const authUserId = authData.user.id;
-
-      // Check the authorizer is not the current operator
-      if (authUserId === user?.id) {
-        setAuthError(t("ret_auth_self_not_allowed"));
-        setAuthorizing(false);
-        return;
-      }
-
-      // Check authorizer has manager/admin role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", authUserId);
-
-      const allowedRoles = ["super_admin", "client_admin", "client_manager"];
-      const hasPermission = (roles ?? []).some((r) => allowedRoles.includes(r.role));
-
-      if (!hasPermission) {
-        setAuthError(t("ret_auth_not_authorized"));
-        setAuthorizing(false);
-        return;
-      }
-
-      // Save return
-      await saveReturn(authUserId);
-    } catch {
-      setAuthError(t("ret_auth_error"));
-    } finally {
-      setAuthorizing(false);
-    }
+  // Step 3: handle manager approval
+  const handleManagerApproved = async (managerId: string) => {
+    setApprovalOpen(false);
+    await saveReturn(managerId);
   };
 
   const saveReturn = async (authorizedBy: string) => {
@@ -343,6 +285,8 @@ export default function CaixaDevolucoes() {
       setStep(2);
     } else if (step === 2 && reason && occurrenceType) {
       setStep(3);
+      setModalOpen(false);
+      setApprovalOpen(true);
     }
   };
 
@@ -493,7 +437,7 @@ export default function CaixaDevolucoes() {
 
       {/* New Return Modal (steps 1 & 2) */}
       <ModalForm
-        open={modalOpen && step < 3}
+        open={modalOpen}
         onOpenChange={(open) => {
           if (!open) { setModalOpen(false); resetModal(); }
         }}
@@ -507,72 +451,22 @@ export default function CaixaDevolucoes() {
         {step === 2 && renderStep2()}
       </ModalForm>
 
-      {/* Step 3: Manager Auth Dialog */}
-      <Dialog
-        open={modalOpen && step === 3}
+      {/* Step 3: Manager Approval Dialog */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
         onOpenChange={(open) => {
-          if (!open) { setStep(2); }
+          setApprovalOpen(open);
+          if (!open) {
+            setStep(2);
+            setModalOpen(true);
+          }
         }}
-      >
-        <DialogContent className="max-w-md bg-card/95 backdrop-blur-sm border-border/60">
-          <DialogHeader>
-            <DialogTitle>{t("ret_step3_title")}</DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAuthorize();
-            }}
-            className="space-y-4"
-          >
-            <p className="text-sm text-muted-foreground">{t("ret_auth_description")}</p>
-            <div className="space-y-2">
-              <Label>{t("email")}</Label>
-              <Input
-                type="email"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("password")}</Label>
-              <Input
-                type="password"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            {authError && <p className="text-sm text-destructive">{authError}</p>}
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => setStep(2)}
-                disabled={authorizing || saving}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 glow-hover"
-                disabled={!authEmail || !authPassword || authorizing || saving}
-              >
-                {authorizing ? (
-                  <span className="animate-pulse">{t("ret_authorizing")}</span>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    {t("ret_confirm")}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+        clientId={clientId}
+        onAuthorized={handleManagerApproved}
+        blockSelfApproval={true}
+        title={t("ret_step3_title")}
+        description={t("ret_auth_description")}
+      />
     </CaixaEventGuard>
   );
 }

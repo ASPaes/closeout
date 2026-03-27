@@ -767,6 +767,18 @@ const enUS: Record<TranslationKey, string> = {
   ret_auth_error: "Error verifying authorization",
   ret_authorizing: "Authorizing...",
   ret_confirm: "Confirm Return",
+
+  // Manager Approval Dialog
+  mgr_approval_title: "Manager Authorization",
+  mgr_approval_description: "This operation requires manager authorization. Select the manager and enter their password.",
+  mgr_approval_select_manager: "Responsible manager",
+  mgr_approval_select_placeholder: "Select manager...",
+  mgr_approval_password_placeholder: "Manager password",
+  mgr_approval_invalid_password: "Incorrect password",
+  mgr_approval_error: "Error verifying authorization",
+  mgr_approval_authorize: "Authorize",
+  mgr_approval_sangria_title: "Sangria Authorization",
+  mgr_approval_sangria_desc: "Cash withdrawal requires manager authorization. Select the manager and enter their password.",
   ret_save_success: "Return recorded successfully",
   ret_save_error: "Error recording return",
 
