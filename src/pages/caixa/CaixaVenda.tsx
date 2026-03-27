@@ -276,8 +276,8 @@ function CartPanel({
                     <p className="text-xs text-muted-foreground">{fmt(item.price)}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.cartId)}>
-                      <Trash2 className="h-3 w-3" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive focus-visible:text-destructive" onClick={() => removeItem(item.cartId)}>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
