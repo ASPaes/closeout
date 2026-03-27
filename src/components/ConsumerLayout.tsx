@@ -30,10 +30,10 @@ function ConsumerTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-card"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/80 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-around">
+      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-around px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.path);
           const isQr = tab.path === "/app/qr";
@@ -42,17 +42,28 @@ function ConsumerTabBar() {
               key={tab.path}
               onClick={() => navigate(tab.path)}
               className={cn(
-                "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 transition-colors",
-                "active:bg-muted/50",
-                active ? "text-primary" : "text-muted-foreground"
+                "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1 transition-all",
+                "active:scale-95",
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground"
               )}
             >
-              <tab.icon className="h-5 w-5" />
+              {/* Active glow indicator */}
               {active && (
-                <span className="text-[10px] font-medium">{t(tab.labelKey)}</span>
+                <div
+                  className="absolute inset-0 rounded-xl bg-primary/10"
+                  style={{ boxShadow: "inset 0 0 12px hsl(24 100% 50% / 0.15)" }}
+                />
+              )}
+              <tab.icon className={cn("relative z-10 h-5 w-5", active && "drop-shadow-[0_0_6px_hsl(24,100%,50%,0.5)]")} />
+              {active && (
+                <span className="relative z-10 text-[10px] font-semibold">{t(tab.labelKey)}</span>
               )}
               {isQr && orderReady && (
-                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full bg-green-500" />
+                <span className="absolute right-1 top-1 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
+                </span>
               )}
             </button>
           );
@@ -67,17 +78,32 @@ function ConsumerHeader() {
   const { profile } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border/60 bg-card px-4">
-      <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-          CO
+    <header className="sticky top-0 z-40 border-b border-border/30 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-[10px] font-bold text-primary-foreground"
+            style={{ boxShadow: "0 0 12px hsl(24 100% 50% / 0.3)" }}
+          >
+            CO
+          </div>
+          <div className="flex flex-col">
+            <span
+              className="text-xs font-bold tracking-wider text-foreground"
+              style={{ fontFamily: "'Mustica Pro', sans-serif" }}
+            >
+              CLOSE OUT
+            </span>
+            {activeEvent && (
+              <span className="text-[10px] text-muted-foreground truncate max-w-[180px]">
+                {activeEvent.name}
+              </span>
+            )}
+          </div>
         </div>
-        <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
-          {activeEvent?.name || "Close Out"}
-        </span>
-      </div>
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-        {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+        <button className="flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border/60 text-xs font-semibold text-foreground active:scale-95 transition-transform">
+          {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+        </button>
       </div>
     </header>
   );
