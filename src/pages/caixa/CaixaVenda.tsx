@@ -425,8 +425,8 @@ export default function CaixaVenda() {
     });
   }, [items]);
 
-  const removeItem = useCallback((id: string) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = useCallback((cartId: string) => {
+    setCart((prev) => prev.filter((i) => i.cartId !== cartId));
   }, []);
 
   const handleFinalize = async () => {
