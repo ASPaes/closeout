@@ -106,8 +106,12 @@ export default function CaixaFechamento() {
       }
 
       toast.success(t("caixa_close_success"));
-      refreshCashRegister();
-      navigate("/caixa");
+      setClosingDone(true);
+      setTimeout(() => printThermalReceipt(), 300);
+      setTimeout(() => {
+        refreshCashRegister();
+        navigate("/caixa");
+      }, 1500);
     } catch {
       toast.error(t("caixa_close_error"));
     } finally {
