@@ -916,6 +916,28 @@ const enUS: Record<TranslationKey, string> = {
   bar_sound_on: "Sound on",
   bar_sound_off: "Sound off",
   bar_unretrieved_alert: "Awaiting pickup for too long",
+
+  // Bar history
+  bar_hist_datetime: "Date/Time",
+  bar_hist_order: "Order",
+  bar_hist_result: "Result",
+  bar_hist_validated_by: "Validated by",
+  bar_hist_total: "Total validations",
+  bar_hist_valid: "Valid",
+  bar_hist_rejected: "Rejected",
+  bar_hist_success_rate: "Success rate",
+  bar_hist_search_placeholder: "Search by order number...",
+  bar_hist_empty: "No validations found",
+  bar_hist_period_all: "All time",
+  bar_hist_period_today: "Today",
+  bar_hist_period_hour: "Last hour",
+  bar_hist_detail_title: "Validation Details",
+  bar_hist_timeline: "Order timeline",
+  bar_hist_tl_created: "Created",
+  bar_hist_tl_paid: "Paid",
+  bar_hist_tl_preparing: "Preparing",
+  bar_hist_tl_ready: "Ready",
+  bar_hist_tl_delivered: "Delivered",
 };
 
 export default enUS;

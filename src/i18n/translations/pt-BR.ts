@@ -914,6 +914,28 @@ const ptBR = {
   bar_sound_on: "Som ativado",
   bar_sound_off: "Som desativado",
   bar_unretrieved_alert: "Aguardando retirada há muito tempo",
+
+  // Bar history
+  bar_hist_datetime: "Data/Hora",
+  bar_hist_order: "Pedido",
+  bar_hist_result: "Resultado",
+  bar_hist_validated_by: "Validado por",
+  bar_hist_total: "Total de validações",
+  bar_hist_valid: "Válidas",
+  bar_hist_rejected: "Rejeitadas",
+  bar_hist_success_rate: "Taxa de sucesso",
+  bar_hist_search_placeholder: "Buscar por nº do pedido...",
+  bar_hist_empty: "Nenhuma validação encontrada",
+  bar_hist_period_all: "Todo o período",
+  bar_hist_period_today: "Hoje",
+  bar_hist_period_hour: "Última hora",
+  bar_hist_detail_title: "Detalhes da Validação",
+  bar_hist_timeline: "Timeline do pedido",
+  bar_hist_tl_created: "Criado",
+  bar_hist_tl_paid: "Pago",
+  bar_hist_tl_preparing: "Em preparo",
+  bar_hist_tl_ready: "Pronto",
+  bar_hist_tl_delivered: "Entregue",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
