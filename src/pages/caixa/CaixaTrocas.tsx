@@ -140,10 +140,8 @@ export default function CaixaTrocas() {
   // Reset modal
   const resetModal = () => {
     setStep(1);
-    setOrderSearch("");
     setFoundOrder(null);
     setOrderItems([]);
-    setOrderNotFound(false);
     setSelectedItemIdx("");
     setCatalogSearch("");
     setSelectedCategory(null);
