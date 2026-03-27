@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
+import { QrCodeModal } from "@/components/caixa/QrCodeModal";
 
 let cartIdCounter = 0;
 const nextCartId = () => `cart-${++cartIdCounter}-${Date.now()}`;
