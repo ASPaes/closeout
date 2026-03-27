@@ -499,6 +499,20 @@ export default function CaixaMovimentacoes() {
           </div>
         </div>
       </ModalForm>
+
+      {/* Sangria approval dialog */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
+        onOpenChange={(open) => {
+          setApprovalOpen(open);
+          if (!open) setModalOpen(true);
+        }}
+        clientId={clientId}
+        onAuthorized={handleSangriaApproved}
+        blockSelfApproval={false}
+        title={t("mgr_approval_sangria_title" as any)}
+        description={t("mgr_approval_sangria_desc" as any)}
+      />
     </CaixaEventGuard>
   );
 }
