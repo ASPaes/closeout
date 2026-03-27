@@ -349,7 +349,12 @@ export default function GestorCaixas() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} />
+      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote}>
+        <Button onClick={() => setOpenModal(true)}>
+          <LockOpen className="h-4 w-4 mr-2" />
+          {t("gcx_open_new")}
+        </Button>
+      </PageHeader>
 
       <Tabs defaultValue="registers">
         <TabsList>
