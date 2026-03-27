@@ -106,18 +106,20 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   const fetchCashRegister = () => {
     if (!userId || !selectedEventId) {
       setCashRegisterId(null);
+      setRegisterNumber(null);
       return;
     }
 
     supabase
       .from("cash_registers")
-      .select("id")
+      .select("id, register_number")
       .eq("event_id", selectedEventId)
       .eq("operator_id", userId)
       .eq("status", "open")
       .maybeSingle()
       .then(({ data }) => {
         setCashRegisterId(data?.id ?? null);
+        setRegisterNumber(data?.register_number ?? null);
       });
   };
 
