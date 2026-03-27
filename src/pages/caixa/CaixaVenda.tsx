@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
-import { useCaixa } from "@/contexts/CaixaContext";
+import { useCaixa, type CartItem, type PaymentMethod } from "@/contexts/CaixaContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { useEventCatalog, useEventSettings, type CatalogProduct } from "@/hooks/usePOSCatalog";
@@ -21,19 +21,8 @@ import {
 import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 
-type CartItem = {
-  cartId: string;
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  type: "product" | "combo";
-};
-
 let cartIdCounter = 0;
 const nextCartId = () => `cart-${++cartIdCounter}-${Date.now()}`;
-
-type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
 const PAYMENT_OPTIONS: { method: PaymentMethod; labelKey: string; icon: any }[] = [
   { method: "cash", labelKey: "caixa_cash", icon: Banknote },
