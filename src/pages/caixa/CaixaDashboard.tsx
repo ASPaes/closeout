@@ -62,7 +62,7 @@ function MetricCard({ title, value, icon: Icon, color = "text-primary" }: { titl
 }
 
 function DashboardContent() {
-  const { cashRegisterId } = useCaixa();
+  const { cashRegisterId, registerNumber } = useCaixa();
   const { t } = useTranslation();
   const { data: metrics } = useDashboardMetrics(cashRegisterId);
 
