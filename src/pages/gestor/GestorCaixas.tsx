@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, LockOpen } from "lucide-react";
+import { Banknote, LockOpen, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -295,6 +295,11 @@ export default function GestorCaixas() {
     {
       key: "actions", header: t("actions"), render: (r) => (
         <div className="flex gap-2">
+          {r.status === "open" && (
+            <Button size="sm" variant="outline" onClick={() => window.open(`/caixa`, "_blank")} title={t("gcx_view_register")}>
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
           {r.status === "closed" && (
             <Button size="sm" variant="outline" onClick={() => setDetailModal(r)}>{t("details")}</Button>
           )}

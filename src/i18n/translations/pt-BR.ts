@@ -829,6 +829,7 @@ const ptBR = {
   gcx_open_balance: "Saldo inicial (fundo de troco)",
   gcx_open_success: "Caixa aberto com sucesso",
   gcx_open_error: "Erro ao abrir o caixa",
+  gcx_view_register: "Visualizar caixa",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

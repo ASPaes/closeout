@@ -831,6 +831,7 @@ const enUS: Record<TranslationKey, string> = {
   gcx_open_balance: "Opening balance (change fund)",
   gcx_open_success: "Register opened successfully",
   gcx_open_error: "Error opening register",
+  gcx_view_register: "View register",
 };
 
 export default enUS;
