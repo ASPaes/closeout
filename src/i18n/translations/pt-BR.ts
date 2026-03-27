@@ -941,6 +941,23 @@ const ptBR = {
   bar_hist_tl_preparing: "Em preparo",
   bar_hist_tl_ready: "Pronto",
   bar_hist_tl_delivered: "Entregue",
+
+  // Gestor — Bar Operations
+  gbar_section_title: "Operação do Bar",
+  gbar_queue: "Pedidos na Fila",
+  gbar_ready: "Pedidos Prontos",
+  gbar_avg_prep: "Tempo Médio de Preparo",
+  gbar_delivered_today: "Entregues Hoje",
+  gbar_unretrieved_alert: "Pedidos não retirados",
+  gbar_more_orders: "pedidos a mais",
+  gbar_ops_title: "Operação do Bar",
+  gbar_ops_desc: "Gerencie pedidos e QR Codes do bar em tempo real",
+  gbar_bulk_cancel_qr: "Cancelar QRs em Aberto",
+  gbar_bulk_cancel_title: "Cancelar todos os QR Codes em aberto?",
+  gbar_bulk_cancel_desc: "Esta ação cancelará todos os QR Codes válidos, cancelará os pedidos vinculados e liberará o estoque reservado. Uso típico: encerramento do evento.",
+  gbar_search: "Buscar por número do pedido...",
+  gbar_origin: "Origem",
+  gbar_no_orders: "Nenhum pedido encontrado",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

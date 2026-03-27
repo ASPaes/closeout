@@ -943,6 +943,23 @@ const enUS: Record<TranslationKey, string> = {
   bar_hist_tl_preparing: "Preparing",
   bar_hist_tl_ready: "Ready",
   bar_hist_tl_delivered: "Delivered",
+
+  // Gestor — Bar Operations
+  gbar_section_title: "Bar Operations",
+  gbar_queue: "Orders in Queue",
+  gbar_ready: "Orders Ready",
+  gbar_avg_prep: "Avg Prep Time",
+  gbar_delivered_today: "Delivered Today",
+  gbar_unretrieved_alert: "Unretrieved orders",
+  gbar_more_orders: "more orders",
+  gbar_ops_title: "Bar Operations",
+  gbar_ops_desc: "Manage bar orders and QR Codes in real time",
+  gbar_bulk_cancel_qr: "Cancel Open QRs",
+  gbar_bulk_cancel_title: "Cancel all open QR Codes?",
+  gbar_bulk_cancel_desc: "This will cancel all valid QR Codes, cancel linked orders, and release reserved stock. Typical use: event closing.",
+  gbar_search: "Search by order number...",
+  gbar_origin: "Origin",
+  gbar_no_orders: "No orders found",
 };
 
 export default enUS;

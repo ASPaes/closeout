@@ -88,6 +88,7 @@ const App = () => (
               <Route path="equipe" element={<GestorEquipe />} />
               <Route path="usuarios" element={<GestorUsuarios />} />
               <Route path="caixas" element={<GestorCaixas />} />
+              <Route path="bar" element={<GestorBarOperacao />} />
             </Route>
 
             {/* Caixa area */}
