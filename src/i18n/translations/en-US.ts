@@ -682,6 +682,8 @@ const enUS: Record<TranslationKey, string> = {
   // POS / Quick Sale
   pos_search_products: "Search product or combo...",
   pos_all_categories: "All",
+  pos_view_grid: "Image view",
+  pos_view_list: "Compact view",
   pos_cart_empty: "Cart is empty",
   pos_cart_empty_desc: "Add products from the catalog to start a sale.",
   pos_cart_title: "Order",
