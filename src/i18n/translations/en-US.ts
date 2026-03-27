@@ -823,6 +823,14 @@ const enUS: Record<TranslationKey, string> = {
   order_picker_search: "Search by number or product name...",
   order_picker_empty: "No orders found",
   order_picker_select: "Select order",
+  gcx_col_register_number: "Register #",
+  gcx_open_new: "Open New Register",
+  gcx_open_new_title: "Open New Register",
+  gcx_open_select_event: "Select event",
+  gcx_open_select_operator: "Select operator",
+  gcx_open_balance: "Opening balance (change fund)",
+  gcx_open_success: "Register opened successfully",
+  gcx_open_error: "Error opening register",
 };
 
 export default enUS;
