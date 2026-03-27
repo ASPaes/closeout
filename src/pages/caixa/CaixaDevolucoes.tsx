@@ -349,22 +349,24 @@ export default function CaixaDevolucoes() {
   // Step content
   const renderStep1 = () => (
     <>
-      <div className="flex gap-2">
-        <Input
-          placeholder={t("ret_search_order")}
-          value={orderSearch}
-          onChange={(e) => setOrderSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchOrder())}
-          type="number"
-        />
-        <Button type="button" variant="outline" onClick={handleSearchOrder} disabled={searchingOrder}>
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full justify-start gap-2"
+        onClick={() => setPickerOpen(true)}
+      >
+        <ShoppingBag className="h-4 w-4" />
+        {foundOrder
+          ? `${t("ret_order_label")} #${foundOrder.order_number}`
+          : t("order_picker_select")}
+      </Button>
 
-      {orderNotFound && (
-        <p className="text-sm text-destructive">{t("ret_order_not_found")}</p>
-      )}
+      <OrderPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        eventId={eventId}
+        onSelect={handleOrderSelected}
+      />
 
       {foundOrder && (
         <Card className="border-border/60 bg-secondary/30">
