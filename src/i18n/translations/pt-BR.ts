@@ -878,6 +878,25 @@ const ptBR = {
   bar_items_count: "itens",
   bar_waiting_time: "Tempo de espera",
   under_construction: "Em construção",
+
+  // Bar queue extras
+  bar_awaiting: "Aguardando",
+  bar_preparing_count: "Em Preparo",
+  bar_ready_count: "Prontos",
+  bar_delivered_today: "Entregues hoje",
+  bar_all: "Todos",
+  bar_filter_origin: "Origem",
+  bar_origin_app: "App",
+  bar_origin_waiter: "Garçom",
+  bar_origin_cashier: "Caixa",
+  bar_start_preparing: "Iniciar Preparo",
+  bar_order_preparing_success: "Pedido em preparo!",
+  bar_order_ready_success: "Pedido pronto!",
+  bar_no_orders: "Nenhum pedido na fila",
+  bar_no_orders_desc: "Novos pedidos aparecerão aqui automaticamente",
+  bar_ago: "há",
+  bar_min: "min",
+  bar_sec: "seg",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
