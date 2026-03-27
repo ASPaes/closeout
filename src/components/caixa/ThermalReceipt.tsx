@@ -89,6 +89,7 @@ function SingleTicket({
   orderNumber,
   operatorName,
   venueName,
+  qrToken,
 }: {
   itemName: string;
   qty?: number;
@@ -96,6 +97,7 @@ function SingleTicket({
   orderNumber?: number;
   operatorName?: string;
   venueName?: string;
+  qrToken?: string;
 }) {
   return (
     <div className="party-ticket">
@@ -110,6 +112,12 @@ function SingleTicket({
         {orderNumber != null && <p>Pedido #{orderNumber}</p>}
         {operatorName && <p>{operatorName}</p>}
       </div>
+      {qrToken && (
+        <div className="ticket-qr">
+          <QRCodeSVG value={qrToken} size={150} level="M" />
+          <p className="ticket-qr-text">Apresente este QR para retirar seu pedido</p>
+        </div>
+      )}
       <div className="ticket-cta">
         <p>NÃO PERCA TEMPO E INSTALE</p>
         <p>O APP AGORA MESMO</p>
