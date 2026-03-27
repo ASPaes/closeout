@@ -846,6 +846,60 @@ export type Database = {
           },
         ]
       }
+      event_checkins: {
+        Row: {
+          check_in_method: string
+          checked_in_at: string | null
+          checked_out_at: string | null
+          client_id: string
+          event_id: string
+          id: string
+          is_visible: boolean | null
+          latitude: number | null
+          longitude: number | null
+          user_id: string
+        }
+        Insert: {
+          check_in_method?: string
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          client_id: string
+          event_id: string
+          id?: string
+          is_visible?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          user_id: string
+        }
+        Update: {
+          check_in_method?: string
+          checked_in_at?: string | null
+          checked_out_at?: string | null
+          client_id?: string
+          event_id?: string
+          id?: string
+          is_visible?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checkins_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checkins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_settings: {
         Row: {
           client_id: string
@@ -1178,6 +1232,82 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          client_id: string
+          consumer_id: string
+          created_at: string | null
+          event_id: string
+          failed_at: string | null
+          gateway_ref: string | null
+          gateway_response: Json | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          payment_method: string
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          cancelled_at?: string | null
+          client_id: string
+          consumer_id: string
+          created_at?: string | null
+          event_id: string
+          failed_at?: string | null
+          gateway_ref?: string | null
+          gateway_response?: Json | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          payment_method: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          client_id?: string
+          consumer_id?: string
+          created_at?: string | null
+          event_id?: string
+          failed_at?: string | null
+          gateway_ref?: string | null
+          gateway_response?: Json | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          payment_method?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1707,6 +1837,36 @@ export type Database = {
           },
         ]
       }
+      user_consumption_limits: {
+        Row: {
+          id: string
+          is_active: boolean | null
+          limit_behavior: string
+          max_order_value: number | null
+          max_orders_per_event: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean | null
+          limit_behavior?: string
+          max_order_value?: number | null
+          max_orders_per_event?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean | null
+          limit_behavior?: string
+          max_order_value?: number | null
+          max_orders_per_event?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_invites: {
         Row: {
           client_id: string | null
@@ -1787,6 +1947,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_payment_methods: {
+        Row: {
+          card_brand: string | null
+          card_last_four: string
+          created_at: string | null
+          gateway_token: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          method_type: string
+          user_id: string
+        }
+        Insert: {
+          card_brand?: string | null
+          card_last_four: string
+          created_at?: string | null
+          gateway_token: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          method_type: string
+          user_id: string
+        }
+        Update: {
+          card_brand?: string | null
+          card_last_four?: string
+          created_at?: string | null
+          gateway_token?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          method_type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1944,14 +2140,49 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      consumer_event_stats: {
+        Row: {
+          event_id: string | null
+          order_count: number | null
+          total_spent: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consumer_event_stats_secure: {
+        Row: {
+          event_id: string | null
+          order_count: number | null
+          total_spent: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       bootstrap_super_admin: { Args: never; Returns: boolean }
+      cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       close_cash_register: {
         Args: { p_closing_balance: number; p_register_id: string }
         Returns: Json
       }
+      create_consumer_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_client_managers: {
         Args: { p_client_id: string }
