@@ -322,8 +322,8 @@ export default function GestorBarOperacao() {
                 <th className="text-left p-3 font-medium">#</th>
                 <th className="text-left p-3 font-medium">Status</th>
                 <th className="text-left p-3 font-medium">{t("gbar_origin" as any)}</th>
-                <th className="text-right p-3 font-medium">{t("total")}</th>
-                <th className="text-left p-3 font-medium">{t("gbar_time" as any)}</th>
+                <th className="text-right p-3 font-medium">Total</th>
+                <th className="text-left p-3 font-medium">Tempo</th>
                 <th className="text-right p-3 font-medium">{t("actions")}</th>
               </tr>
             </thead>
