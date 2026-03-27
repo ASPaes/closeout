@@ -160,9 +160,7 @@ export default function CaixaDevolucoes() {
     setOrderItems([]);
     setReason("");
     setOccurrenceType("");
-    setAuthEmail("");
-    setAuthPassword("");
-    setAuthError("");
+    setApprovalOpen(false);
   };
 
   // Format items for display
