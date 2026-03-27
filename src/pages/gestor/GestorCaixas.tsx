@@ -296,7 +296,7 @@ export default function GestorCaixas() {
       key: "actions", header: t("actions"), render: (r) => (
         <div className="flex gap-2">
           {r.status === "open" && (
-            <Button size="sm" variant="outline" onClick={() => window.open(`/caixa`, "_blank")} title={t("gcx_view_register")}>
+            <Button size="sm" variant="outline" onClick={() => window.open(`/caixa?event=${r.event_id}`, "_blank")} title={t("gcx_view_register")}>
               <Eye className="h-4 w-4" />
             </Button>
           )}
