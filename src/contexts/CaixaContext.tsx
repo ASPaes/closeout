@@ -13,6 +13,8 @@ type CaixaContextType = {
   clientId: string | null;
   /** Open cash register ID for current operator */
   cashRegisterId: string | null;
+  /** Register number for display */
+  registerNumber: number | null;
   /** Operator display name */
   operatorName: string | null;
   /** Event name */
