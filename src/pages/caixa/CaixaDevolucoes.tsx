@@ -159,10 +159,8 @@ export default function CaixaDevolucoes() {
   // Reset modal
   const resetModal = () => {
     setStep(1);
-    setOrderSearch("");
     setFoundOrder(null);
     setOrderItems([]);
-    setOrderNotFound(false);
     setReason("");
     setOccurrenceType("");
     setAuthEmail("");
