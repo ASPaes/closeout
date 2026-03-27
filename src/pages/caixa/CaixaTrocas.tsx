@@ -307,8 +307,15 @@ export default function CaixaTrocas() {
     } else if (step === 2 && selectedOriginal) {
       setStep(3);
     } else if (step === 3 && newItem) {
-      handleConfirm();
+      // Open approval dialog instead of confirming directly
+      setModalOpen(false);
+      setApprovalOpen(true);
     }
+  };
+
+  const handleExchangeApproved = async (_managerId: string) => {
+    setApprovalOpen(false);
+    await handleConfirm();
   };
 
   const stepTitle =
