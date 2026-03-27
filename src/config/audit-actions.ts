@@ -133,7 +133,6 @@ export const AUDIT_ACTION = {
   CONSUMER_PAYMENT_FAILED: 'consumer_payment.failed',
   CONSUMER_CHECKIN: 'consumer.checkin',
   CONSUMER_CHECKOUT: 'consumer.checkout',
-  CONSUMER_LIMIT_CHANGED: 'consumer.limit_changed',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];
