@@ -124,6 +124,7 @@ export default function GestorCaixas() {
 
     setRegisters(regs.map(r => ({
       ...r,
+      register_number: r.register_number,
       operator_name: profileMap[r.operator_id] || r.operator_id.slice(0, 8),
       event_name: eventMap[r.event_id] || r.event_id.slice(0, 8),
       sales_total: salesMap[r.id] || 0,
