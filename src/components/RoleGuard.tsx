@@ -4,13 +4,14 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 
-type Area = "admin" | "gestor" | "caixa" | "bar";
+type Area = "admin" | "gestor" | "caixa" | "bar" | "consumer";
 
 const areaRoles: Record<Area, string[]> = {
   admin: ["super_admin"],
   gestor: ["super_admin", "client_admin", "client_manager"],
   caixa: ["cashier", "super_admin", "client_admin", "client_manager"],
   bar: ["bar_staff", "staff", "super_admin", "client_admin", "client_manager"],
+  consumer: ["consumer", "super_admin"],
 };
 
 const redirectForUnauthorized: Record<Area, string> = {
@@ -18,6 +19,7 @@ const redirectForUnauthorized: Record<Area, string> = {
   gestor: "/login",
   caixa: "/login",
   bar: "/login",
+  consumer: "/app/login",
 };
 
 export function RoleGuard({ area, children }: { area: Area; children: React.ReactNode }) {

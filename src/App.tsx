@@ -8,6 +8,8 @@ import { LanguageProvider } from "@/i18n/language-provider";
 import { AdminLayout } from "@/components/AdminLayout";
 import { GestorLayout } from "@/components/GestorLayout";
 import { CaixaLayout } from "@/components/CaixaLayout";
+import { BarLayout } from "@/components/BarLayout";
+import { ConsumerLayout } from "@/components/ConsumerLayout";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -40,11 +42,24 @@ import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
 import CaixaDevolucoes from "@/pages/caixa/CaixaDevolucoes";
 import CaixaTrocas from "@/pages/caixa/CaixaTrocas";
 import CaixaFechamento from "@/pages/caixa/CaixaFechamento";
-import { BarLayout } from "@/components/BarLayout";
 import BarFilaPedidos from "@/pages/bar/BarFilaPedidos";
 import BarProntos from "@/pages/bar/BarProntos";
 import BarLeitorQR from "@/pages/bar/BarLeitorQR";
 import BarHistorico from "@/pages/bar/BarHistorico";
+// Consumer pages
+import ConsumerLogin from "@/pages/consumer/ConsumerLogin";
+import ConsumerCadastro from "@/pages/consumer/ConsumerCadastro";
+import ConsumerEventos from "@/pages/consumer/ConsumerEventos";
+import ConsumerCardapio from "@/pages/consumer/ConsumerCardapio";
+import ConsumerCarrinho from "@/pages/consumer/ConsumerCarrinho";
+import ConsumerPagamento from "@/pages/consumer/ConsumerPagamento";
+import ConsumerQR from "@/pages/consumer/ConsumerQR";
+import ConsumerPedidos from "@/pages/consumer/ConsumerPedidos";
+import ConsumerPerfil from "@/pages/consumer/ConsumerPerfil";
+import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
+import ConsumerCheckin from "@/pages/consumer/ConsumerCheckin";
+import ConsumerPresentes from "@/pages/consumer/ConsumerPresentes";
+import ConsumerEventoCardapio from "@/pages/consumer/ConsumerEventoCardapio";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +122,25 @@ const App = () => (
               <Route path="prontos" element={<BarProntos />} />
               <Route path="qr" element={<BarLeitorQR />} />
               <Route path="historico" element={<BarHistorico />} />
+            </Route>
+
+            {/* Consumer app — auth (no layout) */}
+            <Route path="/app/login" element={<ConsumerLogin />} />
+            <Route path="/app/cadastro" element={<ConsumerCadastro />} />
+
+            {/* Consumer app — authenticated */}
+            <Route path="/app" element={<ConsumerLayout />}>
+              <Route index element={<ConsumerEventos />} />
+              <Route path="evento/:eventId" element={<ConsumerEventoCardapio />} />
+              <Route path="cardapio" element={<ConsumerCardapio />} />
+              <Route path="carrinho" element={<ConsumerCarrinho />} />
+              <Route path="pagamento" element={<ConsumerPagamento />} />
+              <Route path="qr" element={<ConsumerQR />} />
+              <Route path="pedidos" element={<ConsumerPedidos />} />
+              <Route path="perfil" element={<ConsumerPerfil />} />
+              <Route path="limites" element={<ConsumerLimites />} />
+              <Route path="checkin" element={<ConsumerCheckin />} />
+              <Route path="presentes" element={<ConsumerPresentes />} />
             </Route>
 
             {/* Legacy redirects */}

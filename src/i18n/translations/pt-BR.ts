@@ -958,6 +958,29 @@ const ptBR = {
   gbar_search: "Buscar por número do pedido...",
   gbar_origin: "Origem",
   gbar_no_orders: "Nenhum pedido encontrado",
+
+  // Consumer App
+  consumer_tab_events: "Eventos",
+  consumer_tab_menu: "Cardápio",
+  consumer_tab_qr: "QR Code",
+  consumer_tab_orders: "Pedidos",
+  consumer_tab_profile: "Perfil",
+  consumer_events_title: "Eventos",
+  consumer_menu_title: "Cardápio",
+  consumer_cart_title: "Carrinho",
+  consumer_payment_title: "Pagamento",
+  consumer_qr_title: "Meu QR Code",
+  consumer_orders_title: "Meus Pedidos",
+  consumer_profile_title: "Meu Perfil",
+  consumer_limits_title: "Meus Limites",
+  consumer_checkin_title: "Check-in",
+  consumer_nearby_title: "Presentes no Evento",
+  consumer_coming_soon: "Em breve",
+  consumer_login_subtitle: "Entre para acessar seus eventos",
+  consumer_signup_subtitle: "Crie sua conta para começar",
+  consumer_signup_success: "Conta criada! Verifique seu email.",
+  consumer_no_account: "Não tem conta? Cadastre-se",
+  consumer_has_account: "Já tem conta? Entrar",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
