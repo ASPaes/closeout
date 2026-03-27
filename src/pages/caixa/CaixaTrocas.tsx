@@ -148,6 +148,7 @@ export default function CaixaTrocas() {
     setCatalogSearch("");
     setSelectedCategory(null);
     setNewItem(null);
+    setApprovalOpen(false);
   };
 
   // Filtered catalog
