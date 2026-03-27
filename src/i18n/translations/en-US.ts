@@ -764,6 +764,32 @@ const enUS: Record<TranslationKey, string> = {
   ret_confirm: "Confirm Return",
   ret_save_success: "Return recorded successfully",
   ret_save_error: "Error recording return",
+
+  // Exchanges
+  exc_new: "New Exchange",
+  exc_empty: "No exchanges recorded",
+  exc_empty_hint: "Click 'New Exchange' to record a product exchange.",
+  exc_col_original: "Original Item",
+  exc_col_new: "New Item",
+  exc_col_difference: "Difference",
+  exc_col_direction: "Direction",
+  exc_dir_refund: "Refunded to customer",
+  exc_dir_charge: "Charged customer",
+  exc_dir_none: "No difference",
+  exc_step1_title: "1. Identify order",
+  exc_step2_title: "2. Select item to exchange",
+  exc_step3_title: "3. Select new item",
+  exc_search_order: "Order number or QR code...",
+  exc_items_count: "items in order",
+  exc_select_item: "Select item to exchange",
+  exc_original_item: "Original item",
+  exc_new_item: "New item",
+  exc_refund_msg: "Refund %s to customer",
+  exc_charge_msg: "Charge %s from customer",
+  exc_no_difference: "No price difference",
+  exc_confirm: "Confirm Exchange",
+  exc_save_success: "Exchange recorded successfully",
+  exc_save_error: "Error recording exchange",
 };
 
 export default enUS;
