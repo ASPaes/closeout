@@ -680,6 +680,8 @@ const ptBR = {
   // POS / Venda Rápida
   pos_search_products: "Buscar produto ou combo...",
   pos_all_categories: "Todos",
+  pos_view_grid: "Visualização com imagem",
+  pos_view_list: "Visualização compacta",
   pos_cart_empty: "Carrinho vazio",
   pos_cart_empty_desc: "Adicione produtos do catálogo para iniciar a venda.",
   pos_cart_title: "Pedido",

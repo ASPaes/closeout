@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, Loader2,
-  Banknote, CreditCard, Smartphone, Package,
+  Banknote, CreditCard, Smartphone, Package, LayoutGrid, List,
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
@@ -57,6 +57,7 @@ function CatalogGrid({
   onAddItem: (item: CatalogProduct) => void;
   t: any;
 }) {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const filtered = useMemo(() => {
     let result = items;
     if (searchQuery) {
@@ -84,8 +85,24 @@ function CatalogGrid({
         />
       </div>
 
-      {/* Category filter */}
-      <div className="flex gap-1.5 mb-3 flex-wrap">
+      {/* View toggle + Category filter */}
+      <div className="flex gap-1.5 mb-3 flex-wrap items-center">
+        <div className="flex border border-border rounded-md mr-1">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-1.5 rounded-l-md transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            title={t("pos_view_grid")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-1.5 rounded-r-md transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            title={t("pos_view_list")}
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <Badge
           variant={selectedCategory === null ? "default" : "outline"}
           className="cursor-pointer text-xs"
@@ -105,42 +122,86 @@ function CatalogGrid({
         ))}
       </div>
 
-      {/* Product grid */}
+      {/* Product grid / list */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pr-2 pb-2">
-          {filtered.map((item) => {
-            const outOfStock = item.stockAvailable !== null && item.stockAvailable <= 0;
-            return (
-              <button
-                key={`${item.type}-${item.id}`}
-                disabled={outOfStock}
-                onClick={() => onAddItem(item)}
-                className={`flex flex-col items-start gap-1 rounded-lg border border-border/60 bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed`}
-              >
-                <div className="flex items-center gap-1.5 w-full">
-                  {item.type === "combo" && <Package className="h-3 w-3 text-primary shrink-0" />}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pr-2 pb-2">
+            {filtered.map((item) => {
+              const outOfStock = item.stockAvailable !== null && item.stockAvailable <= 0;
+              return (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  disabled={outOfStock}
+                  onClick={() => onAddItem(item)}
+                  className="flex flex-col items-start gap-1 rounded-lg border border-border/60 bg-card text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
+                >
+                  {item.imageUrl ? (
+                    <div className="w-full aspect-square bg-muted/30 overflow-hidden">
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-square bg-muted/20 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="p-2 w-full flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 w-full">
+                      {item.type === "combo" && <Package className="h-3 w-3 text-primary shrink-0" />}
+                      <span className="text-sm font-medium truncate flex-1">{item.name}</span>
+                    </div>
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-primary font-bold text-sm">{fmt(item.price)}</span>
+                      {outOfStock ? (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">{t("pos_out_of_stock")}</Badge>
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Plus className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    {item.stockAvailable !== null && item.stockAvailable > 0 && (
+                      <span className="text-[10px] text-muted-foreground">Estoque: {item.stockAvailable}</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="col-span-full text-center text-sm text-muted-foreground py-8">{t("no_results")}</p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1 pr-2 pb-2">
+            {filtered.map((item) => {
+              const outOfStock = item.stockAvailable !== null && item.stockAvailable <= 0;
+              return (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  disabled={outOfStock}
+                  onClick={() => onAddItem(item)}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-3 py-2 text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {item.type === "combo" && <Package className="h-3.5 w-3.5 text-primary shrink-0" />}
                   <span className="text-sm font-medium truncate flex-1">{item.name}</span>
-                </div>
-                <div className="flex items-center justify-between w-full mt-auto">
-                  <span className="text-primary font-bold text-sm">{fmt(item.price)}</span>
+                  {item.stockAvailable !== null && item.stockAvailable > 0 && (
+                    <span className="text-[10px] text-muted-foreground shrink-0">Est: {item.stockAvailable}</span>
+                  )}
+                  <span className="text-primary font-bold text-sm shrink-0">{fmt(item.price)}</span>
                   {outOfStock ? (
                     <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">{t("pos_out_of_stock")}</Badge>
                   ) : (
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <Plus className="h-3.5 w-3.5 text-primary" />
                     </div>
                   )}
-                </div>
-                {item.stockAvailable !== null && item.stockAvailable > 0 && (
-                  <span className="text-[10px] text-muted-foreground">Estoque: {item.stockAvailable}</span>
-                )}
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="col-span-full text-center text-sm text-muted-foreground py-8">{t("no_results")}</p>
-          )}
-        </div>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-8">{t("no_results")}</p>
+            )}
+          </div>
+        )}
       </ScrollArea>
     </div>
   );
