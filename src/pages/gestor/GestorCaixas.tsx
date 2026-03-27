@@ -483,6 +483,51 @@ export default function GestorCaixas() {
           </div>
         </ModalForm>
       )}
+
+      {/* Open Register Modal */}
+      {openModal && (
+        <ModalForm
+          open={openModal}
+          onOpenChange={() => { setOpenModal(false); setOpenEventId(""); setOpenOperatorId(""); setOpenBalance(""); }}
+          title={t("gcx_open_new_title")}
+          onSubmit={handleOpenRegister}
+          submitLabel={t("caixa_open_register")}
+          saving={opening}
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("gcx_open_select_event")}</Label>
+              <Select value={openEventId} onValueChange={setOpenEventId}>
+                <SelectTrigger><SelectValue placeholder={t("gcx_open_select_event")} /></SelectTrigger>
+                <SelectContent>
+                  {events.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("gcx_open_select_operator")}</Label>
+              <Select value={openOperatorId} onValueChange={setOpenOperatorId}>
+                <SelectTrigger><SelectValue placeholder={t("gcx_open_select_operator")} /></SelectTrigger>
+                <SelectContent>
+                  {operators.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("gcx_open_balance")}</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={openBalance}
+                onChange={(e) => setOpenBalance(e.target.value)}
+                placeholder="0,00"
+                required
+              />
+            </div>
+          </div>
+        </ModalForm>
+      )}
     </div>
   );
 }
