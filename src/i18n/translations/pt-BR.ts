@@ -727,6 +727,9 @@ const ptBR = {
   mov_field_destination: "Destino",
   mov_field_destination_placeholder: "Para quem/onde vai o dinheiro",
   mov_field_notes_placeholder: "Observações sobre a movimentação...",
+  mov_type_venda: "Venda",
+  mov_total_sales: "Total Vendas",
+  mov_col_order: "Pedido",
 
   // Devoluções
   ret_new: "Nova Devolução",
