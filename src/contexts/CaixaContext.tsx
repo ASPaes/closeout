@@ -33,6 +33,7 @@ const CaixaContext = createContext<CaixaContextType>({
   eventId: null,
   clientId: null,
   cashRegisterId: null,
+  registerNumber: null,
   operatorName: null,
   eventName: null,
   availableEvents: [],
