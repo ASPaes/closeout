@@ -897,6 +897,13 @@ const ptBR = {
   bar_ago: "há",
   bar_min: "min",
   bar_sec: "seg",
+  bar_ready_waiting: "pedidos aguardando retirada",
+  bar_ready_empty: "Nenhum pedido aguardando retirada",
+  bar_ready_empty_desc: "Quando um pedido ficar pronto, ele aparecerá aqui automaticamente",
+  bar_ready_since: "Pronto há",
+  bar_sound_on: "Som ativado",
+  bar_sound_off: "Som desativado",
+  bar_unretrieved_alert: "Aguardando retirada há muito tempo",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
