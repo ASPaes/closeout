@@ -358,7 +358,7 @@ function CartPanel({
 
         {/* Finalize */}
         <Button
-          className="w-full mt-auto font-semibold text-base h-11 shadow-[0_0_15px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.35)] transition-shadow"
+          className="w-full mt-auto font-semibold text-base h-12 min-h-[48px] shadow-[0_0_15px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.35)] transition-shadow"
           disabled={submitting || cart.length === 0 || !paymentMethod}
           onClick={onFinalize}
         >
