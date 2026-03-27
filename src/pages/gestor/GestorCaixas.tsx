@@ -84,6 +84,60 @@ export default function GestorCaixas() {
       .then(({ data }) => setEvents(data ?? []));
   }, [effectiveClientId]);
 
+  // Fetch operators (users with roles in this client)
+  useEffect(() => {
+    if (!effectiveClientId) return;
+    supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("client_id", effectiveClientId)
+      .then(async ({ data: roles }) => {
+        if (!roles?.length) { setOperators([]); return; }
+        const ids = [...new Set(roles.map(r => r.user_id))];
+        const { data: profiles } = await supabase.from("profiles").select("id, name").in("id", ids);
+        setOperators((profiles ?? []).map(p => ({ id: p.id, name: p.name })));
+      });
+  }, [effectiveClientId]);
+
+  const handleOpenRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openEventId || !openOperatorId || !openBalance || !effectiveClientId) return;
+    setOpening(true);
+    try {
+      const { data, error } = await supabase
+        .from("cash_registers")
+        .insert({
+          event_id: openEventId,
+          client_id: effectiveClientId,
+          operator_id: openOperatorId,
+          opening_balance: parseFloat(openBalance),
+          status: "open",
+          register_number: 0,
+        } as any)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      await logAudit({
+        action: AUDIT_ACTION.CASH_REGISTER_OPENED,
+        entityType: "cash_register",
+        entityId: data.id,
+        newData: { event_id: openEventId, operator_id: openOperatorId, opening_balance: parseFloat(openBalance), opened_by: "gestor" },
+      });
+
+      toast.success(t("gcx_open_success"));
+      setOpenModal(false);
+      setOpenEventId("");
+      setOpenOperatorId("");
+      setOpenBalance("");
+      fetchRegisters();
+    } catch (err: any) {
+      toast.error(err.message || t("gcx_open_error"));
+    } finally {
+      setOpening(false);
+    }
+  };
+
   const fetchRegisters = async () => {
     if (!effectiveClientId) return;
     setLoading(true);
