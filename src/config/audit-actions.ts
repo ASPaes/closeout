@@ -117,6 +117,14 @@ export const AUDIT_ACTION = {
   // Event Billing Overrides
   EVENT_BILLING_OVERRIDE_CREATED: 'event_billing_override.created',
   EVENT_BILLING_OVERRIDE_UPDATED: 'event_billing_override.updated',
+
+  // Bar
+  BAR_ORDER_PREPARING: 'bar_order.preparing',
+  BAR_ORDER_READY: 'bar_order.ready',
+  BAR_ORDER_DELIVERED: 'bar_order.delivered',
+  BAR_QR_VALIDATED: 'bar_qr.validated',
+  BAR_QR_REJECTED: 'bar_qr.rejected',
+  BAR_ORDER_CANCELLED: 'bar_order.cancelled',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];

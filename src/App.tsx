@@ -39,6 +39,11 @@ import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
 import CaixaDevolucoes from "@/pages/caixa/CaixaDevolucoes";
 import CaixaTrocas from "@/pages/caixa/CaixaTrocas";
 import CaixaFechamento from "@/pages/caixa/CaixaFechamento";
+import { BarLayout } from "@/components/BarLayout";
+import BarFilaPedidos from "@/pages/bar/BarFilaPedidos";
+import BarProntos from "@/pages/bar/BarProntos";
+import BarLeitorQR from "@/pages/bar/BarLeitorQR";
+import BarHistorico from "@/pages/bar/BarHistorico";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +97,14 @@ const App = () => (
               <Route path="devolucoes" element={<CaixaDevolucoes />} />
               <Route path="trocas" element={<CaixaTrocas />} />
               <Route path="fechamento" element={<CaixaFechamento />} />
+            </Route>
+
+            {/* Bar area */}
+            <Route path="/bar" element={<BarLayout />}>
+              <Route index element={<BarFilaPedidos />} />
+              <Route path="prontos" element={<BarProntos />} />
+              <Route path="qr" element={<BarLeitorQR />} />
+              <Route path="historico" element={<BarHistorico />} />
             </Route>
 
             {/* Legacy redirects */}
