@@ -301,7 +301,7 @@ export default function GestorBarOperacao() {
             className="cursor-pointer py-1.5 px-3"
             onClick={() => setStatusFilter(s)}
           >
-            {s === "all" ? t("all") : (STATUS_MAP[s]?.label ?? s)}
+            {s === "all" ? "Todos" : (STATUS_MAP[s]?.label ?? s)}
           </Badge>
         ))}
       </div>
