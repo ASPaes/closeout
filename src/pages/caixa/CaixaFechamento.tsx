@@ -74,6 +74,8 @@ export default function CaixaFechamento() {
   const [physicalBalance, setPhysicalBalance] = useState("");
   const [notes, setNotes] = useState("");
   const [closing, setClosing] = useState(false);
+  const [closingDone, setClosingDone] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
