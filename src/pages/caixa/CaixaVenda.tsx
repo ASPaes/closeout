@@ -415,7 +415,7 @@ export default function CaixaVenda() {
         if (newQty <= 0) return i;
         // Check stock limit for increase
         if (delta > 0) {
-          const catalogItem = items.find((ci) => ci.id === id);
+          const catalogItem = items.find((ci) => ci.id === i.id);
           if (catalogItem?.stockAvailable !== null && catalogItem?.stockAvailable !== undefined && newQty > catalogItem.stockAvailable) {
             return i;
           }
