@@ -38,13 +38,13 @@ type BarOrder = {
   payment_method: string | null;
 };
 
-const STATUS_MAP: Record<string, { variant: string; label: string }> = {
-  pending: { variant: "warning", label: "Pendente" },
-  paid: { variant: "info", label: "Pago" },
-  preparing: { variant: "info", label: "Preparando" },
-  ready: { variant: "success", label: "Pronto" },
-  delivered: { variant: "default", label: "Entregue" },
-  cancelled: { variant: "destructive", label: "Cancelado" },
+const STATUS_MAP: Record<string, { variant: "active" | "inactive" | "draft" | "completed" | "cancelled"; label: string }> = {
+  pending: { variant: "draft", label: "Pendente" },
+  paid: { variant: "completed", label: "Pago" },
+  preparing: { variant: "completed", label: "Preparando" },
+  ready: { variant: "active", label: "Pronto" },
+  delivered: { variant: "inactive", label: "Entregue" },
+  cancelled: { variant: "cancelled", label: "Cancelado" },
 };
 
 const ORIGIN_LABELS: Record<string, string> = {
