@@ -762,6 +762,32 @@ const ptBR = {
   ret_confirm: "Confirmar Devolução",
   ret_save_success: "Devolução registrada com sucesso",
   ret_save_error: "Erro ao registrar devolução",
+
+  // Trocas
+  exc_new: "Nova Troca",
+  exc_empty: "Nenhuma troca registrada",
+  exc_empty_hint: "Clique em 'Nova Troca' para registrar uma troca de produto.",
+  exc_col_original: "Item Original",
+  exc_col_new: "Novo Item",
+  exc_col_difference: "Diferença",
+  exc_col_direction: "Direção",
+  exc_dir_refund: "Devolveu ao cliente",
+  exc_dir_charge: "Cobrou do cliente",
+  exc_dir_none: "Sem diferença",
+  exc_step1_title: "1. Identificar pedido",
+  exc_step2_title: "2. Selecionar item a trocar",
+  exc_step3_title: "3. Selecionar novo item",
+  exc_search_order: "Nº do pedido ou código QR...",
+  exc_items_count: "itens no pedido",
+  exc_select_item: "Selecione o item para trocar",
+  exc_original_item: "Item original",
+  exc_new_item: "Novo item",
+  exc_refund_msg: "Devolver %s ao cliente",
+  exc_charge_msg: "Cobrar %s do cliente",
+  exc_no_difference: "Sem diferença de valor",
+  exc_confirm: "Confirmar Troca",
+  exc_save_success: "Troca registrada com sucesso",
+  exc_save_error: "Erro ao registrar troca",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
