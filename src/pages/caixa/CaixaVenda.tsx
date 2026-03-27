@@ -19,6 +19,7 @@ import {
   Banknote, CreditCard, Smartphone, Package,
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
+import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 
 type CartItem = {
   id: string;
