@@ -1034,6 +1034,154 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          combo_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          order_id: string
+          product_id: string | null
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          combo_id?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          order_id: string
+          product_id?: string | null
+          quantity?: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          combo_id?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "combos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          client_id: string
+          consumer_id: string | null
+          created_at: string
+          delivered_at: string | null
+          delivered_by_staff_id: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          order_number: number
+          origin: Database["public"]["Enums"]["order_origin"]
+          origin_ref_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          preparing_at: string | null
+          ready_at: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total: number
+          updated_at: string
+          waiter_id: string | null
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id: string
+          consumer_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivered_by_staff_id?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          order_number: number
+          origin: Database["public"]["Enums"]["order_origin"]
+          origin_ref_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          preparing_at?: string | null
+          ready_at?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          client_id?: string
+          consumer_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivered_by_staff_id?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          order_number?: number
+          origin?: Database["public"]["Enums"]["order_origin"]
+          origin_ref_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          preparing_at?: string | null
+          ready_at?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total?: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -1266,6 +1414,44 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_tokens: {
+        Row: {
+          generated_at: string
+          id: string
+          order_id: string
+          status: Database["public"]["Enums"]["qr_status"]
+          token: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          order_id: string
+          status?: Database["public"]["Enums"]["qr_status"]
+          token: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          order_id?: string
+          status?: Database["public"]["Enums"]["qr_status"]
+          token?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       returns: {
         Row: {
           authorized_by: string
@@ -1446,6 +1632,81 @@ export type Database = {
           },
         ]
       }
+      stock_reservations: {
+        Row: {
+          client_id: string
+          event_id: string
+          id: string
+          order_id: string
+          order_item_id: string
+          product_id: string
+          quantity: number
+          reserved_at: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          client_id: string
+          event_id: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          product_id: string
+          quantity: number
+          reserved_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          client_id?: string
+          event_id?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          product_id?: string
+          quantity?: number
+          reserved_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_invites: {
         Row: {
           client_id: string | null
@@ -1579,6 +1840,58 @@ export type Database = {
           },
         ]
       }
+      validations: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          order_id: string
+          qr_token_id: string
+          result: string
+          validated_by: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          order_id: string
+          qr_token_id: string
+          result: string
+          validated_by: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          order_id?: string
+          qr_token_id?: string
+          result?: string
+          validated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validations_qr_token_id_fkey"
+            columns: ["qr_token_id"]
+            isOneToOne: false
+            referencedRelation: "qr_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string | null
@@ -1685,6 +1998,14 @@ export type Database = {
             Returns: boolean
           }
         | { Args: { p_role: string }; Returns: boolean }
+      has_role_for_client: {
+        Args: { p_client_id: string; p_roles: string[]; p_user_id: string }
+        Returns: boolean
+      }
+      has_role_for_event: {
+        Args: { p_event_id: string; p_roles: string[]; p_user_id: string }
+        Returns: boolean
+      }
       has_role_in_client: {
         Args: { p_client_id: string; p_role: string }
         Returns: boolean
@@ -1706,6 +2027,8 @@ export type Database = {
       }
       next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
       normalize_product_name: { Args: { input: string }; Returns: string }
+      release_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
+      reserve_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
       update_stock_entry:
         | {
             Args: {
@@ -1723,6 +2046,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      validate_qr: {
+        Args: { p_staff_id: string; p_token: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
