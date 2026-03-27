@@ -1,7 +1,10 @@
 import { useTranslation } from "@/i18n/use-translation";
-import { Calendar, MapPin, Users, ChevronRight, Zap } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronRight, Zap, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+const categories = ["Todos", "Ao Vivo", "Hoje", "Esta Semana", "Perto de Mim"];
 
 const mockEvents = [
   {
@@ -49,59 +52,91 @@ const mockEvents = [
 export default function ConsumerEventos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [activeCat, setActiveCat] = useState("Todos");
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Olá, Lucas! 👋</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Encontre eventos perto de você</p>
+      {/* Large title */}
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">Olá, Lucas 👋</p>
+          <h1 className="text-[28px] font-extrabold text-foreground leading-tight tracking-tight">
+            Eventos
+          </h1>
+        </div>
+        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.06] border border-white/[0.08] active:scale-95 transition-transform">
+          <SlidersHorizontal className="h-[18px] w-[18px] text-muted-foreground" />
+        </button>
       </div>
 
-      {/* Live event highlight */}
+      {/* Category chips carousel */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCat(cat)}
+            className={cn(
+              "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95",
+              activeCat === cat
+                ? "bg-primary text-primary-foreground shadow-[0_0_16px_hsl(24,100%,50%,0.25)]"
+                : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground"
+            )}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Live event — featured card */}
       {mockEvents
         .filter((e) => e.status === "live")
         .map((event) => (
           <button
             key={event.id}
             onClick={() => navigate(`/app/evento/${event.id}`)}
-            className="relative w-full overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-4 text-left active:scale-[0.98] transition-transform"
-            style={{ boxShadow: "0 0 30px hsl(24 100% 50% / 0.15)" }}
+            className="relative w-full overflow-hidden rounded-3xl text-left active:scale-[0.98] transition-transform"
+            style={{ aspectRatio: "16/10" }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex items-center gap-1 rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary uppercase tracking-wider">
-                <Zap className="h-3 w-3" /> Ao Vivo
-              </span>
+            {/* Simulated image bg */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-background to-background" />
+            <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-30 select-none">
+              {event.image}
             </div>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-foreground leading-tight">{event.name}</h2>
-                <div className="mt-2 flex flex-col gap-1">
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3 text-primary/70" />
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+            {/* Content */}
+            <div className="relative flex h-full flex-col justify-between p-5">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 rounded-full bg-primary/90 px-3 py-1 text-[11px] font-bold text-primary-foreground uppercase tracking-wider">
+                  <Zap className="h-3 w-3" /> Ao Vivo
+                </span>
+                <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/80">
+                  <Users className="h-3 w-3" /> {event.attendees}
+                </span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white leading-tight">{event.name}</h2>
+                <div className="mt-1.5 flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-white/60">
+                    <MapPin className="h-3 w-3" />
                     {event.venue}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Users className="h-3 w-3 text-primary/70" />
-                    {event.attendees} presentes
                   </span>
                 </div>
               </div>
-              <span className="text-4xl">{event.image}</span>
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-primary">Entrar no evento →</span>
             </div>
           </button>
         ))}
 
       {/* Section title */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">Próximos Eventos</h2>
-        <span className="text-xs text-muted-foreground">{mockEvents.filter(e => e.status === 'upcoming').length} eventos</span>
+        <h2 className="text-[17px] font-bold text-foreground">Próximos</h2>
+        <span className="text-xs text-muted-foreground">
+          {mockEvents.filter((e) => e.status === "upcoming").length} eventos
+        </span>
       </div>
 
-      {/* Upcoming events */}
+      {/* Upcoming events — card list */}
       <div className="flex flex-col gap-3">
         {mockEvents
           .filter((e) => e.status === "upcoming")
@@ -109,22 +144,29 @@ export default function ConsumerEventos() {
             <button
               key={event.id}
               onClick={() => navigate(`/app/evento/${event.id}`)}
-              className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left active:scale-[0.98] active:bg-card/80 transition-all"
+              className="relative flex w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.98] transition-all"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-2xl">
+              {/* Emoji image area */}
+              <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-white/[0.06] to-transparent text-4xl">
                 {event.image}
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground truncate">{event.name}</h3>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {event.date}
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground truncate block">{event.venue}</span>
+              {/* Info */}
+              <div className="flex flex-1 flex-col justify-center gap-1 p-3.5 min-w-0">
+                <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-2">
+                  {event.name}
+                </h3>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3 shrink-0" />
+                  {event.date}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  {event.venue}
+                </span>
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+              <div className="flex items-center pr-3">
+                <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+              </div>
             </button>
           ))}
       </div>

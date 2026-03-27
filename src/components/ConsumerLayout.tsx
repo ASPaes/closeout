@@ -30,44 +30,46 @@ function ConsumerTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/80 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-50"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-around px-2">
-        {tabs.map((tab) => {
-          const active = isActive(tab.path);
-          const isQr = tab.path === "/app/qr";
-          return (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              className={cn(
-                "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1 transition-all",
-                "active:scale-95",
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              )}
-            >
-              {/* Active glow indicator */}
-              {active && (
-                <div
-                  className="absolute inset-0 rounded-xl bg-primary/10"
-                  style={{ boxShadow: "inset 0 0 12px hsl(24 100% 50% / 0.15)" }}
-                />
-              )}
-              <tab.icon className={cn("relative z-10 h-5 w-5", active && "drop-shadow-[0_0_6px_hsl(24,100%,50%,0.5)]")} />
-              {active && (
-                <span className="relative z-10 text-[10px] font-semibold">{t(tab.labelKey)}</span>
-              )}
-              {isQr && orderReady && (
-                <span className="absolute right-1 top-1 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-1">
+        {/* Floating pill */}
+        <div
+          className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.08] px-2 py-2"
+          style={{
+            background: "rgba(0, 0, 0, 0.55)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.06)",
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = isActive(tab.path);
+            const isQr = tab.path === "/app/qr";
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
+                className={cn(
+                  "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 transition-all",
+                  "active:scale-95 active:opacity-80",
+                  active ? "text-primary" : "text-white/40"
+                )}
+              >
+                <tab.icon className={cn("h-[22px] w-[22px]", active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]")} />
+                {active && (
+                  <span className="text-[10px] font-semibold tracking-wide">{t(tab.labelKey)}</span>
+                )}
+                {isQr && orderReady && (
+                  <span className="absolute right-1 top-0.5 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
@@ -78,8 +80,15 @@ function ConsumerHeader() {
   const { profile } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/30 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-4">
+    <header
+      className="sticky top-0 z-40 border-b border-white/[0.06]"
+      style={{
+        background: "rgba(10, 10, 10, 0.75)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }}
+    >
+      <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-5">
         <div className="flex items-center gap-2.5">
           <div
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-[10px] font-bold text-primary-foreground"
@@ -101,7 +110,7 @@ function ConsumerHeader() {
             )}
           </div>
         </div>
-        <button className="flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border/60 text-xs font-semibold text-foreground active:scale-95 transition-transform">
+        <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.06] text-xs font-semibold text-foreground active:scale-95 transition-transform">
           {profile?.name?.charAt(0)?.toUpperCase() || "?"}
         </button>
       </div>
@@ -113,7 +122,7 @@ function ConsumerContent() {
   return (
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
-      <main className="px-4 pb-20 pt-4">
+      <main className="px-5 pb-24 pt-4">
         <Outlet />
       </main>
       <ConsumerTabBar />
