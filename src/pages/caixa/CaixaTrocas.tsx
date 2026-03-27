@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { useTranslation } from "@/i18n/use-translation";
 import { useCaixa } from "@/contexts/CaixaContext";
