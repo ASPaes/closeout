@@ -69,7 +69,7 @@ function useClosingMetrics(cashRegisterId: string | null) {
 export default function CaixaFechamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { cashRegisterId, refreshCashRegister } = useCaixa();
+  const { cashRegisterId, refreshCashRegister, operatorName } = useCaixa();
   const { data: metrics } = useClosingMetrics(cashRegisterId);
   const [physicalBalance, setPhysicalBalance] = useState("");
   const [notes, setNotes] = useState("");
