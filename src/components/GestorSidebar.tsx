@@ -24,6 +24,7 @@ const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
   { titleKey: "gusr_title", url: "/gestor/usuarios", icon: Users },
   { titleKey: "gcx_title", url: "/gestor/caixas", icon: Banknote },
+  { titleKey: "gbar_ops_title", url: "/gestor/bar", icon: Beer },
   { titleKey: "gestor_invite_team", url: "/gestor/equipe", icon: UserPlus },
 ];
 

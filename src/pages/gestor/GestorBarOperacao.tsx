@@ -335,7 +335,7 @@ export default function GestorBarOperacao() {
                   <tr key={order.id} className="border-b border-border/20 hover:bg-muted/20">
                     <td className="p-3 font-bold text-primary">#{String(order.order_number).padStart(3, "0")}</td>
                     <td className="p-3">
-                      <StatusBadge status={sm?.variant ?? "default"} label={sm?.label ?? order.status} />
+                      <StatusBadge status={sm?.variant ?? "inactive"} label={sm?.label ?? order.status} />
                     </td>
                     <td className="p-3 text-muted-foreground">{ORIGIN_LABELS[order.origin] ?? order.origin}</td>
                     <td className="p-3 text-right">{fmt(order.total)}</td>
