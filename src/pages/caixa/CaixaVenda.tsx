@@ -338,11 +338,13 @@ function CartPanel({
               <Label className="text-sm text-muted-foreground shrink-0">{t("pos_amount_received")}</Label>
               <Input
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.01"
                 value={amountReceived}
                 onChange={(e) => setAmountReceived(e.target.value)}
-                className="h-7 text-sm text-right"
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                className="h-11 text-sm text-right"
               />
             </div>
             {change > 0 && (
