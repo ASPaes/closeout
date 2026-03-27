@@ -217,63 +217,10 @@ export default function CaixaDevolucoes() {
     },
   ];
 
-  // Step 3: authorize and save
-  const handleAuthorize = async () => {
-    if (!authEmail || !authPassword) return;
-    setAuthorizing(true);
-    setAuthError("");
-
-    try {
-      // Create a separate client to avoid swapping session
-      const { createClient } = await import("@supabase/supabase-js");
-      const tempClient = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        { auth: { persistSession: false, autoRefreshToken: false } }
-      );
-
-      const { data: authData, error: authErr } = await tempClient.auth.signInWithPassword({
-        email: authEmail,
-        password: authPassword,
-      });
-
-      if (authErr || !authData.user) {
-        setAuthError(t("ret_auth_invalid_credentials"));
-        setAuthorizing(false);
-        return;
-      }
-
-      const authUserId = authData.user.id;
-
-      // Check the authorizer is not the current operator
-      if (authUserId === user?.id) {
-        setAuthError(t("ret_auth_self_not_allowed"));
-        setAuthorizing(false);
-        return;
-      }
-
-      // Check authorizer has manager/admin role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", authUserId);
-
-      const allowedRoles = ["super_admin", "client_admin", "client_manager"];
-      const hasPermission = (roles ?? []).some((r) => allowedRoles.includes(r.role));
-
-      if (!hasPermission) {
-        setAuthError(t("ret_auth_not_authorized"));
-        setAuthorizing(false);
-        return;
-      }
-
-      // Save return
-      await saveReturn(authUserId);
-    } catch {
-      setAuthError(t("ret_auth_error"));
-    } finally {
-      setAuthorizing(false);
-    }
+  // Step 3: handle manager approval
+  const handleManagerApproved = async (managerId: string) => {
+    setApprovalOpen(false);
+    await saveReturn(managerId);
   };
 
   const saveReturn = async (authorizedBy: string) => {
