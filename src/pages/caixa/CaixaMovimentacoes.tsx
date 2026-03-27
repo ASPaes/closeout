@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowUpDown, Plus, ArrowUp, ArrowDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowUpDown, Plus, ArrowUp, ArrowDown, DollarSign, TrendingUp, TrendingDown, ShoppingCart } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
 import { useCaixa } from "@/contexts/CaixaContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type CashMovement = Tables<"cash_movements">;
+type CashOrder = Tables<"cash_orders">;
 
 type MovementType = "sangria" | "suprimento" | "pagamento" | "outro";
 
@@ -37,12 +38,34 @@ const TYPE_DIRECTION: Record<MovementType, string | null> = {
   outro: null,
 };
 
+/** Unified row for the table — either a manual movement or a sale */
+type UnifiedRow = {
+  id: string;
+  created_at: string;
+  rowType: "movement" | "sale";
+  movementType: string;
+  direction: string;
+  amount: number;
+  destination: string;
+  notes: string | null;
+  orderNumber?: number;
+  paymentMethod?: string;
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: "caixa_cash",
+  credit_card: "caixa_credit",
+  debit_card: "caixa_debit",
+  pix: "caixa_pix",
+};
+
 export default function CaixaMovimentacoes() {
   const { t } = useTranslation();
   const { cashRegisterId, eventId, clientId } = useCaixa();
   const { session } = useAuth();
 
   const [movements, setMovements] = useState<CashMovement[]>([]);
+  const [orders, setOrders] = useState<CashOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,21 +77,30 @@ export default function CaixaMovimentacoes() {
   const [destination, setDestination] = useState("");
   const [notes, setNotes] = useState("");
 
-  const fetchMovements = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!cashRegisterId) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("cash_movements")
-      .select("*")
-      .eq("cash_register_id", cashRegisterId)
-      .order("created_at", { ascending: false });
-    setMovements(data ?? []);
+    const [movRes, ordRes] = await Promise.all([
+      supabase
+        .from("cash_movements")
+        .select("*")
+        .eq("cash_register_id", cashRegisterId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("cash_orders")
+        .select("*")
+        .eq("cash_register_id", cashRegisterId)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false }),
+    ]);
+    setMovements(movRes.data ?? []);
+    setOrders(ordRes.data ?? []);
     setLoading(false);
   }, [cashRegisterId]);
 
   useEffect(() => {
-    fetchMovements();
-  }, [fetchMovements]);
+    fetchData();
+  }, [fetchData]);
 
   // Auto-fill direction when type changes
   useEffect(() => {
@@ -117,7 +149,7 @@ export default function CaixaMovimentacoes() {
       toast.success(t("mov_success"));
       setModalOpen(false);
       resetForm();
-      fetchMovements();
+      fetchData();
     } catch (err) {
       console.error(err);
       toast.error(t("mov_error"));
@@ -126,6 +158,32 @@ export default function CaixaMovimentacoes() {
     }
   };
 
+  // Build unified rows
+  const unifiedRows: UnifiedRow[] = [
+    ...movements.map((m): UnifiedRow => ({
+      id: m.id,
+      created_at: m.created_at,
+      rowType: "movement",
+      movementType: m.movement_type,
+      direction: m.direction,
+      amount: Number(m.amount),
+      destination: m.destination,
+      notes: m.notes,
+    })),
+    ...orders.map((o): UnifiedRow => ({
+      id: o.id,
+      created_at: o.created_at,
+      rowType: "sale",
+      movementType: "venda",
+      direction: "in",
+      amount: Number(o.total),
+      destination: t((PAYMENT_LABELS[o.payment_method] || "caixa_other") as any),
+      notes: null,
+      orderNumber: o.order_number,
+      paymentMethod: o.payment_method,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   // Totals
   const totalIn = movements
     .filter((m) => m.direction === "in")
@@ -133,6 +191,7 @@ export default function CaixaMovimentacoes() {
   const totalOut = movements
     .filter((m) => m.direction === "out")
     .reduce((s, m) => s + Number(m.amount), 0);
+  const totalSales = orders.reduce((s, o) => s + Number(o.total), 0);
   const balance = totalIn - totalOut;
 
   const fmt = (v: number) =>
@@ -143,22 +202,24 @@ export default function CaixaMovimentacoes() {
       sangria: t("mov_type_sangria"),
       suprimento: t("mov_type_suprimento"),
       pagamento: t("mov_type_pagamento"),
+      venda: t("mov_type_venda" as any),
       outro: t("caixa_other"),
     };
     return map[type] ?? type;
   };
 
-  const typeVariant = (type: string) => {
+  const typeVariant = (type: string): "active" | "inactive" | "draft" | "completed" | "cancelled" => {
     const map: Record<string, "active" | "inactive" | "draft" | "completed" | "cancelled"> = {
       sangria: "cancelled",
       suprimento: "active",
       pagamento: "draft",
+      venda: "completed",
       outro: "inactive",
     };
     return map[type] ?? "inactive";
   };
 
-  const columns: DataTableColumn<CashMovement>[] = [
+  const columns: DataTableColumn<UnifiedRow>[] = [
     {
       key: "created_at",
       header: t("mov_col_datetime"),
@@ -171,10 +232,20 @@ export default function CaixaMovimentacoes() {
         }),
     },
     {
-      key: "movement_type",
+      key: "orderNumber" as any,
+      header: t("mov_col_order" as any),
+      render: (row) =>
+        row.orderNumber != null ? (
+          <span className="font-mono text-sm font-medium">#{row.orderNumber}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "movementType" as any,
       header: t("mov_col_type"),
       render: (row) => (
-        <StatusBadge status={typeVariant(row.movement_type)} label={typeLabel(row.movement_type)} />
+        <StatusBadge status={typeVariant(row.movementType)} label={typeLabel(row.movementType)} />
       ),
     },
     {
@@ -196,7 +267,7 @@ export default function CaixaMovimentacoes() {
       header: t("mov_col_amount"),
       render: (row) => (
         <span className={row.direction === "in" ? "text-success" : "text-destructive"}>
-          {fmt(Number(row.amount))}
+          {fmt(row.amount)}
         </span>
       ),
     },
@@ -230,7 +301,18 @@ export default function CaixaMovimentacoes() {
       />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 mb-6">
+        <Card className="border-border/60 bg-card/80">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="rounded-lg bg-primary/15 p-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{t("mov_total_sales" as any)}</p>
+              <p className="text-lg font-bold text-primary">{fmt(totalSales)}</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card className="border-border/60 bg-card/80">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="rounded-lg bg-success/15 p-2">
@@ -270,7 +352,7 @@ export default function CaixaMovimentacoes() {
 
       <DataTable
         columns={columns}
-        data={movements}
+        data={unifiedRows}
         keyExtractor={(row) => row.id}
         loading={loading}
         emptyMessage={t("mov_empty")}
@@ -326,10 +408,12 @@ export default function CaixaMovimentacoes() {
             <Label>{t("mov_field_amount")}</Label>
             <Input
               type="number"
+              inputMode="decimal"
               min="0.01"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onWheel={(e) => (e.target as HTMLInputElement).blur()}
               placeholder="0,00"
               required
             />

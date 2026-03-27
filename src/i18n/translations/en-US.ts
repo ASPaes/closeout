@@ -729,6 +729,9 @@ const enUS: Record<TranslationKey, string> = {
   mov_field_destination: "Destination",
   mov_field_destination_placeholder: "Who/where the money goes",
   mov_field_notes_placeholder: "Notes about the movement...",
+  mov_type_venda: "Sale",
+  mov_total_sales: "Total Sales",
+  mov_col_order: "Order",
 
   // Returns
   ret_new: "New Return",
