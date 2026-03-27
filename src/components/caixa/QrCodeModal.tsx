@@ -20,8 +20,8 @@ export function QrCodeModal({ open, onClose, token, orderNumber, onPrint }: Prop
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            {t("pos_order_confirmed")}
+            <CheckCircle2 className="h-5 w-5 text-success" />
+            {t("pos_order_confirmed" as any)}
           </DialogTitle>
         </DialogHeader>
 
