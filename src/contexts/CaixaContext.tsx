@@ -1,10 +1,21 @@
-import { createContext, useContext, useMemo, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useMemo, useEffect, useState, useCallback, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "closeout_caixa_event_id";
 
 type CaixaEvent = { id: string; name: string };
+
+export type CartItem = {
+  cartId: string;
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  type: "product" | "combo";
+};
+
+export type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
 type CaixaContextType = {
   /** Selected event ID */
@@ -27,6 +38,16 @@ type CaixaContextType = {
   loading: boolean;
   /** Reload cash register state */
   refreshCashRegister: () => void;
+  /** Cart state persisted across route changes */
+  cart: CartItem[];
+  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
+  cartDiscount: string;
+  setCartDiscount: (v: string) => void;
+  cartPaymentMethod: PaymentMethod | null;
+  setCartPaymentMethod: (m: PaymentMethod | null) => void;
+  cartAmountReceived: string;
+  setCartAmountReceived: (v: string) => void;
+  clearCart: () => void;
 };
 
 const CaixaContext = createContext<CaixaContextType>({
@@ -40,6 +61,15 @@ const CaixaContext = createContext<CaixaContextType>({
   setEventId: () => {},
   loading: false,
   refreshCashRegister: () => {},
+  cart: [],
+  setCart: () => {},
+  cartDiscount: "",
+  setCartDiscount: () => {},
+  cartPaymentMethod: null,
+  setCartPaymentMethod: () => {},
+  cartAmountReceived: "",
+  setCartAmountReceived: () => {},
+  clearCart: () => {},
 });
 
 export function CaixaProvider({ children }: { children: ReactNode }) {
@@ -56,6 +86,19 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   const [registerNumber, setRegisterNumber] = useState<number | null>(null);
   const [cashRegisterId, setCashRegisterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Cart state — persists across route changes within Caixa
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartDiscount, setCartDiscount] = useState("");
+  const [cartPaymentMethod, setCartPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [cartAmountReceived, setCartAmountReceived] = useState("");
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+    setCartDiscount("");
+    setCartPaymentMethod(null);
+    setCartAmountReceived("");
+  }, []);
 
   const userId = session?.user?.id;
   const operatorName = profile?.name || null;
@@ -149,6 +192,15 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
         setEventId,
         loading,
         refreshCashRegister: fetchCashRegister,
+        cart,
+        setCart,
+        cartDiscount,
+        setCartDiscount,
+        cartPaymentMethod,
+        setCartPaymentMethod,
+        cartAmountReceived,
+        setCartAmountReceived,
+        clearCart,
       }}
     >
       {children}
