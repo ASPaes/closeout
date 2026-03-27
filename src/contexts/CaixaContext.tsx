@@ -142,6 +142,7 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
         eventId: selectedEventId,
         clientId,
         cashRegisterId,
+        registerNumber,
         operatorName,
         eventName,
         availableEvents,
