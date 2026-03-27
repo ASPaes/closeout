@@ -14,7 +14,8 @@ import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Lock, DollarSign, TrendingUp, TrendingDown, RotateCcw, Calculator, AlertTriangle } from "lucide-react";
+import { Loader2, Lock, DollarSign, TrendingUp, TrendingDown, RotateCcw, Calculator, AlertTriangle, Printer } from "lucide-react";
+import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
