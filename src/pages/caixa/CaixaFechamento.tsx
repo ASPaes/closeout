@@ -48,18 +48,20 @@ function useClosingMetrics(cashRegisterId: string | null) {
 
       const byPayment: Record<string, { count: number; total: number }> = {};
       let totalSales = 0;
+      let cashSales = 0;
       for (const o of orders) {
         const pm = o.payment_method || "other";
         if (!byPayment[pm]) byPayment[pm] = { count: 0, total: 0 };
         byPayment[pm].count++;
         byPayment[pm].total += Number(o.total);
         totalSales += Number(o.total);
+        if (pm === "cash") cashSales += Number(o.total);
       }
 
       const totalWithdrawals = (movOutRes.data ?? []).reduce((s, m) => s + Number(m.amount), 0);
       const totalDeposits = (movInRes.data ?? []).reduce((s, m) => s + Number(m.amount), 0);
       const totalReturns = (returnsRes.data ?? []).reduce((s, r) => s + Number(r.refund_amount), 0);
-      const expectedBalance = openingBalance + totalSales + totalDeposits - totalWithdrawals - totalReturns;
+      const expectedBalance = openingBalance + cashSales + totalDeposits - totalWithdrawals - totalReturns;
 
       return { openingBalance, totalSales, totalWithdrawals, totalDeposits, totalReturns, expectedBalance, byPayment };
     },
