@@ -10,6 +10,7 @@ import { AUDIT_ACTION } from "@/config/audit-actions";
 import { toast } from "sonner";
 import { RotateCcw, Search, Plus, Check, ShoppingBag } from "lucide-react";
 import { OrderPickerDialog } from "@/components/caixa/OrderPickerDialog";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
