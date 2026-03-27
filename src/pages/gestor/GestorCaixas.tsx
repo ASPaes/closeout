@@ -24,6 +24,7 @@ type CashRegisterRow = {
   id: string;
   operator_id: string;
   operator_name: string;
+  register_number: number;
   opened_at: string;
   closed_at: string | null;
   status: string;
