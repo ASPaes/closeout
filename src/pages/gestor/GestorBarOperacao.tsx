@@ -224,7 +224,7 @@ export default function GestorBarOperacao() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <PageHeader
           title={t("gbar_ops_title" as any)}
-          description={t("gbar_ops_desc" as any)}
+          subtitle={t("gbar_ops_desc" as any)}
           icon={Beer}
         />
         <AlertDialog>
