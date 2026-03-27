@@ -4,6 +4,7 @@ import { CaixaEventGuard } from "@/components/CaixaEventGuard";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { ModalForm } from "@/components/ModalForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ManagerApprovalDialog } from "@/components/caixa/ManagerApprovalDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +70,7 @@ export default function CaixaMovimentacoes() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Form state
   const [movType, setMovType] = useState<MovementType>("sangria");
