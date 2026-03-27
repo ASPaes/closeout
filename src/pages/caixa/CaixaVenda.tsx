@@ -321,10 +321,10 @@ function CartPanel({
                 key={opt.method}
                 variant={paymentMethod === opt.method ? "default" : "outline"}
                 size="sm"
-                className="text-xs flex flex-col gap-0.5 h-auto py-1.5"
+                className="text-xs flex flex-col gap-0.5 h-auto py-2.5 min-h-[44px]"
                 onClick={() => setPaymentMethod(opt.method)}
               >
-                <opt.icon className="h-3.5 w-3.5" />
+                <opt.icon className="h-4 w-4" />
                 {t(opt.labelKey as any)}
               </Button>
             ))}
