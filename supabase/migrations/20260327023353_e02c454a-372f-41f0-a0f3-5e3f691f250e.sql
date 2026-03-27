@@ -1,0 +1,2 @@
+ALTER TABLE public.exchanges DROP CONSTRAINT exchanges_adjustment_direction_check;
+ALTER TABLE public.exchanges ADD CONSTRAINT exchanges_adjustment_direction_check CHECK (adjustment_direction = ANY (ARRAY['refund'::text, 'charge'::text, 'none'::text]));
