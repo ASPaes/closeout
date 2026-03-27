@@ -110,7 +110,7 @@ function CatalogGrid({
         </div>
         <Badge
           variant={selectedCategory === null ? "default" : "outline"}
-          className="cursor-pointer text-xs"
+          className="cursor-pointer text-xs py-1.5 px-3"
           onClick={() => setSelectedCategory(null)}
         >
           {t("pos_all_categories")}
@@ -119,7 +119,7 @@ function CatalogGrid({
           <Badge
             key={cat.id}
             variant={selectedCategory === cat.id ? "default" : "outline"}
-            className="cursor-pointer text-xs"
+            className="cursor-pointer text-xs py-1.5 px-3"
             onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
           >
             {cat.name}
