@@ -125,6 +125,15 @@ export const AUDIT_ACTION = {
   BAR_QR_VALIDATED: 'bar_qr.validated',
   BAR_QR_REJECTED: 'bar_qr.rejected',
   BAR_ORDER_CANCELLED: 'bar_order.cancelled',
+
+  // Consumer
+  CONSUMER_ORDER_CREATED: 'consumer_order.created',
+  CONSUMER_ORDER_CANCELLED: 'consumer_order.cancelled',
+  CONSUMER_PAYMENT_APPROVED: 'consumer_payment.approved',
+  CONSUMER_PAYMENT_FAILED: 'consumer_payment.failed',
+  CONSUMER_CHECKIN: 'consumer.checkin',
+  CONSUMER_CHECKOUT: 'consumer.checkout',
+  CONSUMER_LIMIT_CHANGED: 'consumer.limit_changed',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];

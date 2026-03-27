@@ -960,6 +960,29 @@ const enUS: Record<TranslationKey, string> = {
   gbar_search: "Search by order number...",
   gbar_origin: "Origin",
   gbar_no_orders: "No orders found",
+
+  // Consumer App
+  consumer_tab_events: "Events",
+  consumer_tab_menu: "Menu",
+  consumer_tab_qr: "QR Code",
+  consumer_tab_orders: "Orders",
+  consumer_tab_profile: "Profile",
+  consumer_events_title: "Events",
+  consumer_menu_title: "Menu",
+  consumer_cart_title: "Cart",
+  consumer_payment_title: "Payment",
+  consumer_qr_title: "My QR Code",
+  consumer_orders_title: "My Orders",
+  consumer_profile_title: "My Profile",
+  consumer_limits_title: "My Limits",
+  consumer_checkin_title: "Check-in",
+  consumer_nearby_title: "People at Event",
+  consumer_coming_soon: "Coming soon",
+  consumer_login_subtitle: "Sign in to access your events",
+  consumer_signup_subtitle: "Create your account to get started",
+  consumer_signup_success: "Account created! Check your email.",
+  consumer_no_account: "Don't have an account? Sign up",
+  consumer_has_account: "Already have an account? Sign in",
 };
 
 export default enUS;
