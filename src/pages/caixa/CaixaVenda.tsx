@@ -269,20 +269,13 @@ function CartPanel({
           ) : (
             <div className="space-y-2 pr-2">
               {cart.map((item) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border/40 bg-muted/30 p-2">
+                <div key={item.cartId} className="flex items-center gap-2 rounded-md border border-border/40 bg-muted/30 p-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</p>
+                    <p className="text-xs text-muted-foreground">{fmt(item.price)}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, -1)}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.id)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.cartId)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
