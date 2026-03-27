@@ -22,12 +22,16 @@ import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 
 type CartItem = {
+  cartId: string;
   id: string;
   name: string;
   price: number;
   quantity: number;
   type: "product" | "combo";
 };
+
+let cartIdCounter = 0;
+const nextCartId = () => `cart-${++cartIdCounter}-${Date.now()}`;
 
 type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
@@ -265,20 +269,13 @@ function CartPanel({
           ) : (
             <div className="space-y-2 pr-2">
               {cart.map((item) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border/40 bg-muted/30 p-2">
+                <div key={item.cartId} className="flex items-center gap-2 rounded-md border border-border/40 bg-muted/30 p-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{fmt(item.price)} × {item.quantity} = {fmt(item.price * item.quantity)}</p>
+                    <p className="text-xs text-muted-foreground">{fmt(item.price)}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, -1)}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQty(item.id, 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.id)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeItem(item.cartId)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -394,25 +391,24 @@ export default function CaixaVenda() {
     if (product.stockAvailable !== null && product.stockAvailable <= 0) return;
 
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        // Check stock limit
-        if (product.stockAvailable !== null && existing.quantity >= product.stockAvailable) return prev;
-        return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      // Stock check: count how many of this product are already in cart
+      if (product.stockAvailable !== null) {
+        const totalInCart = prev.filter((i) => i.id === product.id).reduce((s, i) => s + i.quantity, 0);
+        if (totalInCart >= product.stockAvailable) return prev;
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1, type: product.type }];
+      return [...prev, { cartId: nextCartId(), id: product.id, name: product.name, price: product.price, quantity: 1, type: product.type }];
     });
   }, []);
 
-  const updateQty = useCallback((id: string, delta: number) => {
+  const updateQty = useCallback((cartId: string, delta: number) => {
     setCart((prev) => {
       return prev.map((i) => {
-        if (i.id !== id) return i;
+        if (i.cartId !== cartId) return i;
         const newQty = i.quantity + delta;
         if (newQty <= 0) return i;
         // Check stock limit for increase
         if (delta > 0) {
-          const catalogItem = items.find((ci) => ci.id === id);
+          const catalogItem = items.find((ci) => ci.id === i.id);
           if (catalogItem?.stockAvailable !== null && catalogItem?.stockAvailable !== undefined && newQty > catalogItem.stockAvailable) {
             return i;
           }
@@ -422,8 +418,8 @@ export default function CaixaVenda() {
     });
   }, [items]);
 
-  const removeItem = useCallback((id: string) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = useCallback((cartId: string) => {
+    setCart((prev) => prev.filter((i) => i.cartId !== cartId));
   }, []);
 
   const handleFinalize = async () => {
