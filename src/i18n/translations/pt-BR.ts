@@ -821,6 +821,14 @@ const ptBR = {
   order_picker_search: "Buscar por número ou nome do produto...",
   order_picker_empty: "Nenhuma venda encontrada",
   order_picker_select: "Selecionar venda",
+  gcx_col_register_number: "Caixa Nº",
+  gcx_open_new: "Abrir Novo Caixa",
+  gcx_open_new_title: "Abrir Novo Caixa",
+  gcx_open_select_event: "Selecione o evento",
+  gcx_open_select_operator: "Selecione o operador",
+  gcx_open_balance: "Saldo inicial (fundo de troco)",
+  gcx_open_success: "Caixa aberto com sucesso",
+  gcx_open_error: "Erro ao abrir o caixa",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

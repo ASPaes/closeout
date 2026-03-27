@@ -34,7 +34,8 @@ function OpenRegisterForm() {
           operator_id: session.user.id,
           opening_balance: balance,
           status: "open",
-        })
+          register_number: 0,
+        } as any)
         .select("id")
         .single();
 

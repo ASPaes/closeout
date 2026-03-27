@@ -62,7 +62,7 @@ function MetricCard({ title, value, icon: Icon, color = "text-primary" }: { titl
 }
 
 function DashboardContent() {
-  const { cashRegisterId } = useCaixa();
+  const { cashRegisterId, registerNumber } = useCaixa();
   const { t } = useTranslation();
   const { data: metrics } = useDashboardMetrics(cashRegisterId);
 
@@ -92,7 +92,7 @@ function DashboardContent() {
 
 export default function CaixaDashboard() {
   const { t } = useTranslation();
-  const { cashRegisterId } = useCaixa();
+  const { cashRegisterId, registerNumber } = useCaixa();
 
   return (
     <CaixaEventGuard>
@@ -102,7 +102,7 @@ export default function CaixaDashboard() {
         </CaixaEventGuard>
       ) : (
         <>
-          <PageHeader title={t("caixa_dashboard")} />
+          <PageHeader title={`${t("caixa_dashboard")} — Caixa #${registerNumber ?? "?"}`} />
           <DashboardContent />
         </>
       )}

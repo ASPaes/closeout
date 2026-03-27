@@ -13,6 +13,8 @@ type CaixaContextType = {
   clientId: string | null;
   /** Open cash register ID for current operator */
   cashRegisterId: string | null;
+  /** Register number for display */
+  registerNumber: number | null;
   /** Operator display name */
   operatorName: string | null;
   /** Event name */
@@ -31,6 +33,7 @@ const CaixaContext = createContext<CaixaContextType>({
   eventId: null,
   clientId: null,
   cashRegisterId: null,
+  registerNumber: null,
   operatorName: null,
   eventName: null,
   availableEvents: [],
@@ -50,6 +53,7 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   });
   const [clientId, setClientId] = useState<string | null>(null);
   const [eventName, setEventName] = useState<string | null>(null);
+  const [registerNumber, setRegisterNumber] = useState<number | null>(null);
   const [cashRegisterId, setCashRegisterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -102,18 +106,20 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
   const fetchCashRegister = () => {
     if (!userId || !selectedEventId) {
       setCashRegisterId(null);
+      setRegisterNumber(null);
       return;
     }
 
     supabase
       .from("cash_registers")
-      .select("id")
+      .select("id, register_number")
       .eq("event_id", selectedEventId)
       .eq("operator_id", userId)
       .eq("status", "open")
       .maybeSingle()
       .then(({ data }) => {
         setCashRegisterId(data?.id ?? null);
+        setRegisterNumber(data?.register_number ?? null);
       });
   };
 
@@ -136,6 +142,7 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
         eventId: selectedEventId,
         clientId,
         cashRegisterId,
+        registerNumber,
         operatorName,
         eventName,
         availableEvents,

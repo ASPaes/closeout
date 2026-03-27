@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote } from "lucide-react";
+import { Banknote, LockOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,7 @@ type CashRegisterRow = {
   id: string;
   operator_id: string;
   operator_name: string;
+  register_number: number;
   opened_at: string;
   closed_at: string | null;
   status: string;
@@ -66,6 +67,12 @@ export default function GestorCaixas() {
   const [closingBalance, setClosingBalance] = useState("");
   const [closingNotes, setClosingNotes] = useState("");
   const [closing, setClosing] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [openEventId, setOpenEventId] = useState("");
+  const [openOperatorId, setOpenOperatorId] = useState("");
+  const [openBalance, setOpenBalance] = useState("");
+  const [opening, setOpening] = useState(false);
+  const [operators, setOperators] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -77,13 +84,67 @@ export default function GestorCaixas() {
       .then(({ data }) => setEvents(data ?? []));
   }, [effectiveClientId]);
 
+  // Fetch operators (users with roles in this client)
+  useEffect(() => {
+    if (!effectiveClientId) return;
+    supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("client_id", effectiveClientId)
+      .then(async ({ data: roles }) => {
+        if (!roles?.length) { setOperators([]); return; }
+        const ids = [...new Set(roles.map(r => r.user_id))];
+        const { data: profiles } = await supabase.from("profiles").select("id, name").in("id", ids);
+        setOperators((profiles ?? []).map(p => ({ id: p.id, name: p.name })));
+      });
+  }, [effectiveClientId]);
+
+  const handleOpenRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openEventId || !openOperatorId || !openBalance || !effectiveClientId) return;
+    setOpening(true);
+    try {
+      const { data, error } = await supabase
+        .from("cash_registers")
+        .insert({
+          event_id: openEventId,
+          client_id: effectiveClientId,
+          operator_id: openOperatorId,
+          opening_balance: parseFloat(openBalance),
+          status: "open",
+          register_number: 0,
+        } as any)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      await logAudit({
+        action: AUDIT_ACTION.CASH_REGISTER_OPENED,
+        entityType: "cash_register",
+        entityId: data.id,
+        newData: { event_id: openEventId, operator_id: openOperatorId, opening_balance: parseFloat(openBalance), opened_by: "gestor" },
+      });
+
+      toast.success(t("gcx_open_success"));
+      setOpenModal(false);
+      setOpenEventId("");
+      setOpenOperatorId("");
+      setOpenBalance("");
+      fetchRegisters();
+    } catch (err: any) {
+      toast.error(err.message || t("gcx_open_error"));
+    } finally {
+      setOpening(false);
+    }
+  };
+
   const fetchRegisters = async () => {
     if (!effectiveClientId) return;
     setLoading(true);
 
     let query = supabase
       .from("cash_registers")
-      .select("id, operator_id, opened_at, closed_at, status, opening_balance, closing_balance, event_id, client_id, notes")
+      .select("id, operator_id, opened_at, closed_at, status, opening_balance, closing_balance, event_id, client_id, notes, register_number")
       .eq("client_id", effectiveClientId)
       .order("opened_at", { ascending: false })
       .limit(200);
@@ -123,6 +184,7 @@ export default function GestorCaixas() {
 
     setRegisters(regs.map(r => ({
       ...r,
+      register_number: r.register_number,
       operator_name: profileMap[r.operator_id] || r.operator_id.slice(0, 8),
       event_name: eventMap[r.event_id] || r.event_id.slice(0, 8),
       sales_total: salesMap[r.id] || 0,
@@ -217,6 +279,7 @@ export default function GestorCaixas() {
   };
 
   const registerColumns: DataTableColumn<CashRegisterRow>[] = [
+    { key: "register_number", header: t("gcx_col_register_number"), render: (r) => <span className="font-mono font-semibold">#{r.register_number}</span> },
     { key: "operator_name", header: t("gcx_col_operator"), render: (r) => r.operator_name },
     { key: "event_name", header: t("gcx_col_event"), render: (r) => r.event_name },
     { key: "opened_at", header: t("gcx_col_opened_at"), render: (r) => format(new Date(r.opened_at), "dd/MM HH:mm") },
@@ -286,7 +349,12 @@ export default function GestorCaixas() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} />
+      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} actions={
+        <Button onClick={() => setOpenModal(true)}>
+          <LockOpen className="h-4 w-4 mr-2" />
+          {t("gcx_open_new")}
+        </Button>
+      } />
 
       <Tabs defaultValue="registers">
         <TabsList>
@@ -410,6 +478,51 @@ export default function GestorCaixas() {
                 value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
                 placeholder={t("caixa_observations_placeholder")}
+              />
+            </div>
+          </div>
+        </ModalForm>
+      )}
+
+      {/* Open Register Modal */}
+      {openModal && (
+        <ModalForm
+          open={openModal}
+          onOpenChange={() => { setOpenModal(false); setOpenEventId(""); setOpenOperatorId(""); setOpenBalance(""); }}
+          title={t("gcx_open_new_title")}
+          onSubmit={handleOpenRegister}
+          submitLabel={t("caixa_open_register")}
+          saving={opening}
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("gcx_open_select_event")}</Label>
+              <Select value={openEventId} onValueChange={setOpenEventId}>
+                <SelectTrigger><SelectValue placeholder={t("gcx_open_select_event")} /></SelectTrigger>
+                <SelectContent>
+                  {events.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("gcx_open_select_operator")}</Label>
+              <Select value={openOperatorId} onValueChange={setOpenOperatorId}>
+                <SelectTrigger><SelectValue placeholder={t("gcx_open_select_operator")} /></SelectTrigger>
+                <SelectContent>
+                  {operators.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("gcx_open_balance")}</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={openBalance}
+                onChange={(e) => setOpenBalance(e.target.value)}
+                placeholder="0,00"
+                required
               />
             </div>
           </div>
