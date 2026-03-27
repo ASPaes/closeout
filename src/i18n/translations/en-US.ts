@@ -819,6 +819,10 @@ const enUS: Record<TranslationKey, string> = {
   gcx_sales_today: "Cash Sales Today",
   gcx_sales_today_desc: "Total sales made today",
   ret_col_value: "Amount",
+  order_picker_title: "Select Order",
+  order_picker_search: "Search by number or product name...",
+  order_picker_empty: "No orders found",
+  order_picker_select: "Select order",
 };
 
 export default enUS;

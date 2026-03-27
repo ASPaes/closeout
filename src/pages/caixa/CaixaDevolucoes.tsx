@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
 import { toast } from "sonner";
-import { RotateCcw, Search, Plus, Check } from "lucide-react";
+import { RotateCcw, Search, Plus, Check, ShoppingBag } from "lucide-react";
+import { OrderPickerDialog } from "@/components/caixa/OrderPickerDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,11 +78,9 @@ export default function CaixaDevolucoes() {
   const [saving, setSaving] = useState(false);
 
   // Step 1
-  const [orderSearch, setOrderSearch] = useState("");
-  const [searchingOrder, setSearchingOrder] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [foundOrder, setFoundOrder] = useState<CashOrder | null>(null);
   const [orderItems, setOrderItems] = useState<SelectedItem[]>([]);
-  const [orderNotFound, setOrderNotFound] = useState(false);
 
   // Step 2
   const [reason, setReason] = useState("");
@@ -139,30 +138,11 @@ export default function CaixaDevolucoes() {
     fetchReturns();
   }, [eventId]);
 
-  // Search order by number
-  const handleSearchOrder = async () => {
-    const num = parseInt(orderSearch, 10);
-    if (isNaN(num) || !eventId) return;
-    setSearchingOrder(true);
-    setOrderNotFound(false);
-    setFoundOrder(null);
-
-    const { data } = await supabase
-      .from("cash_orders")
-      .select("id, order_number, created_at, items, total, payment_method, status")
-      .eq("event_id", eventId)
-      .eq("order_number", num)
-      .eq("status", "completed")
-      .maybeSingle();
-
-    if (!data) {
-      setOrderNotFound(true);
-    } else {
-      setFoundOrder(data);
-      const items = (Array.isArray(data.items) ? data.items : []) as OrderItem[];
-      setOrderItems(items.map((i) => ({ ...i, returnQty: i.quantity, selected: false })));
-    }
-    setSearchingOrder(false);
+  // Handle order selection from picker
+  const handleOrderSelected = (order: CashOrder) => {
+    setFoundOrder(order);
+    const items = (Array.isArray(order.items) ? order.items : []) as OrderItem[];
+    setOrderItems(items.map((i) => ({ ...i, returnQty: i.quantity, selected: false })));
   };
 
   // Refund amount
@@ -179,10 +159,8 @@ export default function CaixaDevolucoes() {
   // Reset modal
   const resetModal = () => {
     setStep(1);
-    setOrderSearch("");
     setFoundOrder(null);
     setOrderItems([]);
-    setOrderNotFound(false);
     setReason("");
     setOccurrenceType("");
     setAuthEmail("");
@@ -371,22 +349,24 @@ export default function CaixaDevolucoes() {
   // Step content
   const renderStep1 = () => (
     <>
-      <div className="flex gap-2">
-        <Input
-          placeholder={t("ret_search_order")}
-          value={orderSearch}
-          onChange={(e) => setOrderSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchOrder())}
-          type="number"
-        />
-        <Button type="button" variant="outline" onClick={handleSearchOrder} disabled={searchingOrder}>
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full justify-start gap-2"
+        onClick={() => setPickerOpen(true)}
+      >
+        <ShoppingBag className="h-4 w-4" />
+        {foundOrder
+          ? `${t("ret_order_label")} #${foundOrder.order_number}`
+          : t("order_picker_select")}
+      </Button>
 
-      {orderNotFound && (
-        <p className="text-sm text-destructive">{t("ret_order_not_found")}</p>
-      )}
+      <OrderPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        eventId={eventId}
+        onSelect={handleOrderSelected}
+      />
 
       {foundOrder && (
         <Card className="border-border/60 bg-secondary/30">

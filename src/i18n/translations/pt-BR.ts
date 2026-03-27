@@ -817,6 +817,10 @@ const ptBR = {
   gcx_open_registers_desc: "Caixas em operação agora",
   gcx_sales_today: "Vendas no Caixa Hoje",
   gcx_sales_today_desc: "Total de vendas realizadas hoje",
+  order_picker_title: "Selecionar Venda",
+  order_picker_search: "Buscar por número ou nome do produto...",
+  order_picker_empty: "Nenhuma venda encontrada",
+  order_picker_select: "Selecionar venda",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
