@@ -221,6 +221,26 @@ export default function CaixaFechamento() {
           </Card>
         </div>
       )}
+
+      {metrics && (closingDone || difference !== null) && (
+        <ThermalReceipt
+          ref={receiptRef}
+          type="closing"
+          data={{
+            openingBalance: metrics.openingBalance,
+            totalSales: metrics.totalSales,
+            totalDeposits: metrics.totalDeposits,
+            totalWithdrawals: metrics.totalWithdrawals,
+            totalReturns: metrics.totalReturns,
+            expectedBalance: metrics.expectedBalance,
+            physicalBalance: physicalValue || 0,
+            difference: difference ?? 0,
+            byPayment: metrics.byPayment,
+            notes,
+          }}
+          operatorName={useCaixa().operatorName ?? undefined}
+        />
+      )}
     </CaixaEventGuard>
   );
 }
