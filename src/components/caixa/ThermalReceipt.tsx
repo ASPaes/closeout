@@ -15,6 +15,7 @@ type SaleData = {
   discount: number;
   total: number;
   paymentMethod: string;
+  qrToken?: string;
 };
 
 type ReturnData = {
