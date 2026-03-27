@@ -92,7 +92,7 @@ function DashboardContent() {
 
 export default function CaixaDashboard() {
   const { t } = useTranslation();
-  const { cashRegisterId } = useCaixa();
+  const { cashRegisterId, registerNumber } = useCaixa();
 
   return (
     <CaixaEventGuard>
