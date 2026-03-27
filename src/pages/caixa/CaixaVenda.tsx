@@ -171,7 +171,7 @@ function CatalogGrid({
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-1 pr-2 pb-2">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 pr-2 pb-2">
             {filtered.map((item) => {
               const outOfStock = item.stockAvailable !== null && item.stockAvailable <= 0;
               return (
@@ -179,26 +179,27 @@ function CatalogGrid({
                   key={`${item.type}-${item.id}`}
                   disabled={outOfStock}
                   onClick={() => onAddItem(item)}
-                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-3 py-2 text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex flex-col items-start justify-between rounded-md border border-border/60 bg-card p-2 text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[60px]"
                 >
-                  {item.type === "combo" && <Package className="h-3.5 w-3.5 text-primary shrink-0" />}
-                  <span className="text-sm font-medium truncate flex-1">{item.name}</span>
-                  {item.stockAvailable !== null && item.stockAvailable > 0 && (
-                    <span className="text-[10px] text-muted-foreground shrink-0">Est: {item.stockAvailable}</span>
-                  )}
-                  <span className="text-primary font-bold text-sm shrink-0">{fmt(item.price)}</span>
-                  {outOfStock ? (
-                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">{t("pos_out_of_stock")}</Badge>
-                  ) : (
-                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Plus className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 w-full">
+                    {item.type === "combo" && <Package className="h-2.5 w-2.5 text-primary shrink-0" />}
+                    <span className="text-xs font-medium line-clamp-2 flex-1">{item.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between w-full mt-1">
+                    <span className="text-primary font-bold text-xs">{fmt(item.price)}</span>
+                    {outOfStock ? (
+                      <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">{t("pos_out_of_stock")}</Badge>
+                    ) : (
+                      <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Plus className="h-3 w-3 text-primary" />
+                      </div>
+                    )}
+                  </div>
                 </button>
               );
             })}
             {filtered.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-8">{t("no_results")}</p>
+              <p className="col-span-full text-center text-sm text-muted-foreground py-8">{t("no_results")}</p>
             )}
           </div>
         )}
