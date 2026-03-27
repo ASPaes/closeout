@@ -36,12 +36,10 @@ function ConsumerTabBar() {
       <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-5">
         {/* Floating pill */}
         <div
-          className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.08] px-2 py-2"
+          className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.06] px-2 py-2"
           style={{
-            background: "rgba(0, 0, 0, 0.55)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 0.5px 0 rgba(255,255,255,0.06)",
+            background: "#0A0A0A",
+            boxShadow: "0 -2px 20px rgba(0,0,0,0.6)",
           }}
         >
           {tabs.map((tab) => {
