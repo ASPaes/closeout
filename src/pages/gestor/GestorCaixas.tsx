@@ -67,6 +67,12 @@ export default function GestorCaixas() {
   const [closingBalance, setClosingBalance] = useState("");
   const [closingNotes, setClosingNotes] = useState("");
   const [closing, setClosing] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [openEventId, setOpenEventId] = useState("");
+  const [openOperatorId, setOpenOperatorId] = useState("");
+  const [openBalance, setOpenBalance] = useState("");
+  const [opening, setOpening] = useState(false);
+  const [operators, setOperators] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     if (!effectiveClientId) return;
