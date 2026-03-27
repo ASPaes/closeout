@@ -22,12 +22,16 @@ import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
 
 type CartItem = {
+  cartId: string;
   id: string;
   name: string;
   price: number;
   quantity: number;
   type: "product" | "combo";
 };
+
+let cartIdCounter = 0;
+const nextCartId = () => `cart-${++cartIdCounter}-${Date.now()}`;
 
 type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
