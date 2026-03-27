@@ -285,6 +285,8 @@ export default function CaixaDevolucoes() {
       setStep(2);
     } else if (step === 2 && reason && occurrenceType) {
       setStep(3);
+      setModalOpen(false);
+      setApprovalOpen(true);
     }
   };
 
