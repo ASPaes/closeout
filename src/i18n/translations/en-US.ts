@@ -880,6 +880,25 @@ const enUS: Record<TranslationKey, string> = {
   bar_items_count: "items",
   bar_waiting_time: "Waiting time",
   under_construction: "Under construction",
+
+  // Bar queue extras
+  bar_awaiting: "Awaiting",
+  bar_preparing_count: "Preparing",
+  bar_ready_count: "Ready",
+  bar_delivered_today: "Delivered today",
+  bar_all: "All",
+  bar_filter_origin: "Origin",
+  bar_origin_app: "App",
+  bar_origin_waiter: "Waiter",
+  bar_origin_cashier: "Cashier",
+  bar_start_preparing: "Start Preparing",
+  bar_order_preparing_success: "Order is being prepared!",
+  bar_order_ready_success: "Order is ready!",
+  bar_no_orders: "No orders in queue",
+  bar_no_orders_desc: "New orders will appear here automatically",
+  bar_ago: "",
+  bar_min: "min",
+  bar_sec: "sec",
 };
 
 export default enUS;
