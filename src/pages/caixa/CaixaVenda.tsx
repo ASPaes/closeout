@@ -125,7 +125,7 @@ function CatalogGrid({
       {/* Product grid / list */}
       <ScrollArea className="flex-1 min-h-0">
         {viewMode === "grid" ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pr-2 pb-2">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 pr-2 pb-2">
             {filtered.map((item) => {
               const outOfStock = item.stockAvailable !== null && item.stockAvailable <= 0;
               return (
@@ -133,21 +133,21 @@ function CatalogGrid({
                   key={`${item.type}-${item.id}`}
                   disabled={outOfStock}
                   onClick={() => onAddItem(item)}
-                  className="flex flex-col items-start gap-1 rounded-lg border border-border/60 bg-card text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
+                  className="flex flex-col items-start rounded-md border border-border/60 bg-card text-left transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
                 >
                   {item.imageUrl ? (
-                    <div className="w-full aspect-square bg-muted/30 overflow-hidden">
+                    <div className="w-full aspect-[4/3] bg-muted/30 overflow-hidden">
                       <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                   ) : (
-                    <div className="w-full aspect-square bg-muted/20 flex items-center justify-center">
-                      <Package className="h-8 w-8 text-muted-foreground/40" />
+                    <div className="w-full aspect-[4/3] bg-muted/20 flex items-center justify-center">
+                      <Package className="h-6 w-6 text-muted-foreground/40" />
                     </div>
                   )}
-                  <div className="p-2 w-full flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 w-full">
-                      {item.type === "combo" && <Package className="h-3 w-3 text-primary shrink-0" />}
-                      <span className="text-sm font-medium truncate flex-1">{item.name}</span>
+                  <div className="p-1.5 w-full flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 w-full">
+                      {item.type === "combo" && <Package className="h-2.5 w-2.5 text-primary shrink-0" />}
+                      <span className="text-xs font-medium truncate flex-1">{item.name}</span>
                     </div>
                     <div className="flex items-center justify-between w-full">
                       <span className="text-primary font-bold text-sm">{fmt(item.price)}</span>
