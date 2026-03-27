@@ -86,11 +86,8 @@ export default function CaixaDevolucoes() {
   const [reason, setReason] = useState("");
   const [occurrenceType, setOccurrenceType] = useState("");
 
-  // Step 3 (auth dialog)
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authorizing, setAuthorizing] = useState(false);
+  // Step 3 (manager approval)
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Fetch returns list
   const fetchReturns = async () => {
