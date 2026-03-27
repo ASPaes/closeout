@@ -102,7 +102,7 @@ export default function CaixaDashboard() {
         </CaixaEventGuard>
       ) : (
         <>
-          <PageHeader title={t("caixa_dashboard")} />
+          <PageHeader title={`${t("caixa_dashboard")} — ${t("gcx_col_register_number")} #${registerNumber ?? "?"}`} />
           <DashboardContent />
         </>
       )}
