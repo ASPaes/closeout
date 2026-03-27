@@ -29,12 +29,12 @@ type CartItem = {
   type: "product" | "combo";
 };
 
-type PaymentMethod = "cash" | "credit" | "debit" | "pix";
+type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
 const PAYMENT_OPTIONS: { method: PaymentMethod; labelKey: string; icon: any }[] = [
   { method: "cash", labelKey: "caixa_cash", icon: Banknote },
-  { method: "credit", labelKey: "caixa_credit", icon: CreditCard },
-  { method: "debit", labelKey: "caixa_debit", icon: CreditCard },
+  { method: "credit_card", labelKey: "caixa_credit", icon: CreditCard },
+  { method: "debit_card", labelKey: "caixa_debit", icon: CreditCard },
   { method: "pix", labelKey: "caixa_pix", icon: Smartphone },
 ];
 
