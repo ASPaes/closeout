@@ -67,6 +67,7 @@ export default function CaixaTrocas() {
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [saving, setSaving] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   // Step 1
   const [pickerOpen, setPickerOpen] = useState(false);
