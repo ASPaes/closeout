@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
+import { QrCodeModal } from "@/components/caixa/QrCodeModal";
 
 let cartIdCounter = 0;
 const nextCartId = () => `cart-${++cartIdCounter}-${Date.now()}`;
@@ -376,6 +377,7 @@ export default function CaixaVenda() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
+  const [qrModal, setQrModal] = useState<{ token: string; orderNumber: number } | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   const items = catalogData?.items ?? [];
@@ -472,8 +474,56 @@ export default function CaixaVenda() {
 
       if (orderError) throw orderError;
 
-      // Decrement stock for product items (if stock control enabled)
-      if (stockControlEnabled) {
+      // --- Create bar order (orders table) ---
+      const qrToken = crypto.randomUUID();
+
+      const { data: barOrder, error: barOrderError } = await supabase
+        .from("orders")
+        .insert({
+          event_id: eventId,
+          client_id: clientId,
+          origin: "cashier" as const,
+          origin_ref_id: order.id,
+          order_number: order.order_number,
+          status: "paid" as const,
+          paid_at: new Date().toISOString(),
+          total,
+          payment_method: paymentMethod,
+        })
+        .select("id")
+        .single();
+
+      if (barOrderError) {
+        console.error("Bar order creation error:", barOrderError);
+        // Don't throw — cash_order was already created successfully
+      }
+
+      // Insert order_items + qr_token if bar order was created
+      if (barOrder) {
+        const orderItemsInsert = cart.map((item) => ({
+          order_id: barOrder.id,
+          product_id: item.type === "product" ? item.id : null,
+          combo_id: item.type === "combo" ? item.id : null,
+          name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total: item.price * item.quantity,
+        }));
+
+        await supabase.from("order_items").insert(orderItemsInsert);
+
+        await supabase.from("qr_tokens").insert({
+          order_id: barOrder.id,
+          token: qrToken,
+          status: "valid" as const,
+        });
+
+        // Reserve stock via RPC
+        await supabase.rpc("reserve_stock_for_order", { p_order_id: barOrder.id });
+      }
+
+      // Decrement stock for product items (if stock control enabled) — legacy direct stock
+      if (stockControlEnabled && !barOrder) {
         const productItems = cart.filter((i) => i.type === "product");
         if (productItems.length > 0) {
           const stockInserts = productItems.map((item) => ({
@@ -507,8 +557,15 @@ export default function CaixaVenda() {
         discount: discountValue,
         total,
         paymentMethod: paymentMethod,
+        qrToken: barOrder ? qrToken : undefined,
       });
-      setTimeout(() => printThermalReceipt(), 300);
+
+      // Show QR modal if bar order was created
+      if (barOrder) {
+        setQrModal({ token: qrToken, orderNumber: order.order_number });
+      } else {
+        setTimeout(() => printThermalReceipt(), 300);
+      }
 
       // Reset for next sale
       clearCart();
@@ -578,6 +635,19 @@ export default function CaixaVenda() {
             type="sale"
             data={lastSale}
             operatorName={session?.user?.email ?? undefined}
+          />
+        )}
+
+        {qrModal && (
+          <QrCodeModal
+            open
+            token={qrModal.token}
+            orderNumber={qrModal.orderNumber}
+            onClose={() => setQrModal(null)}
+            onPrint={() => {
+              printThermalReceipt();
+              setQrModal(null);
+            }}
           />
         )}
       </CaixaEventGuard>

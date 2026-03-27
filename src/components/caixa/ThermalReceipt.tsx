@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 type ReceiptItem = {
   name: string;
@@ -14,6 +15,7 @@ type SaleData = {
   discount: number;
   total: number;
   paymentMethod: string;
+  qrToken?: string;
 };
 
 type ReturnData = {
@@ -87,6 +89,7 @@ function SingleTicket({
   orderNumber,
   operatorName,
   venueName,
+  qrToken,
 }: {
   itemName: string;
   qty?: number;
@@ -94,6 +97,7 @@ function SingleTicket({
   orderNumber?: number;
   operatorName?: string;
   venueName?: string;
+  qrToken?: string;
 }) {
   return (
     <div className="party-ticket">
@@ -108,6 +112,12 @@ function SingleTicket({
         {orderNumber != null && <p>Pedido #{orderNumber}</p>}
         {operatorName && <p>{operatorName}</p>}
       </div>
+      {qrToken && (
+        <div className="ticket-qr">
+          <QRCodeSVG value={qrToken} size={150} level="M" />
+          <p className="ticket-qr-text">Apresente este QR para retirar seu pedido</p>
+        </div>
+      )}
       <div className="ticket-cta">
         <p>NÃO PERCA TEMPO E INSTALE</p>
         <p>O APP AGORA MESMO</p>
@@ -195,11 +205,13 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ReceiptProps>(
       // sale, return, exchange — print one ticket per item per quantity
       let items: ReceiptItem[] = [];
       let orderNumber: number | undefined;
+      let qrToken: string | undefined;
 
       if (type === "sale") {
         const d = data as SaleData;
         items = d.items;
         orderNumber = d.orderNumber;
+        qrToken = d.qrToken;
       } else if (type === "return") {
         const d = data as ReturnData;
         items = d.items;
@@ -224,6 +236,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ReceiptProps>(
               orderNumber={orderNumber}
               operatorName={operatorName}
               venueName={venueName}
+              qrToken={idx === 0 && q === 0 ? qrToken : undefined}
             />
           );
         }
