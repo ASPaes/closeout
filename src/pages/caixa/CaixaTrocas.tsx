@@ -68,11 +68,9 @@ export default function CaixaTrocas() {
   const [saving, setSaving] = useState(false);
 
   // Step 1
-  const [orderSearch, setOrderSearch] = useState("");
-  const [searchingOrder, setSearchingOrder] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [foundOrder, setFoundOrder] = useState<CashOrder | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [orderNotFound, setOrderNotFound] = useState(false);
 
   // Step 2
   const [selectedItemIdx, setSelectedItemIdx] = useState<string>("");
