@@ -33,7 +33,7 @@ function ConsumerTabBar() {
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-1">
+      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-3">
         {/* Floating pill */}
         <div
           className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.08] px-2 py-2"
