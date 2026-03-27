@@ -361,17 +361,19 @@ function CartPanel({
 
 export default function CaixaVenda() {
   const { t } = useTranslation();
-  const { eventId, clientId, cashRegisterId } = useCaixa();
+  const {
+    eventId, clientId, cashRegisterId,
+    cart, setCart, cartDiscount: discount, setCartDiscount: setDiscount,
+    cartPaymentMethod: paymentMethod, setCartPaymentMethod: setPaymentMethod,
+    cartAmountReceived: amountReceived, setCartAmountReceived: setAmountReceived,
+    clearCart,
+  } = useCaixa();
   const { session } = useAuth();
   const { data: catalogData, isLoading: catalogLoading } = useEventCatalog();
   const { data: eventSettings } = useEventSettings();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [discount, setDiscount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [amountReceived, setAmountReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
