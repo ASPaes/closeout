@@ -192,6 +192,15 @@ export function CaixaProvider({ children }: { children: ReactNode }) {
         setEventId,
         loading,
         refreshCashRegister: fetchCashRegister,
+        cart,
+        setCart,
+        cartDiscount,
+        setCartDiscount,
+        cartPaymentMethod,
+        setCartPaymentMethod,
+        cartAmountReceived,
+        setCartAmountReceived,
+        clearCart,
       }}
     >
       {children}
