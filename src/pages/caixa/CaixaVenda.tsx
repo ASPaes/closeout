@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, Loader2,
-  Banknote, CreditCard, Smartphone, Package,
+  Banknote, CreditCard, Smartphone, Package, LayoutGrid, List,
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { ThermalReceipt, printThermalReceipt } from "@/components/caixa/ThermalReceipt";
