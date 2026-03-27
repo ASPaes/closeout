@@ -445,6 +445,17 @@ export default function CaixaVenda() {
 
       toast.success(t("pos_order_success").replace("%s", String(order.order_number)));
 
+      // Prepare receipt data and trigger print
+      setLastSale({
+        orderNumber: order.order_number,
+        items: cart.map((i) => ({ name: i.name, qty: i.quantity, unitPrice: i.price, total: i.price * i.quantity })),
+        subtotal,
+        discount: discountValue,
+        total,
+        paymentMethod: paymentMethod,
+      });
+      setTimeout(() => printThermalReceipt(), 300);
+
       // Reset for next sale
       setCart([]);
       setDiscount("");
