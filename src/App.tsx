@@ -81,6 +81,7 @@ const App = () => (
               <Route path="eventos" element={<GestorEventos />} />
               <Route path="equipe" element={<GestorEquipe />} />
               <Route path="usuarios" element={<GestorUsuarios />} />
+              <Route path="caixas" element={<GestorCaixas />} />
             </Route>
 
             {/* Caixa area */}
