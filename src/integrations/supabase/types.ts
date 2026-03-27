@@ -395,6 +395,7 @@ export type Database = {
           opened_at: string
           opening_balance: number
           operator_id: string
+          register_number: number
           status: string
           updated_at: string
         }
@@ -409,6 +410,7 @@ export type Database = {
           opened_at?: string
           opening_balance?: number
           operator_id: string
+          register_number: number
           status?: string
           updated_at?: string
         }
@@ -423,6 +425,7 @@ export type Database = {
           opened_at?: string
           opening_balance?: number
           operator_id?: string
+          register_number?: number
           status?: string
           updated_at?: string
         }
