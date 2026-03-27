@@ -320,6 +320,8 @@ export default function CaixaVenda() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [amountReceived, setAmountReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lastSale, setLastSale] = useState<any>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const items = catalogData?.items ?? [];
   const categories = catalogData?.categories ?? [];
