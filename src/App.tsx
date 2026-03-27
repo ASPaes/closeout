@@ -39,6 +39,11 @@ import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
 import CaixaDevolucoes from "@/pages/caixa/CaixaDevolucoes";
 import CaixaTrocas from "@/pages/caixa/CaixaTrocas";
 import CaixaFechamento from "@/pages/caixa/CaixaFechamento";
+import { BarLayout } from "@/components/BarLayout";
+import BarFilaPedidos from "@/pages/bar/BarFilaPedidos";
+import BarProntos from "@/pages/bar/BarProntos";
+import BarLeitorQR from "@/pages/bar/BarLeitorQR";
+import BarHistorico from "@/pages/bar/BarHistorico";
 
 const queryClient = new QueryClient();
 
