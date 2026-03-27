@@ -238,7 +238,7 @@ export default function CaixaFechamento() {
             byPayment: metrics.byPayment,
             notes,
           }}
-          operatorName={useCaixa().operatorName ?? undefined}
+          operatorName={operatorName ?? undefined}
         />
       )}
     </CaixaEventGuard>
