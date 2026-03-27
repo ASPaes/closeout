@@ -519,7 +519,16 @@ export default function CaixaVenda() {
             />
           </div>
         </div>
-      )}
-    </CaixaEventGuard>
+        )}
+
+        {lastSale && (
+          <ThermalReceipt
+            ref={receiptRef}
+            type="sale"
+            data={lastSale}
+            operatorName={session?.user?.email ?? undefined}
+          />
+        )}
+      </CaixaEventGuard>
   );
 }
