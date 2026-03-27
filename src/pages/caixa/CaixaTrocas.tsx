@@ -522,6 +522,18 @@ export default function CaixaTrocas() {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
       </ModalForm>
+
+      {/* Manager Approval Dialog for exchanges */}
+      <ManagerApprovalDialog
+        open={approvalOpen}
+        onOpenChange={(open) => {
+          setApprovalOpen(open);
+          if (!open) setModalOpen(true);
+        }}
+        clientId={clientId}
+        onAuthorized={handleExchangeApproved}
+        blockSelfApproval={true}
+      />
     </CaixaEventGuard>
   );
 }
