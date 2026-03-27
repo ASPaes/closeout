@@ -99,6 +99,14 @@ const App = () => (
               <Route path="fechamento" element={<CaixaFechamento />} />
             </Route>
 
+            {/* Bar area */}
+            <Route path="/bar" element={<BarLayout />}>
+              <Route index element={<BarFilaPedidos />} />
+              <Route path="prontos" element={<BarProntos />} />
+              <Route path="qr" element={<BarLeitorQR />} />
+              <Route path="historico" element={<BarHistorico />} />
+            </Route>
+
             {/* Legacy redirects */}
             <Route path="/" element={<Navigate to="/admin" replace />} />
             <Route path="/clients" element={<Navigate to="/admin/clients" replace />} />
