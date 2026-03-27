@@ -637,6 +637,19 @@ export default function CaixaVenda() {
             operatorName={session?.user?.email ?? undefined}
           />
         )}
+
+        {qrModal && (
+          <QrCodeModal
+            open
+            token={qrModal.token}
+            orderNumber={qrModal.orderNumber}
+            onClose={() => setQrModal(null)}
+            onPrint={() => {
+              printThermalReceipt();
+              setQrModal(null);
+            }}
+          />
+        )}
       </CaixaEventGuard>
   );
 }
