@@ -279,6 +279,7 @@ export default function GestorCaixas() {
   };
 
   const registerColumns: DataTableColumn<CashRegisterRow>[] = [
+    { key: "register_number", header: t("gcx_col_register_number"), render: (r) => <span className="font-mono font-semibold">#{r.register_number}</span> },
     { key: "operator_name", header: t("gcx_col_operator"), render: (r) => r.operator_name },
     { key: "event_name", header: t("gcx_col_event"), render: (r) => r.event_name },
     { key: "opened_at", header: t("gcx_col_opened_at"), render: (r) => format(new Date(r.opened_at), "dd/MM HH:mm") },
