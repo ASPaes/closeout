@@ -27,7 +27,7 @@ export function QrCodeModal({ open, onClose, token, orderNumber, onPrint }: Prop
 
         <div className="flex flex-col items-center gap-4 py-4">
           <p className="text-sm text-muted-foreground text-center">
-            {t("pos_qr_instruction")}
+            {t("pos_qr_instruction" as any)}
           </p>
 
           <div className="bg-white p-4 rounded-xl">
