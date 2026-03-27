@@ -41,11 +41,11 @@ export function QrCodeModal({ open, onClose, token, orderNumber, onPrint }: Prop
           <div className="flex gap-3 w-full">
             <Button variant="outline" className="flex-1" onClick={onPrint}>
               <Printer className="h-4 w-4 mr-2" />
-              {t("pos_print_qr")}
+              {t("pos_print_qr" as any)}
             </Button>
             <Button className="flex-1" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
-              {t("pos_next_sale")}
+              {t("pos_next_sale" as any)}
             </Button>
           </div>
         </div>
