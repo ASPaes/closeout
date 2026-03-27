@@ -144,10 +144,10 @@ function CatalogGrid({
                       <Package className="h-6 w-6 text-muted-foreground/40" />
                     </div>
                   )}
-                  <div className="p-2 w-full flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 w-full">
-                      {item.type === "combo" && <Package className="h-3 w-3 text-primary shrink-0" />}
-                      <span className="text-sm font-medium truncate flex-1">{item.name}</span>
+                  <div className="p-1.5 w-full flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 w-full">
+                      {item.type === "combo" && <Package className="h-2.5 w-2.5 text-primary shrink-0" />}
+                      <span className="text-xs font-medium truncate flex-1">{item.name}</span>
                     </div>
                     <div className="flex items-center justify-between w-full">
                       <span className="text-primary font-bold text-sm">{fmt(item.price)}</span>
