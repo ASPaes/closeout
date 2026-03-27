@@ -57,6 +57,7 @@ function CatalogGrid({
   onAddItem: (item: CatalogProduct) => void;
   t: any;
 }) {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const filtered = useMemo(() => {
     let result = items;
     if (searchQuery) {
