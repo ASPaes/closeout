@@ -138,3 +138,63 @@
     text-shadow: 0 0 12px hsl(var(--primary-glow) / 0.5);
   }
 }
+
+/* Thermal receipt styles */
+.thermal-receipt {
+  display: none;
+  width: 80mm;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #000;
+  background: #fff;
+  padding: 2mm;
+}
+
+.thermal-receipt .receipt-center {
+  text-align: center;
+}
+
+.thermal-receipt .receipt-bold {
+  font-weight: bold;
+}
+
+.thermal-receipt .receipt-small {
+  font-size: 10px;
+}
+
+.thermal-receipt .receipt-sep {
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.thermal-receipt .receipt-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .thermal-receipt,
+  .thermal-receipt * {
+    visibility: visible !important;
+  }
+
+  .thermal-receipt {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
