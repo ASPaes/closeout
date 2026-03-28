@@ -1035,6 +1035,30 @@ const ptBR = {
   consumer_events_count: "eventos",
   consumer_no_events: "Nenhum evento encontrado",
   consumer_no_events_desc: "Quando houver eventos disponíveis, eles aparecerão aqui",
+
+  // Consumer Cardápio & Carrinho
+  consumer_search_product: "Buscar produto...",
+  consumer_no_products: "Nenhum produto encontrado",
+  consumer_no_event_selected: "Selecione um evento para ver o cardápio",
+  consumer_low_stock: "Últimas unidades",
+  consumer_out_of_stock: "Esgotado",
+  consumer_view_cart: "Ver carrinho",
+  consumer_cart_empty: "Seu carrinho está vazio",
+  consumer_cart_empty_desc: "Adicione itens do cardápio para começar",
+  consumer_cart_clear: "Limpar",
+  consumer_event_spent: "Gasto acumulado neste evento",
+  consumer_subtotal: "Subtotal",
+  consumer_accumulated: "Acumulado no evento",
+  consumer_total: "Total",
+  consumer_pay: "Pagar",
+  consumer_limit_blocked: "Limite excedido",
+  consumer_limit_warning: "Atenção: limite próximo",
+  consumer_max_value_exceeded: "Valor máximo por compra excedido",
+  consumer_event_limit_warning: "Valor máximo do evento excedido",
+  consumer_event_max_value: "Máximo por pedido:",
+  consumer_orders_blocked: "Limite de pedidos atingido",
+  consumer_orders_warning: "Atenção: limite de pedidos",
+  consumer_max_orders_reached: "Máximo de pedidos no evento atingido",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
