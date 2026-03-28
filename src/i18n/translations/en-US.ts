@@ -1061,6 +1061,22 @@ const enUS: Record<TranslationKey, string> = {
   consumer_orders_blocked: "Order limit reached",
   consumer_orders_warning: "Warning: order limit",
   consumer_max_orders_reached: "Max orders per event reached",
+
+  // Consumer Payment
+  consumer_payment_processing: "Processing payment...",
+  consumer_payment_wait: "Please wait, don't close this screen",
+  consumer_payment_secure: "Secure and encrypted payment",
+  consumer_payment_success: "Payment approved!",
+  consumer_payment_redirect: "Redirecting to your QR Code...",
+  consumer_payment_error: "Payment failed",
+  consumer_payment_retry: "Try again",
+  consumer_payment_back_cart: "Back to cart",
+  consumer_payment_summary: "Order summary",
+  consumer_payment_method: "Payment method",
+  consumer_payment_pix_desc: "Instant approval",
+  consumer_payment_new_card: "New credit card",
+  consumer_payment_new_card_desc: "Add a card for this purchase",
+  consumer_payment_confirm: "Confirm Payment",
 };
 
 export default enUS;

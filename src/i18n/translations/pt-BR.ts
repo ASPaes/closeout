@@ -1059,6 +1059,22 @@ const ptBR = {
   consumer_orders_blocked: "Limite de pedidos atingido",
   consumer_orders_warning: "Atenção: limite de pedidos",
   consumer_max_orders_reached: "Máximo de pedidos no evento atingido",
+
+  // Consumer Payment
+  consumer_payment_processing: "Processando pagamento...",
+  consumer_payment_wait: "Aguarde, não feche a tela",
+  consumer_payment_secure: "Pagamento seguro e criptografado",
+  consumer_payment_success: "Pagamento aprovado!",
+  consumer_payment_redirect: "Redirecionando para seu QR Code...",
+  consumer_payment_error: "Falha no pagamento",
+  consumer_payment_retry: "Tentar novamente",
+  consumer_payment_back_cart: "Voltar ao carrinho",
+  consumer_payment_summary: "Resumo do pedido",
+  consumer_payment_method: "Forma de pagamento",
+  consumer_payment_pix_desc: "Aprovação instantânea",
+  consumer_payment_new_card: "Novo cartão de crédito",
+  consumer_payment_new_card_desc: "Adicionar cartão para esta compra",
+  consumer_payment_confirm: "Confirmar Pagamento",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
