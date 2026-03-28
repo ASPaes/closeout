@@ -117,6 +117,7 @@ function ConsumerHeader() {
 }
 
 function ConsumerContent() {
+  useConsumerNotifications();
   return (
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
