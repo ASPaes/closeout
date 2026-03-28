@@ -1023,6 +1023,18 @@ const ptBR = {
   consumer_limit_behavior: "Comportamento ao atingir limite",
   consumer_behavior_warn: "Avisar",
   consumer_behavior_block: "Bloquear",
+
+  // Consumer Events
+  consumer_greeting: "Olá",
+  consumer_events_nearby: "Eventos perto de você",
+  consumer_search_events: "Buscar por nome ou cidade...",
+  consumer_promos_highlight: "Promoções em destaque",
+  consumer_promo_label: "Promoção",
+  consumer_promo_until: "Até",
+  consumer_promo_badge: "Promo",
+  consumer_events_count: "eventos",
+  consumer_no_events: "Nenhum evento encontrado",
+  consumer_no_events_desc: "Quando houver eventos disponíveis, eles aparecerão aqui",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
