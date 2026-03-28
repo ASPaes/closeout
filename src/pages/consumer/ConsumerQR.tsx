@@ -1,21 +1,13 @@
 import { QRCodeSVG } from "qrcode.react";
-import { Clock, CheckCircle2, Package, ChefHat } from "lucide-react";
+import { Clock, CheckCircle2, Package, ChefHat, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConsumer } from "@/contexts/ConsumerContext";
+import { useTranslation } from "@/i18n/use-translation";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const mockActiveOrder = {
-  id: "abc-123",
-  order_number: 42,
-  status: "ready" as const,
-  total: 66.0,
-  qr_token: "clsout_tk_a1b2c3d4e5f6g7h8i9j0",
-  created_at: "2026-03-27T22:15:00",
-  items: [
-    { name: "Heineken 600ml", quantity: 2, unit_price: 18.0 },
-    { name: "Gin Tônica", quantity: 1, unit_price: 28.0 },
-  ],
-};
-
-const statusConfig = {
+const statusConfig: Record<string, { label: string; sublabel: string; icon: any; color: string; bgColor: string; borderColor: string; step: number }> = {
   paid: {
     label: "Pedido Confirmado",
     sublabel: "Aguardando preparo",
@@ -52,8 +44,38 @@ const steps = [
 ];
 
 export default function ConsumerQR() {
-  const order = mockActiveOrder;
-  const config = statusConfig[order.status];
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { activeOrder, loadingOrder } = useConsumer();
+
+  if (loadingOrder) {
+    return (
+      <div className="flex flex-col items-center gap-5 py-8">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-[260px] w-[260px] rounded-3xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!activeOrder) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.04] border border-white/[0.06]">
+          <Inbox className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground">{t("consumer_qr_title")}</h2>
+          <p className="text-sm text-muted-foreground mt-1">Nenhum pedido ativo no momento</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/app/cardapio")} className="rounded-xl h-12">
+          {t("consumer_tab_menu")}
+        </Button>
+      </div>
+    );
+  }
+
+  const config = statusConfig[activeOrder.status] || statusConfig.paid;
   const StatusIcon = config.icon;
 
   return (
@@ -84,23 +106,9 @@ export default function ConsumerQR() {
               >
                 {i + 1}
               </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium",
-                  isActive ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
+              <span className={cn("text-[10px] font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
                 {step.label}
               </span>
-              {i < steps.length - 1 && (
-                <div
-                  className={cn(
-                    "absolute h-0.5 w-12",
-                    isActive ? "bg-primary/40" : "bg-border"
-                  )}
-                  style={{ display: "none" }}
-                />
-              )}
             </div>
           );
         })}
@@ -109,11 +117,11 @@ export default function ConsumerQR() {
       {/* QR Code */}
       <div
         className="relative rounded-3xl border border-border/60 bg-card p-6"
-        style={{ boxShadow: order.status === "ready" ? "0 0 40px hsl(145 100% 39% / 0.15)" : undefined }}
+        style={{ boxShadow: activeOrder.status === "ready" ? "0 0 40px hsl(145 100% 39% / 0.15)" : undefined }}
       >
         <div className="rounded-2xl bg-white p-4">
           <QRCodeSVG
-            value={order.qr_token}
+            value={activeOrder.qr_token}
             size={200}
             level="H"
             bgColor="#ffffff"
@@ -121,7 +129,7 @@ export default function ConsumerQR() {
           />
         </div>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          Pedido <span className="font-bold text-primary">#{String(order.order_number).padStart(3, "0")}</span>
+          Pedido <span className="font-bold text-primary">#{String(activeOrder.order_number).padStart(3, "0")}</span>
         </p>
       </div>
 
@@ -129,7 +137,7 @@ export default function ConsumerQR() {
       <div className="w-full rounded-2xl border border-border/60 bg-card p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3">Resumo do Pedido</h3>
         <div className="flex flex-col gap-2">
-          {order.items.map((item, i) => (
+          {activeOrder.items.map((item, i) => (
             <div key={i} className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
                 {item.quantity}x {item.name}
@@ -141,15 +149,9 @@ export default function ConsumerQR() {
           ))}
           <div className="mt-2 border-t border-border/40 pt-2 flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">Total</span>
-            <span className="text-base font-bold text-primary">R$ {order.total.toFixed(2)}</span>
+            <span className="text-base font-bold text-primary">R$ {activeOrder.total.toFixed(2)}</span>
           </div>
         </div>
-      </div>
-
-      {/* Time */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Clock className="h-3 w-3" />
-        Pedido realizado às 22:15
       </div>
     </div>
   );
