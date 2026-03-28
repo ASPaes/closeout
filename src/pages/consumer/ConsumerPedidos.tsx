@@ -1,48 +1,26 @@
-import { useState } from "react";
-import { Clock, ChevronRight, CheckCircle2, XCircle, ChefHat, Package, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Clock, ChevronRight, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useConsumer } from "@/contexts/ConsumerContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/i18n/use-translation";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const mockOrders = [
-  {
-    id: "1",
-    order_number: 42,
-    status: "ready",
-    total: 66.0,
-    event: "Neon Nights",
-    created_at: "22:15",
-    items: ["2x Heineken 600ml", "1x Gin Tônica"],
-  },
-  {
-    id: "2",
-    order_number: 38,
-    status: "delivered",
-    total: 45.0,
-    event: "Neon Nights",
-    created_at: "21:40",
-    items: ["1x Combo Casal — 2 Drinks"],
-  },
-  {
-    id: "3",
-    order_number: 27,
-    status: "delivered",
-    total: 30.0,
-    event: "Neon Nights",
-    created_at: "20:55",
-    items: ["2x Tequila Shot"],
-  },
-  {
-    id: "4",
-    order_number: 15,
-    status: "cancelled",
-    total: 16.0,
-    event: "Sunset Rooftop",
-    created_at: "18:30",
-    items: ["1x Red Bull"],
-  },
-];
+type OrderRow = {
+  id: string;
+  order_number: number;
+  status: string;
+  total: number;
+  created_at: string;
+  event_id: string;
+  event_name: string;
+  items: string[];
+};
 
 const statusMap: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
+  pending: { label: "Pendente", icon: Clock, color: "text-muted-foreground", bg: "bg-white/[0.04]" },
   paid: { label: "Confirmado", icon: CheckCircle2, color: "text-info", bg: "bg-info/10" },
   preparing: { label: "Em Preparo", icon: ChefHat, color: "text-warning", bg: "bg-warning/10" },
   ready: { label: "Pronto", icon: Package, color: "text-success", bg: "bg-success/10" },
@@ -51,23 +29,55 @@ const statusMap: Record<string, { label: string; icon: React.ElementType; color:
 };
 
 const filters = ["Todos", "Ativos", "Entregues", "Cancelados"];
-
 const filterMap: Record<string, string[]> = {
   Todos: [],
-  Ativos: ["paid", "preparing", "ready"],
+  Ativos: ["pending", "paid", "preparing", "ready"],
   Entregues: ["delivered"],
   Cancelados: ["cancelled"],
 };
 
 export default function ConsumerPedidos() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { activeEvent } = useConsumer();
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
 
-  const filtered = mockOrders.filter((order) => {
-    const matchFilter =
-      activeFilter === "Todos" || filterMap[activeFilter]?.includes(order.status);
-    const matchSearch =
-      search === "" ||
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+
+    const fetchOrders = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total, created_at, event_id, events!inner(name), order_items(name, quantity)")
+        .eq("consumer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (data) {
+        setOrders(data.map((o: any) => ({
+          id: o.id,
+          order_number: o.order_number,
+          status: o.status,
+          total: o.total,
+          created_at: o.created_at,
+          event_id: o.event_id,
+          event_name: o.events?.name || "",
+          items: (o.order_items || []).map((i: any) => `${i.quantity}x ${i.name}`),
+        })));
+      }
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, [user]);
+
+  const filtered = orders.filter((order) => {
+    const matchFilter = activeFilter === "Todos" || filterMap[activeFilter]?.includes(order.status);
+    const matchSearch = !search ||
       order.items.some((i) => i.toLowerCase().includes(search.toLowerCase())) ||
       String(order.order_number).includes(search);
     return matchFilter && matchSearch;
@@ -75,13 +85,13 @@ export default function ConsumerPedidos() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Large title */}
+      {/* Title */}
       <div>
         <h1 className="text-[28px] font-extrabold text-foreground leading-tight tracking-tight">
-          Pedidos
+          {t("consumer_orders_title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {mockOrders.length} pedidos
+          {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
         </p>
       </div>
 
@@ -114,55 +124,68 @@ export default function ConsumerPedidos() {
         ))}
       </div>
 
-      {/* Orders list — card container */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-        {filtered.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">Nenhum pedido encontrado</p>
-          </div>
-        ) : (
-          filtered.map((order, idx) => {
-            const st = statusMap[order.status] || statusMap.delivered;
-            const StIcon = st.icon;
-            return (
-              <button
-                key={order.id}
-                className={cn(
-                  "flex w-full items-center gap-3 px-4 py-4 text-left active:bg-white/[0.03] transition-colors",
-                  idx > 0 && "border-t border-white/[0.04]"
-                )}
-              >
-                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl shrink-0", st.bg)}>
-                  <StIcon className={cn("h-5 w-5", st.color)} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[15px] font-semibold text-foreground">
-                      #{String(order.order_number).padStart(3, "0")}
-                    </span>
-                    <span className="text-[15px] font-bold text-foreground">
-                      R$ {order.total.toFixed(2)}
-                    </span>
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Orders list */}
+      {!loading && (
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center py-12 text-center gap-3">
+              <Inbox className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">Nenhum pedido encontrado</p>
+            </div>
+          ) : (
+            filtered.map((order, idx) => {
+              const st = statusMap[order.status] || statusMap.delivered;
+              const StIcon = st.icon;
+              const time = new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              return (
+                <div
+                  key={order.id}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-4 text-left",
+                    idx > 0 && "border-t border-white/[0.04]"
+                  )}
+                >
+                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl shrink-0", st.bg)}>
+                    <StIcon className={cn("h-5 w-5", st.color)} />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {order.items.join(" · ")}
-                  </p>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {order.created_at} · {order.event}
-                    </span>
-                    <span className={cn("text-[11px] font-semibold", st.color)}>
-                      {st.label}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-semibold text-foreground">
+                        #{String(order.order_number).padStart(3, "0")}
+                      </span>
+                      <span className="text-[15px] font-bold text-foreground">
+                        R$ {order.total.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {order.items.join(" · ")}
+                    </p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {time} · {order.event_name}
+                      </span>
+                      <span className={cn("text-[11px] font-semibold", st.color)}>
+                        {st.label}
+                      </span>
+                    </div>
                   </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/20 shrink-0" />
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/20 shrink-0" />
-              </button>
-            );
-          })
-        )}
-      </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }
