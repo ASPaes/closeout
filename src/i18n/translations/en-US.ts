@@ -1077,6 +1077,17 @@ const enUS: Record<TranslationKey, string> = {
   consumer_payment_new_card: "New credit card",
   consumer_payment_new_card_desc: "Add a card for this purchase",
   consumer_payment_confirm: "Confirm Payment",
+
+  // Consumer QR
+  consumer_qr_no_order: "No active order",
+  consumer_qr_no_order_desc: "Place an order to get your QR Code",
+  consumer_qr_explore: "Explore events",
+  consumer_qr_delivered: "Order Picked Up!",
+  consumer_qr_order: "Order",
+  consumer_qr_new_order: "New Order",
+  consumer_qr_ready_title: "YOUR ORDER IS READY!",
+  consumer_qr_ready_desc: "Show the QR Code at the counter to pick up",
+  consumer_qr_show_counter: "Show at counter",
 };
 
 export default enUS;
