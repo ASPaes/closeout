@@ -1,155 +1,442 @@
-import { useState } from "react";
-import { Search, Plus, Minus, ShoppingCart, ArrowRight } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useConsumer } from "@/contexts/ConsumerContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/i18n/use-translation";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const categories = ["Todos", "Cervejas", "Drinks", "Shots", "Combos", "Sem Álcool"];
+type CatalogProduct = {
+  id: string;
+  type: "product" | "combo";
+  name: string;
+  description: string | null;
+  price: number;
+  promo_price: number | null;
+  discount_percent: number | null;
+  category_name: string | null;
+  image_path: string | null;
+  is_stock_tracked: boolean;
+  stock_available: number | null;
+  low_stock_threshold: number;
+};
 
-const mockProducts = [
-  { id: "1", name: "Heineken 600ml", price: 18.0, category: "Cervejas", emoji: "🍺", popular: true, desc: "Cerveja premium importada" },
-  { id: "2", name: "Brahma Chopp 300ml", price: 10.0, category: "Cervejas", emoji: "🍻", desc: "Chopp gelado" },
-  { id: "3", name: "Gin Tônica", price: 28.0, category: "Drinks", emoji: "🍸", popular: true, desc: "Gin, tônica, limão e especiarias" },
-  { id: "4", name: "Caipirinha Clássica", price: 22.0, category: "Drinks", emoji: "🍹", desc: "Cachaça, limão e açúcar" },
-  { id: "5", name: "Tequila Shot", price: 15.0, category: "Shots", emoji: "🥃", desc: "Shot 50ml com limão e sal" },
-  { id: "6", name: "Jägerbomb", price: 20.0, category: "Shots", emoji: "💣", popular: true, desc: "Jägermeister + energético" },
-  { id: "7", name: "Combo Balde 5 Heineken", price: 75.0, category: "Combos", emoji: "🪣", desc: "5 long necks no balde de gelo" },
-  { id: "8", name: "Combo Casal — 2 Drinks", price: 45.0, category: "Combos", emoji: "💑", desc: "2 drinks à escolha" },
-  { id: "9", name: "Red Bull", price: 16.0, category: "Sem Álcool", emoji: "⚡", desc: "Energético 250ml" },
-  { id: "10", name: "Água Mineral", price: 6.0, category: "Sem Álcool", emoji: "💧", desc: "Garrafa 500ml" },
-];
+type Campaign = {
+  id: string;
+  name: string;
+  description: string | null;
+  ends_at: string;
+};
 
 export default function ConsumerCardapio() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart } = useConsumer();
+
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockProducts.filter((p) => {
-    const matchCat = activeCategory === "Todos" || p.category === activeCategory;
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  // Fetch catalog products for event
+  useEffect(() => {
+    if (!activeEvent) {
+      setLoading(false);
+      return;
+    }
 
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
-  const cartTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
-    const p = mockProducts.find((x) => x.id === id);
-    return sum + (p?.price ?? 0) * qty;
-  }, 0);
+    const fetchCatalog = async () => {
+      setLoading(true);
 
-  const addItem = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
-  const removeItem = (id: string) =>
-    setCart((c) => {
-      const next = { ...c };
-      if (next[id] > 1) next[id]--;
-      else delete next[id];
-      return next;
+      // Get event catalogs
+      const { data: eventCatalogs } = await supabase
+        .from("event_catalogs")
+        .select("catalog_id")
+        .eq("event_id", activeEvent.id)
+        .eq("is_active", true);
+
+      if (!eventCatalogs || eventCatalogs.length === 0) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      const catalogIds = eventCatalogs.map((ec) => ec.catalog_id);
+
+      // Get catalog items with products
+      const { data: catalogItems } = await supabase
+        .from("catalog_items")
+        .select(`
+          id, item_type, product_id, combo_id, is_active,
+          products:product_id (id, name, description, price, image_path, category_id, is_stock_tracked, categories:category_id (name)),
+          combos:combo_id (id, name, description, price)
+        `)
+        .in("catalog_id", catalogIds)
+        .eq("is_active", true);
+
+      // Get active campaigns for promo prices
+      const now = new Date().toISOString();
+      const { data: campaignsData } = await supabase
+        .from("campaigns")
+        .select("id, name, description, ends_at")
+        .eq("client_id", activeEvent.client_id)
+        .eq("is_active", true)
+        .lte("starts_at", now)
+        .gte("ends_at", now);
+
+      setCampaigns(campaignsData || []);
+
+      let campaignItemsMap: Record<string, { promo_price: number | null; discount_percent: number | null }> = {};
+      if (campaignsData && campaignsData.length > 0) {
+        const campaignIds = campaignsData.map((c) => c.id);
+        const { data: campItems } = await supabase
+          .from("campaign_items")
+          .select("product_id, combo_id, promo_price, discount_percent, item_type")
+          .in("campaign_id", campaignIds)
+          .eq("is_active", true);
+
+        if (campItems) {
+          campItems.forEach((ci) => {
+            const key = ci.item_type === "product" ? ci.product_id : ci.combo_id;
+            if (key) campaignItemsMap[key] = { promo_price: ci.promo_price, discount_percent: ci.discount_percent };
+          });
+        }
+      }
+
+      // Get stock balances
+      const { data: stockBalances } = await supabase
+        .from("stock_balances")
+        .select("product_id, quantity_available, low_stock_threshold, is_enabled")
+        .eq("client_id", activeEvent.client_id)
+        .eq("is_enabled", true);
+
+      const stockMap: Record<string, { available: number; threshold: number }> = {};
+      stockBalances?.forEach((sb) => {
+        stockMap[sb.product_id] = { available: sb.quantity_available, threshold: sb.low_stock_threshold };
+      });
+
+      // Build product list
+      const items: CatalogProduct[] = [];
+      const catSet = new Set<string>();
+
+      catalogItems?.forEach((ci: any) => {
+        if (ci.item_type === "product" && ci.products) {
+          const p = ci.products;
+          const catName = p.categories?.name || null;
+          if (catName) catSet.add(catName);
+          const promo = campaignItemsMap[p.id];
+          const stock = stockMap[p.id];
+
+          let finalPromo = promo?.promo_price || null;
+          if (!finalPromo && promo?.discount_percent) {
+            finalPromo = p.price * (1 - promo.discount_percent / 100);
+          }
+
+          items.push({
+            id: p.id,
+            type: "product",
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            promo_price: finalPromo,
+            discount_percent: promo?.discount_percent || null,
+            category_name: catName,
+            image_path: p.image_path,
+            is_stock_tracked: p.is_stock_tracked,
+            stock_available: stock ? stock.available : null,
+            low_stock_threshold: stock?.threshold ?? 5,
+          });
+        } else if (ci.item_type === "combo" && ci.combos) {
+          const c = ci.combos;
+          const promo = campaignItemsMap[c.id];
+          let finalPromo = promo?.promo_price || null;
+          if (!finalPromo && promo?.discount_percent) {
+            finalPromo = c.price * (1 - promo.discount_percent / 100);
+          }
+          catSet.add("Combos");
+          items.push({
+            id: c.id,
+            type: "combo",
+            name: c.name,
+            description: c.description,
+            price: c.price,
+            promo_price: finalPromo,
+            discount_percent: promo?.discount_percent || null,
+            category_name: "Combos",
+            image_path: null,
+            is_stock_tracked: false,
+            stock_available: null,
+            low_stock_threshold: 5,
+          });
+        }
+      });
+
+      setCategories(["Todos", ...Array.from(catSet).sort()]);
+      setProducts(items);
+      setLoading(false);
+    };
+
+    fetchCatalog();
+  }, [activeEvent]);
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchCat = activeCategory === "Todos" || p.category_name === activeCategory;
+      const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
+      return matchCat && matchSearch;
     });
+  }, [products, activeCategory, search]);
+
+  const cartItemMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    cart.items.forEach((i) => { map[i.id] = i.quantity; });
+    return map;
+  }, [cart.items]);
+
+  const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+
+  const handleAdd = (product: CatalogProduct) => {
+    const displayPrice = product.promo_price ?? product.price;
+    addToCart({
+      id: product.id,
+      type: product.type,
+      name: product.name,
+      price: displayPrice,
+      image_path: product.image_path,
+    });
+  };
+
+  const handleDecrease = (id: string) => {
+    const qty = cartItemMap[id] || 0;
+    if (qty <= 1) removeFromCart(id);
+    else updateQuantity(id, qty - 1);
+  };
+
+  const handleIncrease = (id: string) => {
+    const qty = cartItemMap[id] || 0;
+    updateQuantity(id, qty + 1);
+  };
+
+  if (!activeEvent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+        <p className="text-muted-foreground text-sm">{t("consumer_no_event_selected")}</p>
+        <Button variant="outline" onClick={() => navigate("/app")} className="rounded-xl">
+          {t("consumer_tab_events")}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 pb-4">
-      {/* Large title */}
+      {/* Header */}
       <div>
         <h1 className="text-[28px] font-extrabold text-foreground leading-tight tracking-tight">
-          Cardápio
+          {t("consumer_menu_title")}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Neon Nights — Club Aurora</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{activeEvent.name}</p>
       </div>
+
+      {/* Campaigns carousel */}
+      {campaigns.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 snap-x snap-mandatory">
+          {campaigns.map((c) => (
+            <div
+              key={c.id}
+              className="shrink-0 w-[260px] snap-start rounded-2xl p-4 border border-primary/20"
+              style={{ background: "linear-gradient(135deg, hsl(24 100% 50% / 0.15), hsl(24 100% 50% / 0.05))" }}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <Flame className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                  {t("consumer_promo_label")}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-foreground line-clamp-1">{c.name}</p>
+              {c.description && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{c.description}</p>
+              )}
+              <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                {t("consumer_promo_until")} {new Date(c.ends_at).toLocaleDateString("pt-BR")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Buscar produto..."
+          placeholder={t("consumer_search_product")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-12 rounded-2xl border-white/[0.08] bg-white/[0.04] pl-11 text-base placeholder:text-muted-foreground/60 focus-visible:ring-primary/30"
         />
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={cn(
-              "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95",
-              activeCategory === cat
-                ? "bg-primary text-primary-foreground shadow-[0_0_16px_hsl(24,100%,50%,0.25)]"
-                : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Product list — Keeta style */}
-      <div className="flex flex-col gap-4">
-        {filtered.map((product) => {
-          const qty = cart[product.id] || 0;
-          return (
-            <div
-              key={product.id}
-              className="flex items-center gap-3 active:opacity-90 transition-opacity"
+      {/* Category pills */}
+      {categories.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={cn(
+                "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95",
+                activeCategory === cat
+                  ? "bg-primary text-primary-foreground shadow-[0_0_16px_hsl(24,100%,50%,0.25)]"
+                  : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground"
+              )}
             >
-              {/* Text content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-[15px] font-semibold text-foreground truncate">{product.name}</h3>
-                  {product.popular && (
-                    <span className="text-[10px]">🔥</span>
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-[72px] w-[72px] rounded-xl" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && filtered.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+          <p className="text-muted-foreground text-sm">{t("consumer_no_products")}</p>
+        </div>
+      )}
+
+      {/* Product list */}
+      {!loading && (
+        <div className="flex flex-col gap-4">
+          {filtered.map((product) => {
+            const qty = cartItemMap[product.id] || 0;
+            const hasPromo = product.promo_price !== null && product.promo_price < product.price;
+            const displayPrice = hasPromo ? product.promo_price! : product.price;
+            const lowStock = product.is_stock_tracked && product.stock_available !== null &&
+              product.stock_available <= product.low_stock_threshold && product.stock_available > 0;
+            const outOfStock = product.is_stock_tracked && product.stock_available !== null && product.stock_available <= 0;
+
+            return (
+              <div
+                key={product.id}
+                className={cn(
+                  "flex items-center gap-3 active:opacity-90 transition-opacity",
+                  outOfStock && "opacity-50"
+                )}
+              >
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-[15px] font-semibold text-foreground truncate">{product.name}</h3>
+                    {hasPromo && (
+                      <span className="text-[10px]">🔥</span>
+                    )}
+                  </div>
+                  {product.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{product.description}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[15px] font-bold text-primary">
+                      R$ {displayPrice.toFixed(2)}
+                    </span>
+                    {hasPromo && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        R$ {product.price.toFixed(2)}
+                      </span>
+                    )}
+                    {product.discount_percent && (
+                      <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded-full">
+                        -{product.discount_percent}%
+                      </span>
+                    )}
+                  </div>
+                  {lowStock && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <AlertTriangle className="h-3 w-3 text-yellow-400" />
+                      <span className="text-[11px] text-yellow-400 font-medium">
+                        {t("consumer_low_stock")} ({product.stock_available})
+                      </span>
+                    </div>
+                  )}
+                  {outOfStock && (
+                    <span className="text-[11px] text-destructive font-medium mt-1 block">
+                      {t("consumer_out_of_stock")}
+                    </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{product.desc}</p>
-                <p className="text-[15px] font-bold text-primary mt-1">
-                  R$ {product.price.toFixed(2)}
-                </p>
-              </div>
 
-              {/* Image + action */}
-              <div className="relative shrink-0">
-                <div className="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-3xl select-none">
-                  {product.emoji}
-                </div>
-
-                {/* Add / stepper overlay at bottom-right of image */}
-                {qty === 0 ? (
-                  <button
-                    onClick={() => addItem(product.id)}
-                    className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-90 transition-transform"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 rounded-full bg-primary shadow-lg">
-                    <button
-                      onClick={() => removeItem(product.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="min-w-[20px] text-center text-sm font-bold text-primary-foreground">
-                      {qty}
-                    </span>
-                    <button
-                      onClick={() => addItem(product.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
+                {/* Image + action */}
+                <div className="relative shrink-0">
+                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-sm font-medium text-muted-foreground select-none overflow-hidden">
+                    {product.image_path ? (
+                      <img
+                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${product.image_path}`}
+                        alt={product.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-2xl">{product.type === "combo" ? "🪣" : "🍺"}</span>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
-      {/* Checkout bar — fixed above tab bar */}
+                  {!outOfStock && (
+                    <>
+                      {qty === 0 ? (
+                        <button
+                          onClick={() => handleAdd(product)}
+                          className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-90 transition-transform"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 rounded-full bg-primary shadow-lg">
+                          <button
+                            onClick={() => handleDecrease(product.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="min-w-[20px] text-center text-sm font-bold text-primary-foreground">
+                            {qty}
+                          </span>
+                          <button
+                            onClick={() => handleIncrease(product.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Checkout bar */}
       {cartCount > 0 && (
         <div className="fixed bottom-[76px] left-0 right-0 z-40 px-5">
           <div className="mx-auto max-w-[480px]">
@@ -163,12 +450,12 @@ export default function ConsumerCardapio() {
                   {cartCount}
                 </div>
                 <span className="text-[15px] font-semibold text-primary-foreground">
-                  Finalizar
+                  {t("consumer_view_cart")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[15px] font-bold text-primary-foreground">
-                  R$ {cartTotal.toFixed(2)}
+                  R$ {cart.total.toFixed(2)}
                 </span>
                 <ArrowRight className="h-4 w-4 text-primary-foreground/70" />
               </div>
