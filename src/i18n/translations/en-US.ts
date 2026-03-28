@@ -1037,6 +1037,30 @@ const enUS: Record<TranslationKey, string> = {
   consumer_events_count: "events",
   consumer_no_events: "No events found",
   consumer_no_events_desc: "When events are available, they will appear here",
+
+  // Consumer Menu & Cart
+  consumer_search_product: "Search product...",
+  consumer_no_products: "No products found",
+  consumer_no_event_selected: "Select an event to see the menu",
+  consumer_low_stock: "Low stock",
+  consumer_out_of_stock: "Out of stock",
+  consumer_view_cart: "View cart",
+  consumer_cart_empty: "Your cart is empty",
+  consumer_cart_empty_desc: "Add items from the menu to get started",
+  consumer_cart_clear: "Clear",
+  consumer_event_spent: "Total spent at this event",
+  consumer_subtotal: "Subtotal",
+  consumer_accumulated: "Accumulated at event",
+  consumer_total: "Total",
+  consumer_pay: "Pay",
+  consumer_limit_blocked: "Limit exceeded",
+  consumer_limit_warning: "Warning: limit approaching",
+  consumer_max_value_exceeded: "Max order value exceeded",
+  consumer_event_limit_warning: "Event max order value exceeded",
+  consumer_event_max_value: "Max per order:",
+  consumer_orders_blocked: "Order limit reached",
+  consumer_orders_warning: "Warning: order limit",
+  consumer_max_orders_reached: "Max orders per event reached",
 };
 
 export default enUS;
