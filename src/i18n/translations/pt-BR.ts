@@ -1075,6 +1075,17 @@ const ptBR = {
   consumer_payment_new_card: "Novo cartão de crédito",
   consumer_payment_new_card_desc: "Adicionar cartão para esta compra",
   consumer_payment_confirm: "Confirmar Pagamento",
+
+  // Consumer QR
+  consumer_qr_no_order: "Nenhum pedido ativo",
+  consumer_qr_no_order_desc: "Faça um pedido para receber seu QR Code",
+  consumer_qr_explore: "Explorar eventos",
+  consumer_qr_delivered: "Pedido Retirado!",
+  consumer_qr_order: "Pedido",
+  consumer_qr_new_order: "Novo Pedido",
+  consumer_qr_ready_title: "SEU PEDIDO ESTÁ PRONTO!",
+  consumer_qr_ready_desc: "Apresente o QR Code no balcão para retirar",
+  consumer_qr_show_counter: "Apresente no balcão",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
