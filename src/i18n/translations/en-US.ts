@@ -1025,6 +1025,18 @@ const enUS: Record<TranslationKey, string> = {
   consumer_limit_behavior: "Behavior when limit is reached",
   consumer_behavior_warn: "Warn",
   consumer_behavior_block: "Block",
+
+  // Consumer Events
+  consumer_greeting: "Hi",
+  consumer_events_nearby: "Events near you",
+  consumer_search_events: "Search by name or city...",
+  consumer_promos_highlight: "Featured promos",
+  consumer_promo_label: "Promo",
+  consumer_promo_until: "Until",
+  consumer_promo_badge: "Promo",
+  consumer_events_count: "events",
+  consumer_no_events: "No events found",
+  consumer_no_events_desc: "When events are available, they will appear here",
 };
 
 export default enUS;
