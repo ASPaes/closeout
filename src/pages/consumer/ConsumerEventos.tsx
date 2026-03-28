@@ -183,7 +183,7 @@ export default function ConsumerEventos() {
 
   const handleSelectEvent = (ev: EnrichedEvent) => {
     setActiveEvent({ id: ev.id, name: ev.name, client_id: ev.client_id || "" });
-    navigate(`/app/evento/${ev.id}`);
+    navigate("/app/cardapio");
   };
 
   const filtered = search.trim()
