@@ -409,7 +409,7 @@ export default function ConsumerCardapio() {
                         className="flex h-9 w-full items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform text-sm font-semibold gap-1.5"
                       >
                         <Plus className="h-4 w-4" />
-                        {t("consumer_add_label") || "Adicionar"}
+                        {"Adicionar"}
                       </button>
                     ) : (
                       <>
