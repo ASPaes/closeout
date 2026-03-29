@@ -117,6 +117,22 @@ export default function ConsumerEventos() {
 
     const campaignClientIds = new Set(activeCampaigns.map((c) => c.client_id));
 
+    // Fetch cover images (sort_order=0) for all events
+    const eventIds = (eventsData || []).map((e) => e.id);
+    let coverMap: Record<string, string> = {};
+    if (eventIds.length > 0) {
+      const { data: imgData } = await supabase
+        .from("event_images")
+        .select("event_id, public_url")
+        .in("event_id", eventIds)
+        .eq("sort_order", 0);
+      if (imgData) {
+        for (const img of imgData) {
+          if (img.public_url) coverMap[img.event_id] = img.public_url;
+        }
+      }
+    }
+
     const enriched: EnrichedEvent[] = ((eventsData || []) as EventRow[]).map((ev) => {
       const venue = venues.find((v) => v.id === ev.venue_id);
       let distance: number | undefined;
@@ -128,6 +144,7 @@ export default function ConsumerEventos() {
         venue,
         distance,
         hasPromo: ev.client_id ? campaignClientIds.has(ev.client_id) : false,
+        cover_url: coverMap[ev.id] || null,
       };
     });
 
