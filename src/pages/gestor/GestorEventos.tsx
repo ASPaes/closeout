@@ -420,6 +420,14 @@ export default function GestorEventos() {
             </div>
           </TabsContent>
 
+          <TabsContent value="images" className="mt-4">
+            <EventImageManager
+              eventId={editingId}
+              clientId={clientId!}
+              onPendingFiles={!editingId ? (files) => setPendingImages(files) : undefined}
+            />
+          </TabsContent>
+
           {editingId && (
             <TabsContent value="catalogs" className="space-y-4 mt-4">
               {/* Link catalog */}
