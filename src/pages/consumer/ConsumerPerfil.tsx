@@ -363,11 +363,7 @@ export default function ConsumerPerfil() {
         {transactionsTab}
       </ProfileDetailSheet>
       <ProfileDetailSheet open={detailSheet === "limits"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Meus Limites">
-        <div className="flex flex-col items-center py-10 text-muted-foreground">
-          <Gauge className="h-10 w-10 mb-2 opacity-30" />
-          <p className="text-sm">Em breve</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Controle seus limites de consumo</p>
-        </div>
+        <ConsumerLimites />
       </ProfileDetailSheet>
       <ProfileDetailSheet open={detailSheet === "privacy"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Segurança e Privacidade">
         <PrivacyCard
