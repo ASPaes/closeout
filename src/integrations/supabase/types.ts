@@ -1519,6 +1519,7 @@ export type Database = {
           phone: string | null
           status: string
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1530,6 +1531,7 @@ export type Database = {
           phone?: string | null
           status?: string
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1541,6 +1543,7 @@ export type Database = {
           phone?: string | null
           status?: string
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -2178,6 +2181,10 @@ export type Database = {
     Functions: {
       bootstrap_super_admin: { Args: never; Returns: boolean }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
+      check_username_available: {
+        Args: { p_username: string }
+        Returns: boolean
+      }
       close_cash_register: {
         Args: { p_closing_balance: number; p_register_id: string }
         Returns: Json
@@ -2200,6 +2207,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
+      get_consumer_profile_stats: { Args: never; Returns: Json }
       get_my_roles: {
         Args: never
         Returns: {
@@ -2260,6 +2268,10 @@ export type Database = {
       normalize_product_name: { Args: { input: string }; Returns: string }
       release_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
       reserve_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
+      set_checkin_visibility: {
+        Args: { p_visible: boolean }
+        Returns: undefined
+      }
       update_stock_entry:
         | {
             Args: {
