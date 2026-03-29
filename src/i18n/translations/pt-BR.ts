@@ -1086,6 +1086,14 @@ const ptBR = {
   consumer_qr_ready_title: "SEU PEDIDO ESTÁ PRONTO!",
   consumer_qr_ready_desc: "Apresente o QR Code no balcão para retirar",
   consumer_qr_show_counter: "Apresente no balcão",
+
+  // Event Images
+  event_images_title: "Fotos do evento",
+  event_images_add: "Adicionar",
+  event_images_cover: "Capa",
+  event_images_max_reached: "Máximo de 5 imagens por evento",
+  event_images_invalid_type: "Formato inválido. Use JPG, PNG ou WebP",
+  event_images_tab: "Imagens",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
