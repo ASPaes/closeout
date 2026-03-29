@@ -37,6 +37,7 @@ type EventRow = {
   status: string;
   client_id: string | null;
   venue_id: string;
+  cover_url?: string | null;
 };
 
 type VenueRow = {
