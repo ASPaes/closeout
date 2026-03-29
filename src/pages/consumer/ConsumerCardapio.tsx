@@ -35,6 +35,7 @@ export default function ConsumerCardapio() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { activeEvent, cart, addToCart, updateQuantity, removeFromCart } = useConsumer();
+  const { user } = useAuth();
 
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -42,6 +43,27 @@ export default function ConsumerCardapio() {
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checkinVerified, setCheckinVerified] = useState(false);
+
+  // Block access without active check-in
+  useEffect(() => {
+    if (!user || !activeEvent) return;
+    supabase
+      .from("event_checkins")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("event_id", activeEvent.id)
+      .is("checked_out_at", null)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) {
+          toast.error("Faça check-in para acessar o cardápio");
+          navigate(`/app/evento/${activeEvent.id}`);
+        } else {
+          setCheckinVerified(true);
+        }
+      });
+  }, [user, activeEvent, navigate]);
 
   // Fetch catalog products for event
   useEffect(() => {
