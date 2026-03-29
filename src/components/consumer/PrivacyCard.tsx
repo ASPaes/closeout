@@ -10,10 +10,14 @@ type Props = {
 
 export function PrivacyCard({ isVisible, hasActiveCheckin, onToggle, loading }: Props) {
   return (
-    <div className="rounded-2xl border border-border/40 bg-card p-4">
+    <div className="rounded-3xl border border-white/[0.06] bg-white/[0.03] p-4 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="h-4.5 w-4.5 text-primary" />
-        <span className="text-sm font-semibold text-foreground">Segurança e Privacidade</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
+          <Shield className="h-4 w-4 text-primary" />
+        </div>
+        <span className="text-sm font-semibold text-foreground">
+          Privacidade
+        </span>
       </div>
 
       <div className="flex items-center justify-between min-h-[48px]">
@@ -22,7 +26,7 @@ export function PrivacyCard({ isVisible, hasActiveCheckin, onToggle, loading }: 
           {!hasActiveCheckin && (
             <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
               <Info className="h-3 w-3 shrink-0" />
-              Faça check-in em um evento para ativar
+              Faça check-in para ativar
             </p>
           )}
         </div>
