@@ -169,6 +169,7 @@ export default function GestorEventos() {
     setEditingId(null);
     setName(""); setDescription(""); setVenueId(""); setStartAt(""); setEndAt(""); setStatus("draft");
     setSettingsId(null); setFormTab("general"); setEventCatalogs([]); setAllCatalogs([]);
+    setPendingImages([]);
     const defaults = await loadDefaults();
     setGeoRadius(String(defaults.geo_radius_meters));
     setMaxOrderValue(defaults.max_order_value != null ? String(defaults.max_order_value) : "");
