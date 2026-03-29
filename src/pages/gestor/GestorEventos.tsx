@@ -81,6 +81,7 @@ export default function GestorEventos() {
   const [eventCatalogs, setEventCatalogs] = useState<EventCatalogLink[]>([]);
   const [allCatalogs, setAllCatalogs] = useState<{ id: string; name: string }[]>([]);
   const [linkCatalogId, setLinkCatalogId] = useState("");
+  const [pendingImages, setPendingImages] = useState<{ id: string; file: File }[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!clientId) return;
