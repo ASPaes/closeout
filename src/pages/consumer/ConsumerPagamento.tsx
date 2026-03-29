@@ -33,6 +33,41 @@ export default function ConsumerPagamento() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [flowState, setFlowState] = useState<FlowState>("select");
   const [errorMessage, setErrorMessage] = useState("");
+  const [limitWarning, setLimitWarning] = useState<{ limit: number; alreadySpent: number; willSpend: number } | null>(null);
+
+  // Check spending limit
+  useEffect(() => {
+    if (!user || !activeEvent) return;
+    (async () => {
+      const { data: limRow } = await supabase
+        .from("user_consumption_limits")
+        .select("max_order_value, is_active")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!limRow || !limRow.max_order_value) return;
+
+      const limit = limRow.max_order_value;
+
+      // Sum already spent in this event
+      const { data: spentData } = await supabase
+        .from("orders")
+        .select("total")
+        .eq("consumer_id", user.id)
+        .eq("event_id", activeEvent.id)
+        .in("status", ["paid", "preparing", "ready", "delivered"]);
+
+      const alreadySpent = (spentData || []).reduce((s: number, o: any) => s + Number(o.total), 0);
+      const willSpend = alreadySpent + cart.total;
+
+      if (willSpend > limit) {
+        setLimitWarning({ limit, alreadySpent, willSpend });
+      } else {
+        setLimitWarning(null);
+      }
+    })();
+  }, [user, activeEvent, cart.total]);
 
   // Fetch saved cards
   useEffect(() => {
