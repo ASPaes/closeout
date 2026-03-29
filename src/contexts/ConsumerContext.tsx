@@ -160,6 +160,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         consumptionLimits,
         location,
         setActiveEvent,
+        setActiveOrder,
         setLocation,
         addToCart,
         removeFromCart,
