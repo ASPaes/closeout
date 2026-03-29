@@ -141,7 +141,7 @@ export default function ConsumerPagamento() {
 
       // Navigate after brief success display
       setTimeout(() => {
-        navigate("/app/qr", { replace: true });
+        navigate(`/app/qr?order=${orderId}`, { replace: true });
       }, 1500);
     } catch (err: any) {
       console.error("Payment error:", err);
