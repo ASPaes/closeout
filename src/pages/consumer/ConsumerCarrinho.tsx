@@ -146,7 +146,7 @@ export default function ConsumerCarrinho() {
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-xl select-none overflow-hidden">
               {item.image_path ? (
                 <img
-                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${item.image_path}`}
+                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.image_path}`}
                   alt={item.name}
                   className="h-full w-full object-cover"
                 />
