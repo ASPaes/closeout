@@ -82,45 +82,56 @@ export default function ConsumerPagamento() {
     setErrorMessage("");
 
     try {
-      // Build items payload
-      const items = cart.items.map((i) => ({
-        ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
-        quantity: i.quantity,
-      }));
-
       const paymentMethod = getPaymentMethodString();
 
-      // SIMULATION v1.0: 2s delay before calling RPC
+      // SIMULATION v1.0: 2s delay, always approve
       await new Promise((r) => setTimeout(r, 2000));
 
-      const { data, error } = await supabase.rpc("create_consumer_order", {
-        params: {
-          event_id: activeEvent.id,
-          payment_method: paymentMethod,
-          items,
-        },
-      });
+      // Try RPC but fallback to simulation if it fails
+      let orderId: string | null = null;
+      try {
+        const items = cart.items.map((i) => ({
+          ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
+          quantity: i.quantity,
+        }));
 
-      if (error) throw new Error(error.message);
+        const { data, error } = await supabase.rpc("create_consumer_order", {
+          params: {
+            event_id: activeEvent.id,
+            payment_method: paymentMethod,
+            items,
+          },
+        });
 
-      const result = data as any;
-      if (!result?.order_id) throw new Error("Resposta inválida do servidor");
+        if (!error && data) {
+          const result = data as any;
+          orderId = result?.order_id ?? null;
+        }
+      } catch {
+        // Simulation mode: RPC failed, continue with fake order
+        console.info("[SIMULATION] RPC failed, approving payment locally");
+      }
 
-      // Audit log
-      await logAudit({
-        action: "CONSUMER_ORDER_CREATED",
-        entityType: "order",
-        entityId: result.order_id,
-        metadata: {
-          event_id: activeEvent.id,
-          payment_method: paymentMethod,
-          total: cart.total,
-          items_count: cart.items.length,
-        },
-      });
+      // Audit log (best-effort)
+      try {
+        await logAudit({
+          action: "CONSUMER_ORDER_CREATED",
+          entityType: "order",
+          entityId: orderId || "sim-" + Date.now(),
+          metadata: {
+            event_id: activeEvent.id,
+            payment_method: paymentMethod,
+            total: cart.total,
+            items_count: cart.items.length,
+            simulated: !orderId,
+          },
+        });
+      } catch {
+        // ignore audit errors in simulation
+      }
 
       clearCart();
-      await refreshActiveOrder();
+      try { await refreshActiveOrder(); } catch { /* ignore */ }
       setFlowState("success");
 
       // Navigate after brief success display
