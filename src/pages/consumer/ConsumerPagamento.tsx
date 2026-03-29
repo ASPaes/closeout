@@ -397,6 +397,26 @@ export default function ConsumerPagamento() {
         {t("consumer_payment_secure")}
       </p>
 
+
+      {/* Spending limit warning */}
+      {limitWarning && (
+        <div className="flex items-start gap-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 animate-in fade-in slide-in-from-top-2">
+          <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-300">Limite de gastos atingido</p>
+            <p className="text-xs text-amber-200/70 mt-1 leading-relaxed">
+              Seu limite para esta noite é de{" "}
+              <strong>R$ {limitWarning.limit.toFixed(2)}</strong>. Você já gastou{" "}
+              <strong>R$ {limitWarning.alreadySpent.toFixed(2)}</strong> e com este pedido totalizará{" "}
+              <strong>R$ {limitWarning.willSpend.toFixed(2)}</strong>.
+            </p>
+            <p className="text-[11px] text-amber-200/50 mt-1.5">
+              A compra não será bloqueada, mas fique atento aos seus gastos.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Confirm button */}
       <Button
         onClick={handleConfirm}
