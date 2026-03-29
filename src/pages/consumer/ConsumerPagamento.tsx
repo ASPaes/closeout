@@ -26,7 +26,7 @@ export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, activeEvent, clearCart, refreshActiveOrder } = useConsumer();
+  const { cart, activeEvent, clearCart, refreshActiveOrder, setActiveOrder } = useConsumer();
 
   const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("pix");
@@ -84,54 +84,59 @@ export default function ConsumerPagamento() {
     try {
       const paymentMethod = getPaymentMethodString();
 
-      // SIMULATION v1.0: 2s delay, always approve
-      await new Promise((r) => setTimeout(r, 2000));
+      const items = cart.items.map((i) => ({
+        ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
+        quantity: i.quantity,
+      }));
 
-      // Try RPC but fallback to simulation if it fails
-      let orderId: string | null = null;
-      try {
-        const items = cart.items.map((i) => ({
-          ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
+      const { data, error } = await supabase.rpc("create_consumer_order", {
+        params: {
+          event_id: activeEvent.id,
+          payment_method: paymentMethod,
+          items,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+
+      const result = data as any;
+      const orderId = result?.order_id;
+      const orderNumber = result?.order_number;
+      const qrToken = result?.qr_token;
+      const total = result?.total;
+
+      // Set active order immediately so QR page shows it
+      setActiveOrder({
+        id: orderId,
+        order_number: orderNumber,
+        status: "paid",
+        total: total,
+        qr_token: qrToken,
+        items: cart.items.map((i) => ({
+          name: i.name,
           quantity: i.quantity,
-        }));
-
-        const { data, error } = await supabase.rpc("create_consumer_order", {
-          params: {
-            event_id: activeEvent.id,
-            payment_method: paymentMethod,
-            items,
-          },
-        });
-
-        if (!error && data) {
-          const result = data as any;
-          orderId = result?.order_id ?? null;
-        }
-      } catch {
-        // Simulation mode: RPC failed, continue with fake order
-        console.info("[SIMULATION] RPC failed, approving payment locally");
-      }
+          unit_price: i.price,
+        })),
+      });
 
       // Audit log (best-effort)
       try {
         await logAudit({
           action: "CONSUMER_ORDER_CREATED",
           entityType: "order",
-          entityId: orderId || "sim-" + Date.now(),
+          entityId: orderId,
           metadata: {
             event_id: activeEvent.id,
             payment_method: paymentMethod,
-            total: cart.total,
+            total,
             items_count: cart.items.length,
-            simulated: !orderId,
           },
         });
       } catch {
-        // ignore audit errors in simulation
+        // ignore audit errors
       }
 
       clearCart();
-      try { await refreshActiveOrder(); } catch { /* ignore */ }
       setFlowState("success");
 
       // Navigate after brief success display
