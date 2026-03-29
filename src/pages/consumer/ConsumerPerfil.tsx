@@ -18,7 +18,7 @@ import {
   Smartphone,
   DollarSign,
   Inbox,
-  Gauge,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
 import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
+import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
 
 /* ── status mappings ── */
 const statusIcons: Record<string, React.ElementType> = {
@@ -362,11 +363,7 @@ export default function ConsumerPerfil() {
         {transactionsTab}
       </ProfileDetailSheet>
       <ProfileDetailSheet open={detailSheet === "limits"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Meus Limites">
-        <div className="flex flex-col items-center py-10 text-muted-foreground">
-          <Gauge className="h-10 w-10 mb-2 opacity-30" />
-          <p className="text-sm">Em breve</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Controle seus limites de consumo</p>
-        </div>
+        <ConsumerLimites />
       </ProfileDetailSheet>
       <ProfileDetailSheet open={detailSheet === "privacy"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Segurança e Privacidade">
         <PrivacyCard
