@@ -294,7 +294,7 @@ export default function ConsumerPedidos() {
                     <Button
                       size="sm"
                       className="w-full h-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
-                      onClick={() => navigate("/app/qr")}
+                      onClick={() => navigate(`/app/qr?order=${order.id}`)}
                     >
                       <QrCode className="h-4 w-4 mr-2" />
                       Ver QR Code
