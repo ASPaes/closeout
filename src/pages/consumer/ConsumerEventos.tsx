@@ -37,6 +37,7 @@ type EventRow = {
   status: string;
   client_id: string | null;
   venue_id: string;
+  cover_url?: string | null;
 };
 
 type VenueRow = {
@@ -116,6 +117,22 @@ export default function ConsumerEventos() {
 
     const campaignClientIds = new Set(activeCampaigns.map((c) => c.client_id));
 
+    // Fetch cover images (sort_order=0) for all events
+    const eventIds = (eventsData || []).map((e) => e.id);
+    let coverMap: Record<string, string> = {};
+    if (eventIds.length > 0) {
+      const { data: imgData } = await supabase
+        .from("event_images")
+        .select("event_id, public_url")
+        .in("event_id", eventIds)
+        .eq("sort_order", 0);
+      if (imgData) {
+        for (const img of imgData) {
+          if (img.public_url) coverMap[img.event_id] = img.public_url;
+        }
+      }
+    }
+
     const enriched: EnrichedEvent[] = ((eventsData || []) as EventRow[]).map((ev) => {
       const venue = venues.find((v) => v.id === ev.venue_id);
       let distance: number | undefined;
@@ -127,6 +144,7 @@ export default function ConsumerEventos() {
         venue,
         distance,
         hasPromo: ev.client_id ? campaignClientIds.has(ev.client_id) : false,
+        cover_url: coverMap[ev.id] || null,
       };
     });
 
@@ -320,10 +338,14 @@ export default function ConsumerEventos() {
                   onClick={() => handleSelectEvent(event)}
                   className="relative flex w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.98] transition-all"
                 >
-                  {/* Image area */}
-                  <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none">
-                    🎉
-                  </div>
+                   {/* Image area */}
+                   <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none overflow-hidden">
+                     {event.cover_url ? (
+                       <img src={event.cover_url} alt={event.name} className="h-full w-full object-cover" />
+                     ) : (
+                       "🎉"
+                     )}
+                   </div>
                   {/* Info */}
                   <div className="flex flex-1 flex-col justify-center gap-1 p-3.5 min-w-0">
                     <div className="flex items-center gap-1.5">

@@ -1088,6 +1088,17 @@ const enUS: Record<TranslationKey, string> = {
   consumer_qr_ready_title: "YOUR ORDER IS READY!",
   consumer_qr_ready_desc: "Show the QR Code at the counter to pick up",
   consumer_qr_show_counter: "Show at counter",
+
+  // Event Images
+  event_images_title: "Event photos",
+  event_images_add: "Add",
+  event_images_cover: "Cover",
+  event_images_max_reached: "Maximum of 5 images per event",
+  event_images_invalid_type: "Invalid format. Use JPG, PNG or WebP",
+  event_images_tab: "Images",
+  back: "Back",
+  consumer_no_event_images: "No event photos",
+  consumer_enter_event: "Enter event",
 };
 
 export default enUS;

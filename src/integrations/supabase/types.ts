@@ -900,6 +900,51 @@ export type Database = {
           },
         ]
       }
+      event_images: {
+        Row: {
+          client_id: string
+          created_at: string
+          event_id: string
+          id: string
+          public_url: string | null
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          public_url?: string | null
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          public_url?: string | null
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_images_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_images_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_settings: {
         Row: {
           client_id: string

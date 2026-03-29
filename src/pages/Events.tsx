@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EventBillingOverrides } from "@/components/EventBillingOverrides";
+import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
@@ -56,6 +57,10 @@ export default function Events() {
     status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
+  const [pendingImages, setPendingImages] = useState<{ id: string; file: File }[]>([]);
+  const handlePendingFiles = useCallback((files: { id: string; file: File }[]) => {
+    setPendingImages(files);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -80,6 +85,7 @@ export default function Events() {
 
   const openCreate = () => {
     setEditing(null);
+    setPendingImages([]);
     setForm({ name: "", client_id: "", venue_id: "", description: "", start_at: "", end_at: "", status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "", unretrieved_order_alert_minutes: "", stock_control_enabled: true });
     setSheetOpen(true);
   };
@@ -117,7 +123,13 @@ export default function Events() {
     } else {
       const { data, error } = await supabase.from("events").insert(payload).select("id").single();
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
-      if (data) await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
+      if (data) {
+        await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
+        // Upload pending images
+        if (pendingImages.length > 0) {
+          await uploadPendingEventImages(pendingImages, data.id, payload.client_id || "");
+        }
+      }
       toast.success(t("event_created"));
     }
     setSaving(false);
@@ -176,22 +188,28 @@ export default function Events() {
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={editing ? t("edit_event") : t("new_event")}
         onSubmit={handleSubmit} saving={saving} submitLabel={editing ? t("update") : t("create")}
         size="wide">
-        {editing && isSuperAdmin ? (
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
-              <TabsTrigger value="billing">{t("ebo_tab")}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="general">
-              <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
-            </TabsContent>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
+            {editing && isSuperAdmin && <TabsTrigger value="billing">{t("ebo_tab")}</TabsTrigger>}
+            <TabsTrigger value="images">{t("event_images_tab")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="general">
+            <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
+          </TabsContent>
+          {editing && isSuperAdmin && (
             <TabsContent value="billing">
               <EventBillingOverrides eventId={editing.id} clientId={form.client_id} />
             </TabsContent>
-          </Tabs>
-        ) : (
-          <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
-        )}
+          )}
+          <TabsContent value="images">
+            <EventImageManager
+              eventId={editing?.id || null}
+              clientId={form.client_id}
+              onPendingFiles={!editing ? handlePendingFiles : undefined}
+            />
+          </TabsContent>
+        </Tabs>
       </ModalForm>
     </div>
   );
