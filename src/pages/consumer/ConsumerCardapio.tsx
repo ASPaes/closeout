@@ -400,34 +400,35 @@ export default function ConsumerCardapio() {
                   </div>
                 </div>
 
-                {/* Add/counter button */}
+                {/* Add/counter bar */}
                 {!outOfStock && (
-                  <div className="absolute bottom-[52px] right-2">
+                  <div className="flex items-center justify-between w-full px-2 py-1.5 border-t border-white/[0.06]">
                     {qty === 0 ? (
                       <button
                         onClick={() => handleAdd(product)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-90 transition-transform"
+                        className="flex h-9 w-full items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform text-sm font-semibold gap-1.5"
                       >
                         <Plus className="h-4 w-4" />
+                        {t("consumer_add_label") || "Adicionar"}
                       </button>
                     ) : (
-                      <div className="flex items-center gap-0.5 rounded-full bg-primary shadow-lg">
+                      <>
                         <button
                           onClick={() => handleDecrease(product.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-foreground active:scale-90 transition-transform"
                         >
-                          <Minus className="h-3.5 w-3.5" />
+                          <Minus className="h-4 w-4" />
                         </button>
-                        <span className="min-w-[18px] text-center text-sm font-bold text-primary-foreground">
+                        <span className="text-sm font-bold text-foreground">
                           {qty}
                         </span>
                         <button
                           onClick={() => handleIncrease(product.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground active:scale-90 transition-transform"
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Plus className="h-4 w-4" />
                         </button>
-                      </div>
+                      </>
                     )}
                   </div>
                 )}
