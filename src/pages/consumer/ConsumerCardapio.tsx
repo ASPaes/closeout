@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/i18n/use-translation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 type CatalogProduct = {
   id: string;
