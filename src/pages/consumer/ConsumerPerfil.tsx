@@ -35,6 +35,8 @@ import { ProfileHeaderSocial } from "@/components/consumer/ProfileHeaderSocial";
 import { ProfileStatsRow } from "@/components/consumer/ProfileStatsRow";
 import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
+import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
+import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
 
 /* ── status mappings ── */
 const statusIcons: Record<string, React.ElementType> = {
