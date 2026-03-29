@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, CreditCard, Smartphone, Plus, CheckCircle2, XCircle, Loader2, Shield } from "lucide-react";
+import { ArrowLeft, CreditCard, Smartphone, Plus, CheckCircle2, XCircle, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
@@ -33,6 +33,41 @@ export default function ConsumerPagamento() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [flowState, setFlowState] = useState<FlowState>("select");
   const [errorMessage, setErrorMessage] = useState("");
+  const [limitWarning, setLimitWarning] = useState<{ limit: number; alreadySpent: number; willSpend: number } | null>(null);
+
+  // Check spending limit
+  useEffect(() => {
+    if (!user || !activeEvent) return;
+    (async () => {
+      const { data: limRow } = await supabase
+        .from("user_consumption_limits")
+        .select("max_order_value, is_active")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!limRow || !limRow.max_order_value) return;
+
+      const limit = limRow.max_order_value;
+
+      // Sum already spent in this event
+      const { data: spentData } = await supabase
+        .from("orders")
+        .select("total")
+        .eq("consumer_id", user.id)
+        .eq("event_id", activeEvent.id)
+        .in("status", ["paid", "preparing", "ready", "delivered"]);
+
+      const alreadySpent = (spentData || []).reduce((s: number, o: any) => s + Number(o.total), 0);
+      const willSpend = alreadySpent + cart.total;
+
+      if (willSpend > limit) {
+        setLimitWarning({ limit, alreadySpent, willSpend });
+      } else {
+        setLimitWarning(null);
+      }
+    })();
+  }, [user, activeEvent, cart.total]);
 
   // Fetch saved cards
   useEffect(() => {
@@ -361,6 +396,26 @@ export default function ConsumerPagamento() {
         <Shield className="h-3.5 w-3.5" />
         {t("consumer_payment_secure")}
       </p>
+
+
+      {/* Spending limit warning */}
+      {limitWarning && (
+        <div className="flex items-start gap-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 animate-in fade-in slide-in-from-top-2">
+          <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-300">Limite de gastos atingido</p>
+            <p className="text-xs text-amber-200/70 mt-1 leading-relaxed">
+              Seu limite para esta noite é de{" "}
+              <strong>R$ {limitWarning.limit.toFixed(2)}</strong>. Você já gastou{" "}
+              <strong>R$ {limitWarning.alreadySpent.toFixed(2)}</strong> e com este pedido totalizará{" "}
+              <strong>R$ {limitWarning.willSpend.toFixed(2)}</strong>.
+            </p>
+            <p className="text-[11px] text-amber-200/50 mt-1.5">
+              A compra não será bloqueada, mas fique atento aos seus gastos.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Confirm button */}
       <Button
