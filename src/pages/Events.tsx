@@ -119,10 +119,6 @@ export default function Events() {
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
       if (data) {
         await logAudit({ action: "event.created", entityType: "event", entityId: data.id, metadata: { name: payload.name, client_id: payload.client_id, venue_id: payload.venue_id }, newData: payload });
-        // Upload pending images
-        if (pendingImages.length > 0) {
-          await uploadPendingEventImages(pendingImages, data.id, payload.client_id || "");
-        }
       }
       toast.success(t("event_created"));
     }
