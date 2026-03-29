@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,6 +81,7 @@ export default function GestorEventos() {
   const [eventCatalogs, setEventCatalogs] = useState<EventCatalogLink[]>([]);
   const [allCatalogs, setAllCatalogs] = useState<{ id: string; name: string }[]>([]);
   const [linkCatalogId, setLinkCatalogId] = useState("");
+  const [pendingImages, setPendingImages] = useState<{ id: string; file: File }[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!clientId) return;
@@ -167,6 +169,7 @@ export default function GestorEventos() {
     setEditingId(null);
     setName(""); setDescription(""); setVenueId(""); setStartAt(""); setEndAt(""); setStatus("draft");
     setSettingsId(null); setFormTab("general"); setEventCatalogs([]); setAllCatalogs([]);
+    setPendingImages([]);
     const defaults = await loadDefaults();
     setGeoRadius(String(defaults.geo_radius_meters));
     setMaxOrderValue(defaults.max_order_value != null ? String(defaults.max_order_value) : "");
@@ -230,6 +233,10 @@ export default function GestorEventos() {
       if (error || !data) { toast.error(t("gevt_save_error")); setSaving(false); return; }
       eventId = data.id;
       await logAudit({ action: AUDIT_ACTION.EVENT_CREATED, entityType: "event", entityId: data.id, newData: eventPayload });
+      // Upload pending images after creation
+      if (pendingImages.length > 0) {
+        await uploadPendingEventImages(pendingImages, data.id, clientId!);
+      }
     }
 
     const settingsPayload = {
@@ -338,9 +345,10 @@ export default function GestorEventos() {
 
       <ModalForm open={modalOpen} onOpenChange={setModalOpen} title={editingId ? t("edit_event") : t("new_event")} onSubmit={handleSave} saving={saving} disabled={venues.length === 0 && !editingId}>
         <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
-          <TabsList className={`grid w-full ${editingId ? "grid-cols-3" : "grid-cols-2"}`}>
+          <TabsList className={`grid w-full ${editingId ? "grid-cols-4" : "grid-cols-3"}`}>
             <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
             <TabsTrigger value="settings">{t("gevt_tab_settings")}</TabsTrigger>
+            <TabsTrigger value="images">{t("event_images_tab")}</TabsTrigger>
             {editingId && <TabsTrigger value="catalogs">{t("ctlg_title")}</TabsTrigger>}
           </TabsList>
 
@@ -410,6 +418,14 @@ export default function GestorEventos() {
               <Label className="cursor-pointer">{t("stock_control")}</Label>
               <Switch checked={stockEnabled} onCheckedChange={setStockEnabled} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="images" className="mt-4">
+            <EventImageManager
+              eventId={editingId}
+              clientId={clientId!}
+              onPendingFiles={!editingId ? (files) => setPendingImages(files) : undefined}
+            />
           </TabsContent>
 
           {editingId && (
