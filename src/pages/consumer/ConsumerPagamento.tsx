@@ -26,7 +26,7 @@ export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, activeEvent, clearCart, refreshActiveOrder } = useConsumer();
+  const { cart, activeEvent, clearCart, refreshActiveOrder, setActiveOrder } = useConsumer();
 
   const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("pix");
