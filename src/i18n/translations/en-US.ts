@@ -1096,6 +1096,9 @@ const enUS: Record<TranslationKey, string> = {
   event_images_max_reached: "Maximum of 5 images per event",
   event_images_invalid_type: "Invalid format. Use JPG, PNG or WebP",
   event_images_tab: "Images",
+  back: "Back",
+  consumer_no_event_images: "No event photos",
+  consumer_enter_event: "Enter event",
 };
 
 export default enUS;

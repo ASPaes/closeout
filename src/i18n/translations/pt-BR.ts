@@ -1094,6 +1094,9 @@ const ptBR = {
   event_images_max_reached: "Máximo de 5 imagens por evento",
   event_images_invalid_type: "Formato inválido. Use JPG, PNG ou WebP",
   event_images_tab: "Imagens",
+  back: "Voltar",
+  consumer_no_event_images: "Sem fotos do evento",
+  consumer_enter_event: "Entrar no evento",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
