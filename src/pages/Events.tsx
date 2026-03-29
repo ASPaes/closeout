@@ -178,28 +178,22 @@ export default function Events() {
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={editing ? t("edit_event") : t("new_event")}
         onSubmit={handleSubmit} saving={saving} submitLabel={editing ? t("update") : t("create")}
         size="wide">
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
-            {editing && isSuperAdmin && <TabsTrigger value="billing">{t("ebo_tab")}</TabsTrigger>}
-            <TabsTrigger value="images">{t("event_images_tab")}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="general">
-            <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
-          </TabsContent>
-          {editing && isSuperAdmin && (
+        {editing && isSuperAdmin ? (
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
+              <TabsTrigger value="billing">{t("ebo_tab")}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+              <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
+            </TabsContent>
             <TabsContent value="billing">
               <EventBillingOverrides eventId={editing.id} clientId={form.client_id} />
             </TabsContent>
-          )}
-          <TabsContent value="images">
-            <EventImageManager
-              eventId={editing?.id || null}
-              clientId={form.client_id}
-              onPendingFiles={!editing ? handlePendingFiles : undefined}
-            />
-          </TabsContent>
-        </Tabs>
+          </Tabs>
+        ) : (
+          <EventFormFields form={form} setForm={setForm} clients={clients} filteredVenuesByClient={filteredVenuesByClient} t={t} />
+        )}
       </ModalForm>
     </div>
   );
