@@ -233,6 +233,10 @@ export default function GestorEventos() {
       if (error || !data) { toast.error(t("gevt_save_error")); setSaving(false); return; }
       eventId = data.id;
       await logAudit({ action: AUDIT_ACTION.EVENT_CREATED, entityType: "event", entityId: data.id, newData: eventPayload });
+      // Upload pending images after creation
+      if (pendingImages.length > 0) {
+        await uploadPendingEventImages(pendingImages, data.id, clientId!);
+      }
     }
 
     const settingsPayload = {
