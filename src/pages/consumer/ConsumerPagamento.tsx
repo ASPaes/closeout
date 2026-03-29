@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, CreditCard, Smartphone, Plus, CheckCircle2, XCircle, Loader2, Shield } from "lucide-react";
+import { ArrowLeft, CreditCard, Smartphone, Plus, CheckCircle2, XCircle, Loader2, Shield, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
