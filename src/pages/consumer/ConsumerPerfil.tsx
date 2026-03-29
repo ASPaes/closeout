@@ -301,6 +301,13 @@ export default function ConsumerPerfil() {
     </div>
   );
 
+  const handleAction = (key: string) => {
+    if (key === "profile") openEdit();
+    else if (key === "events") setDetailSheet("events");
+    else if (key === "limits") setDetailSheet("limits");
+    else if (key === "privacy") setDetailSheet("privacy");
+  };
+
   return (
     <div className="flex flex-col gap-4 pb-20">
       {/* Header glass */}
@@ -331,6 +338,18 @@ export default function ConsumerPerfil() {
         />
       )}
 
+      {/* Action cards */}
+      <ProfileActionCards onAction={handleAction} />
+
+      {/* Segmented tabs */}
+      <ProfileSegmentedTabs
+        tabs={[
+          { key: "orders", label: "Pedidos", content: ordersTab },
+          { key: "events", label: "Eventos", content: eventsTab },
+          { key: "transactions", label: "Transações", content: transactionsTab },
+        ]}
+      />
+
       {/* Detail sheets */}
       <ProfileDetailSheet open={detailSheet === "orders"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Meus Pedidos">
         {ordersTab}
@@ -341,14 +360,21 @@ export default function ConsumerPerfil() {
       <ProfileDetailSheet open={detailSheet === "transactions"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Transações">
         {transactionsTab}
       </ProfileDetailSheet>
-
-      {/* Privacy */}
-      <PrivacyCard
-        isVisible={activeCheckin?.is_visible ?? false}
-        hasActiveCheckin={!!activeCheckin}
-        onToggle={handleToggleVisibility}
-        loading={togglingVisibility}
-      />
+      <ProfileDetailSheet open={detailSheet === "limits"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Meus Limites">
+        <div className="flex flex-col items-center py-10 text-muted-foreground">
+          <Gauge className="h-10 w-10 mb-2 opacity-30" />
+          <p className="text-sm">Em breve</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Controle seus limites de consumo</p>
+        </div>
+      </ProfileDetailSheet>
+      <ProfileDetailSheet open={detailSheet === "privacy"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Segurança e Privacidade">
+        <PrivacyCard
+          isVisible={activeCheckin?.is_visible ?? false}
+          hasActiveCheckin={!!activeCheckin}
+          onToggle={handleToggleVisibility}
+          loading={togglingVisibility}
+        />
+      </ProfileDetailSheet>
 
       {/* Logout */}
       <button
