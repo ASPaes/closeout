@@ -36,17 +36,29 @@ import { ProfileStatsRow } from "@/components/consumer/ProfileStatsRow";
 import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 
-/* ── status mappings ── */
 const statusIcons: Record<string, React.ElementType> = {
-  pending: Clock, paid: CheckCircle2, preparing: ChefHat,
-  ready: Package, delivered: CheckCircle2, cancelled: XCircle,
+  pending: Clock,
+  paid: CheckCircle2,
+  preparing: ChefHat,
+  ready: Package,
+  delivered: CheckCircle2,
+  cancelled: XCircle,
 };
+
 const statusLabels: Record<string, string> = {
-  pending: "Pendente", paid: "Confirmado", preparing: "Em Preparo",
-  ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado",
+  pending: "Pendente",
+  paid: "Confirmado",
+  preparing: "Em Preparo",
+  ready: "Pronto",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
 };
+
 const paymentIcons: Record<string, React.ElementType> = {
-  pix: Smartphone, credit: CreditCard, debit: CreditCard, cash: Banknote,
+  pix: Smartphone,
+  credit: CreditCard,
+  debit: CreditCard,
+  cash: Banknote,
 };
 
 function formatCurrency(v: number) {
@@ -58,6 +70,7 @@ export default function ConsumerPerfil() {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
 
+  // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -66,15 +79,23 @@ export default function ConsumerPerfil() {
   const [saving, setSaving] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | null>(null);
 
+  // Stats via RPC
   const [stats, setStats] = useState({ orders: 0, spent: 0, events: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // Avatar local state
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
+  // Presence
   const [activeCheckin, setActiveCheckin] = useState<{
-    id: string; event_id: string; event_name: string; is_visible: boolean;
+    id: string;
+    event_id: string;
+    event_name: string;
+    is_visible: boolean;
   } | null>(null);
   const [togglingVisibility, setTogglingVisibility] = useState(false);
 
+  // Tab data
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
@@ -86,21 +107,31 @@ export default function ConsumerPerfil() {
   const displayPhone = profile?.phone ? maskPhone(profile.phone) : "—";
   const profileUsername = (profile as any)?.username || null;
   const avatarUrl = localAvatarUrl || profile?.avatar_url || null;
-  const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-  /* ── data fetching ── */
+  // Fetch stats via RPC
   useEffect(() => {
     if (!user) return;
     setLoadingStats(true);
     supabase.rpc("get_consumer_profile_stats").then(({ data, error }) => {
       if (data && !error) {
         const d = data as any;
-        setStats({ orders: d.total_orders || 0, spent: Number(d.total_spent) || 0, events: d.total_events || 0 });
+        setStats({
+          orders: d.total_orders || 0,
+          spent: Number(d.total_spent) || 0,
+          events: d.total_events || 0,
+        });
       }
       setLoadingStats(false);
     });
   }, [user]);
 
+  // Fetch active checkin
   useEffect(() => {
     if (!user) return;
     supabase
@@ -113,7 +144,8 @@ export default function ConsumerPerfil() {
         if (data && data.length > 0) {
           const row = data[0] as any;
           setActiveCheckin({
-            id: row.id, event_id: row.event_id,
+            id: row.id,
+            event_id: row.event_id,
             event_name: row.events?.name || "Evento",
             is_visible: row.is_visible ?? true,
           });
@@ -121,22 +153,37 @@ export default function ConsumerPerfil() {
       });
   }, [user]);
 
+  // Fetch tab data
   useEffect(() => {
     if (!user) return;
     setLoadingTabs(true);
     Promise.all([
-      supabase.from("orders").select("id, order_number, status, total, created_at, payment_method, events!inner(name)").eq("consumer_id", user.id).order("created_at", { ascending: false }).limit(10),
-      supabase.from("event_checkins").select("id, event_id, checked_in_at, checked_out_at, events!inner(name)").eq("user_id", user.id).order("checked_in_at", { ascending: false }).limit(10),
-      supabase.from("payments").select("id, amount, payment_method, status, created_at, paid_at").eq("consumer_id", user.id).order("created_at", { ascending: false }).limit(10),
-    ]).then(([o, e, p]) => {
-      setRecentOrders(o.data || []);
-      setRecentEvents(e.data || []);
-      setRecentPayments(p.data || []);
+      supabase
+        .from("orders")
+        .select("id, order_number, status, total, created_at, payment_method, events!inner(name)")
+        .eq("consumer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("event_checkins")
+        .select("id, event_id, checked_in_at, checked_out_at, events!inner(name)")
+        .eq("user_id", user.id)
+        .order("checked_in_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("payments")
+        .select("id, amount, payment_method, status, created_at, paid_at")
+        .eq("consumer_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]).then(([ordersRes, eventsRes, paymentsRes]) => {
+      setRecentOrders(ordersRes.data || []);
+      setRecentEvents(eventsRes.data || []);
+      setRecentPayments(paymentsRes.data || []);
       setLoadingTabs(false);
     });
   }, [user]);
 
-  /* ── actions ── */
   const openEdit = () => {
     setEditName(profile?.name || "");
     setEditPhone(profile?.phone ? maskPhone(profile.phone) : "");
@@ -146,7 +193,10 @@ export default function ConsumerPerfil() {
   };
 
   const validateUsername = (val: string) => {
-    if (!val) { setUsernameError(""); return true; }
+    if (!val) {
+      setUsernameError("");
+      return true;
+    }
     if (!/^[a-z0-9._]{3,30}$/.test(val)) {
       setUsernameError("3-30 caracteres: letras minúsculas, números, . e _");
       return false;
@@ -158,54 +208,92 @@ export default function ConsumerPerfil() {
   const handleSave = async () => {
     if (!user) return;
     if (editUsername && !validateUsername(editUsername)) return;
+
+    // Check availability if username changed
     if (editUsername && editUsername !== profileUsername) {
-      const { data: available } = await supabase.rpc("check_username_available", { p_username: editUsername });
-      if (!available) { setUsernameError("Username já está em uso"); return; }
+      const { data: available } = await supabase.rpc("check_username_available", {
+        p_username: editUsername,
+      });
+      if (!available) {
+        setUsernameError("Username já está em uso");
+        return;
+      }
     }
+
     setSaving(true);
-    const updates: any = { name: editName.trim(), phone: unmask(editPhone) };
-    if (editUsername) updates.username = editUsername.toLowerCase();
-    const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+    const updates: any = {
+      name: editName.trim(),
+      phone: unmask(editPhone),
+    };
+    if (editUsername) {
+      updates.username = editUsername.toLowerCase();
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("id", user.id);
     setSaving(false);
-    if (error) { toast.error(error.message); } else { toast.success(t("consumer_profile_updated")); setEditOpen(false); window.location.reload(); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(t("consumer_profile_updated"));
+      setEditOpen(false);
+      window.location.reload();
+    }
   };
 
   const handleToggleVisibility = async (val: boolean) => {
     if (!activeCheckin) return;
     setTogglingVisibility(true);
-    const { error } = await supabase.rpc("set_checkin_visibility", { p_visible: val });
+    const { error } = await supabase.rpc("set_checkin_visibility", {
+      p_visible: val,
+    });
     setTogglingVisibility(false);
-    if (error) { toast.error(error.message); } else {
+    if (error) {
+      toast.error(error.message);
+    } else {
       setActiveCheckin((prev) => (prev ? { ...prev, is_visible: val } : null));
       toast.success(val ? "Agora você está visível" : "Agora você está oculto");
     }
   };
 
-  const handleLogout = async () => { await signOut(); navigate("/app/login"); };
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/app/login");
+  };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  const formatTime = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  };
 
-  /* ── glass card style ── */
-  const glassCard = "rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm";
+  const formatTime = (d: string) => {
+    return new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  };
 
-  /* ── tab: orders ── */
+  // Tab: Pedidos
   const ordersTab = (
     <div className="flex flex-col gap-2">
       {loadingTabs ? (
-        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)
+        Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+        ))
       ) : recentOrders.length === 0 ? (
-        <div className="flex flex-col items-center py-10 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-2 opacity-30" />
+        <div className="flex flex-col items-center py-8 text-muted-foreground">
+          <Inbox className="h-10 w-10 mb-2 opacity-40" />
           <p className="text-sm">Nenhum pedido ainda</p>
         </div>
       ) : (
         recentOrders.map((o: any) => {
           const Icon = statusIcons[o.status] || Clock;
           return (
-            <button key={o.id} onClick={() => navigate("/app/pedidos")}
-              className={cn(glassCard, "flex items-center gap-3 p-3 active:bg-white/[0.06] transition-colors text-left w-full min-h-[52px]")}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+            <button
+              key={o.id}
+              onClick={() => navigate("/app/pedidos")}
+              className="flex items-center gap-3 rounded-xl border border-border/30 bg-card p-3 active:bg-secondary/50 transition-colors text-left w-full min-h-[48px]"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0">
                 <Icon className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -226,30 +314,44 @@ export default function ConsumerPerfil() {
     </div>
   );
 
-  /* ── tab: events ── */
+  // Tab: Eventos
   const eventsTab = (
     <div className="flex flex-col gap-2">
       {loadingTabs ? (
-        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)
+        Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+        ))
       ) : recentEvents.length === 0 ? (
-        <div className="flex flex-col items-center py-10 text-muted-foreground">
-          <Calendar className="h-10 w-10 mb-2 opacity-30" />
+        <div className="flex flex-col items-center py-8 text-muted-foreground">
+          <Calendar className="h-10 w-10 mb-2 opacity-40" />
           <p className="text-sm">Nenhum evento visitado</p>
         </div>
       ) : (
         recentEvents.map((e: any) => {
           const isActive = !e.checked_out_at;
           return (
-            <div key={e.id} className={cn(glassCard, "flex items-center gap-3 p-3 min-h-[52px]")}>
-              <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0", isActive ? "bg-green-500/10" : "bg-secondary")}>
+            <div
+              key={e.id}
+              className="flex items-center gap-3 rounded-xl border border-border/30 bg-card p-3 min-h-[48px]"
+            >
+              <div
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                  isActive ? "bg-green-500/10" : "bg-secondary"
+                )}
+              >
                 <Calendar className={cn("h-4 w-4", isActive ? "text-green-400" : "text-muted-foreground")} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{e.events?.name}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(e.checked_in_at)} · {formatTime(e.checked_in_at)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(e.checked_in_at)} · {formatTime(e.checked_in_at)}
+                </p>
               </div>
               {isActive && (
-                <span className="text-[10px] font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Ativo</span>
+                <span className="text-[10px] font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                  Ativo
+                </span>
               )}
             </div>
           );
@@ -258,14 +360,16 @@ export default function ConsumerPerfil() {
     </div>
   );
 
-  /* ── tab: transactions ── */
+  // Tab: Transações
   const transactionsTab = (
     <div className="flex flex-col gap-2">
       {loadingTabs ? (
-        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)
+        Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+        ))
       ) : recentPayments.length === 0 ? (
-        <div className="flex flex-col items-center py-10 text-muted-foreground">
-          <DollarSign className="h-10 w-10 mb-2 opacity-30" />
+        <div className="flex flex-col items-center py-8 text-muted-foreground">
+          <DollarSign className="h-10 w-10 mb-2 opacity-40" />
           <p className="text-sm">Nenhuma transação</p>
         </div>
       ) : (
@@ -273,8 +377,16 @@ export default function ConsumerPerfil() {
           const PayIcon = paymentIcons[p.payment_method] || CreditCard;
           const isApproved = p.status === "approved";
           return (
-            <div key={p.id} className={cn(glassCard, "flex items-center gap-3 p-3 min-h-[52px]")}>
-              <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0", isApproved ? "bg-green-500/10" : "bg-destructive/10")}>
+            <div
+              key={p.id}
+              className="flex items-center gap-3 rounded-xl border border-border/30 bg-card p-3 min-h-[48px]"
+            >
+              <div
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                  isApproved ? "bg-green-500/10" : "bg-destructive/10"
+                )}
+              >
                 <PayIcon className={cn("h-4 w-4", isApproved ? "text-green-400" : "text-destructive")} />
               </div>
               <div className="flex-1 min-w-0">
@@ -300,7 +412,7 @@ export default function ConsumerPerfil() {
 
   return (
     <div className="flex flex-col gap-4 pb-20">
-      {/* Header glass */}
+      {/* Social header */}
       <ProfileHeaderSocial
         userId={user?.id || ""}
         avatarUrl={avatarUrl}
@@ -315,8 +427,10 @@ export default function ConsumerPerfil() {
 
       {/* Stats */}
       {loadingStats ? (
-        <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[76px] w-full rounded-2xl" />)}
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-2xl" />
+          ))}
         </div>
       ) : (
         <ProfileStatsRow
@@ -339,7 +453,7 @@ export default function ConsumerPerfil() {
         {transactionsTab}
       </ProfileDetailSheet>
 
-      {/* Privacy */}
+      {/* Privacy card */}
       <PrivacyCard
         isVisible={activeCheckin?.is_visible ?? false}
         hasActiveCheckin={!!activeCheckin}
@@ -350,19 +464,19 @@ export default function ConsumerPerfil() {
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive active:bg-destructive/10 transition-colors"
+        className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive active:bg-destructive/10 transition-colors"
       >
         <LogOut className="h-4 w-4" />
         {t("consumer_logout")}
       </button>
 
-      <p className="text-center text-[10px] text-muted-foreground/30 pb-2">
+      <p className="text-center text-[10px] text-muted-foreground/40 pb-2">
         Close Out v1.0 · © 2026
       </p>
 
       {/* Edit Profile Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="dark max-w-[420px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground">
+        <DialogContent className="dark max-w-[420px] rounded-2xl border-border/60 bg-card text-foreground">
           <DialogHeader>
             <DialogTitle>{t("consumer_edit_profile")}</DialogTitle>
           </DialogHeader>
@@ -371,7 +485,7 @@ export default function ConsumerPerfil() {
               placeholder={t("full_name")}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
+              className="h-12 rounded-xl border-border/60 bg-secondary text-base"
             />
             <div>
               <div className="relative">
@@ -384,20 +498,22 @@ export default function ConsumerPerfil() {
                     setEditUsername(v);
                     validateUsername(v);
                   }}
-                  className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base pl-8"
+                  className="h-12 rounded-xl border-border/60 bg-secondary text-base pl-8"
                   maxLength={30}
                 />
               </div>
-              {usernameError && <p className="text-xs text-destructive mt-1 ml-1">{usernameError}</p>}
+              {usernameError && (
+                <p className="text-xs text-destructive mt-1 ml-1">{usernameError}</p>
+              )}
             </div>
             <Input
               placeholder={t("consumer_phone_placeholder")}
               value={editPhone}
               onChange={(e) => setEditPhone(maskPhone(e.target.value))}
-              className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
+              className="h-12 rounded-xl border-border/60 bg-secondary text-base"
               inputMode="numeric"
             />
-            <div className="rounded-xl bg-white/[0.03] p-3">
+            <div className="rounded-xl bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">
                 CPF: <span className="font-medium text-foreground">{displayCpf}</span>
                 <span className="ml-2 text-[10px]">({t("consumer_cpf_not_editable")})</span>

@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Camera, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Pencil, Camera, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -78,80 +80,71 @@ export function ProfileHeaderSocial({
     }
   };
 
-  const derivedUsername =
-    username ||
-    email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._]/g, "") ||
-    "user";
-
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.04] p-6 backdrop-blur-xl">
-      {/* Subtle gradient glow */}
-      <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
+    <div className="flex flex-col items-center pt-2 pb-4">
+      {/* Avatar */}
+      <div className="relative">
+        <Avatar className="h-24 w-24 border-2 border-primary/40">
+          <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+          <AvatarFallback className="bg-primary/20 text-2xl font-bold text-primary">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
 
-      <div className="relative flex flex-col items-center gap-3">
-        {/* Avatar */}
-        <div className="relative">
-          <Avatar className="h-20 w-20 border-2 border-white/10 shadow-lg shadow-black/30">
-            <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-            <AvatarFallback className="bg-primary/20 text-xl font-bold text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+        {/* Camera button for photo upload */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition-transform disabled:opacity-60"
+        >
+          {uploading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Camera className="h-3.5 w-3.5" />
+          )}
+        </button>
 
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md active:scale-90 transition-transform disabled:opacity-60"
-          >
-            {uploading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Camera className="h-3 w-3" />
-            )}
-          </button>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarUpload}
-          />
-        </div>
-
-        {/* Name + username */}
-        <div className="text-center">
-          <h1 className="text-lg font-bold text-foreground leading-tight">
-            {displayName}
-          </h1>
-          <p className="text-sm text-muted-foreground">@{derivedUsername}</p>
-        </div>
-
-        {/* Presence pill */}
-        {presenceEvent ? (
-          <div className="flex items-center gap-1.5 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-            </span>
-            <MapPin className="h-3 w-3 text-green-400" />
-            <span className="text-xs font-medium text-green-400">
-              {presenceEvent.name}
-            </span>
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground/50">Offline</span>
-        )}
-
-        {/* Edit button */}
+        {/* Edit button on the other side */}
         <button
           onClick={onEditPress}
-          className="mt-1 rounded-full border border-white/10 bg-white/[0.06] px-5 py-1.5 text-xs font-medium text-foreground active:bg-white/10 transition-colors"
+          className="absolute -bottom-1 -left-1 flex h-8 w-8 items-center justify-center rounded-full bg-secondary border border-border/40 text-foreground active:scale-90 transition-transform"
         >
-          Editar perfil
+          <Pencil className="h-3.5 w-3.5" />
         </button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarUpload}
+        />
       </div>
+
+      {/* Name + username */}
+      <h1 className="mt-3 text-lg font-bold text-foreground leading-tight">{displayName}</h1>
+      <p className="text-sm text-muted-foreground">
+        @{username || email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._]/g, "") || "user"}
+      </p>
+
+      {/* Presence badge */}
+      {presenceEvent ? (
+        <div className="mt-2 flex items-center gap-1.5">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+          </span>
+          <Badge
+            variant="outline"
+            className="border-green-500/30 bg-green-500/10 text-green-400 text-xs font-medium px-2 py-0.5"
+          >
+            <MapPin className="mr-1 h-3 w-3" />
+            {presenceEvent.name}
+          </Badge>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground/60">Offline</p>
+      )}
     </div>
   );
 }
