@@ -35,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { ProfileHeaderSocial } from "@/components/consumer/ProfileHeaderSocial";
 import { ProfileStatsRow } from "@/components/consumer/ProfileStatsRow";
-import { ProfileTabs } from "@/components/consumer/ProfileTabs";
+import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 
 const statusIcons: Record<string, React.ElementType> = {
