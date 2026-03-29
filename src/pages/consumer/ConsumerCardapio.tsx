@@ -326,7 +326,7 @@ export default function ConsumerCardapio() {
 
       {/* Product list */}
       {!loading && (
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {filtered.map((product) => {
             const qty = cartItemMap[product.id] || 0;
             const hasPromo = product.promo_price !== null && product.promo_price < product.price;
@@ -339,97 +339,98 @@ export default function ConsumerCardapio() {
               <div
                 key={product.id}
                 className={cn(
-                  "flex items-center gap-3 active:opacity-90 transition-opacity",
+                  "relative flex flex-col rounded-2xl bg-white/[0.04] border border-white/[0.06] overflow-hidden active:scale-[0.98] transition-transform",
                   outOfStock && "opacity-50"
                 )}
               >
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-[15px] font-semibold text-foreground truncate">{product.name}</h3>
-                    {hasPromo && (
-                      <span className="text-[10px]">🔥</span>
-                    )}
-                  </div>
-                  {product.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{product.description}</p>
+                {/* Image */}
+                <div className="relative aspect-square w-full bg-white/[0.02] overflow-hidden">
+                  {product.image_path ? (
+                    <img
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.image_path}`}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-4xl">{product.type === "combo" ? "🪣" : "🍺"}</span>
+                    </div>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
+
+                  {/* Promo badge */}
+                  {hasPromo && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-0.5">
+                      <Flame className="h-3 w-3 text-primary-foreground" />
+                      {product.discount_percent && (
+                        <span className="text-[10px] font-bold text-primary-foreground">
+                          -{product.discount_percent}%
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Low stock badge */}
+                  {lowStock && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-yellow-500/90 px-2 py-0.5">
+                      <AlertTriangle className="h-3 w-3 text-black" />
+                      <span className="text-[10px] font-bold text-black">{product.stock_available}</span>
+                    </div>
+                  )}
+
+                  {outOfStock && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <span className="text-xs font-bold text-destructive">{t("consumer_out_of_stock")}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex flex-col gap-1 p-3">
+                  <h3 className="text-[13px] font-semibold text-foreground line-clamp-2 leading-tight">{product.name}</h3>
+                  <div className="flex items-center gap-1.5">
                     <span className="text-[15px] font-bold text-primary">
                       R$ {displayPrice.toFixed(2)}
                     </span>
                     {hasPromo && (
-                      <span className="text-xs text-muted-foreground line-through">
+                      <span className="text-[11px] text-muted-foreground line-through">
                         R$ {product.price.toFixed(2)}
                       </span>
                     )}
-                    {product.discount_percent && (
-                      <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded-full">
-                        -{product.discount_percent}%
-                      </span>
-                    )}
                   </div>
-                  {lowStock && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <AlertTriangle className="h-3 w-3 text-yellow-400" />
-                      <span className="text-[11px] text-yellow-400 font-medium">
-                        {t("consumer_low_stock")} ({product.stock_available})
-                      </span>
-                    </div>
-                  )}
-                  {outOfStock && (
-                    <span className="text-[11px] text-destructive font-medium mt-1 block">
-                      {t("consumer_out_of_stock")}
-                    </span>
-                  )}
                 </div>
 
-                {/* Image + action */}
-                <div className="relative shrink-0">
-                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-sm font-medium text-muted-foreground select-none overflow-hidden">
-                    {product.image_path ? (
-                      <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.image_path}`}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
+                {/* Add/counter button */}
+                {!outOfStock && (
+                  <div className="absolute bottom-[52px] right-2">
+                    {qty === 0 ? (
+                      <button
+                        onClick={() => handleAdd(product)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-90 transition-transform"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
                     ) : (
-                      <span className="text-2xl">{product.type === "combo" ? "🪣" : "🍺"}</span>
+                      <div className="flex items-center gap-0.5 rounded-full bg-primary shadow-lg">
+                        <button
+                          onClick={() => handleDecrease(product.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[18px] text-center text-sm font-bold text-primary-foreground">
+                          {qty}
+                        </span>
+                        <button
+                          onClick={() => handleIncrease(product.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
-
-                  {!outOfStock && (
-                    <>
-                      {qty === 0 ? (
-                        <button
-                          onClick={() => handleAdd(product)}
-                          className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-90 transition-transform"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      ) : (
-                        <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 rounded-full bg-primary shadow-lg">
-                          <button
-                            onClick={() => handleDecrease(product.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="min-w-[20px] text-center text-sm font-bold text-primary-foreground">
-                            {qty}
-                          </span>
-                          <button
-                            onClick={() => handleIncrease(product.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground active:scale-90 transition-transform"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                )}
               </div>
             );
           })}
