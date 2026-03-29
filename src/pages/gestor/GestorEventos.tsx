@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 import { GestorClientGuard } from "@/components/GestorClientGuard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
