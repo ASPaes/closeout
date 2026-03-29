@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/use-translation";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LogOut,
   Loader2,
-  Receipt,
   Calendar,
   CreditCard,
   Clock,
@@ -30,7 +29,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { maskCPF, maskPhone, unmask } from "@/lib/masks";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { ProfileHeaderSocial } from "@/components/consumer/ProfileHeaderSocial";
@@ -67,13 +65,6 @@ function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function deriveUsername(name: string, email: string) {
-  if (name && name.trim()) {
-    return name.trim().toLowerCase().replace(/\s+/g, ".").replace(/[^a-z0-9._]/g, "");
-  }
-  return email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9._]/g, "") || "user";
-}
-
 export default function ConsumerPerfil() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -83,12 +74,17 @@ export default function ConsumerPerfil() {
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [saving, setSaving] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | null>(null);
 
-  // Stats
+  // Stats via RPC
   const [stats, setStats] = useState({ orders: 0, spent: 0, events: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // Avatar local state
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   // Presence
   const [activeCheckin, setActiveCheckin] = useState<{
@@ -99,7 +95,7 @@ export default function ConsumerPerfil() {
   } | null>(null);
   const [togglingVisibility, setTogglingVisibility] = useState(false);
 
-  // Recent orders
+  // Tab data
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
@@ -109,7 +105,8 @@ export default function ConsumerPerfil() {
   const displayEmail = user?.email || "";
   const displayCpf = profile?.cpf ? maskCPF(profile.cpf) : "—";
   const displayPhone = profile?.phone ? maskPhone(profile.phone) : "—";
-  const username = deriveUsername(displayName, displayEmail);
+  const profileUsername = (profile as any)?.username || null;
+  const avatarUrl = localAvatarUrl || profile?.avatar_url || null;
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
@@ -117,25 +114,19 @@ export default function ConsumerPerfil() {
     .slice(0, 2)
     .toUpperCase();
 
-  // Fetch stats
+  // Fetch stats via RPC
   useEffect(() => {
     if (!user) return;
     setLoadingStats(true);
-    Promise.all([
-      supabase
-        .from("orders")
-        .select("id, total, status", { count: "exact" })
-        .eq("consumer_id", user.id)
-        .in("status", ["paid", "preparing", "ready", "delivered"]),
-      supabase
-        .from("event_checkins")
-        .select("event_id")
-        .eq("user_id", user.id),
-    ]).then(([ordersRes, checkinsRes]) => {
-      const orders = ordersRes.data || [];
-      const spent = orders.reduce((s, o) => s + Number(o.total || 0), 0);
-      const uniqueEvents = new Set((checkinsRes.data || []).map((c) => c.event_id));
-      setStats({ orders: orders.length, spent, events: uniqueEvents.size });
+    supabase.rpc("get_consumer_profile_stats").then(({ data, error }) => {
+      if (data && !error) {
+        const d = data as any;
+        setStats({
+          orders: d.total_orders || 0,
+          spent: Number(d.total_spent) || 0,
+          events: d.total_events || 0,
+        });
+      }
       setLoadingStats(false);
     });
   }, [user]);
@@ -196,15 +187,51 @@ export default function ConsumerPerfil() {
   const openEdit = () => {
     setEditName(profile?.name || "");
     setEditPhone(profile?.phone ? maskPhone(profile.phone) : "");
+    setEditUsername(profileUsername || "");
+    setUsernameError("");
     setEditOpen(true);
+  };
+
+  const validateUsername = (val: string) => {
+    if (!val) {
+      setUsernameError("");
+      return true;
+    }
+    if (!/^[a-z0-9._]{3,30}$/.test(val)) {
+      setUsernameError("3-30 caracteres: letras minúsculas, números, . e _");
+      return false;
+    }
+    setUsernameError("");
+    return true;
   };
 
   const handleSave = async () => {
     if (!user) return;
+    if (editUsername && !validateUsername(editUsername)) return;
+
+    // Check availability if username changed
+    if (editUsername && editUsername !== profileUsername) {
+      const { data: available } = await supabase.rpc("check_username_available", {
+        p_username: editUsername,
+      });
+      if (!available) {
+        setUsernameError("Username já está em uso");
+        return;
+      }
+    }
+
     setSaving(true);
+    const updates: any = {
+      name: editName.trim(),
+      phone: unmask(editPhone),
+    };
+    if (editUsername) {
+      updates.username = editUsername.toLowerCase();
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({ name: editName.trim(), phone: unmask(editPhone) })
+      .update(updates)
       .eq("id", user.id);
     setSaving(false);
     if (error) {
@@ -219,10 +246,9 @@ export default function ConsumerPerfil() {
   const handleToggleVisibility = async (val: boolean) => {
     if (!activeCheckin) return;
     setTogglingVisibility(true);
-    const { error } = await supabase
-      .from("event_checkins")
-      .update({ is_visible: val })
-      .eq("id", activeCheckin.id);
+    const { error } = await supabase.rpc("set_checkin_visibility", {
+      p_visible: val,
+    });
     setTogglingVisibility(false);
     if (error) {
       toast.error(error.message);
@@ -388,13 +414,15 @@ export default function ConsumerPerfil() {
     <div className="flex flex-col gap-4 pb-20">
       {/* Social header */}
       <ProfileHeaderSocial
-        avatarUrl={profile?.avatar_url || null}
+        userId={user?.id || ""}
+        avatarUrl={avatarUrl}
         initials={initials}
         displayName={displayName}
-        username={username}
+        username={profileUsername}
         email={displayEmail}
         presenceEvent={activeCheckin ? { name: activeCheckin.event_name } : null}
         onEditPress={openEdit}
+        onAvatarUpdated={(url) => setLocalAvatarUrl(url)}
       />
 
       {/* Stats */}
@@ -459,6 +487,25 @@ export default function ConsumerPerfil() {
               onChange={(e) => setEditName(e.target.value)}
               className="h-12 rounded-xl border-border/60 bg-secondary text-base"
             />
+            <div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">@</span>
+                <Input
+                  placeholder="username"
+                  value={editUsername}
+                  onChange={(e) => {
+                    const v = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, "");
+                    setEditUsername(v);
+                    validateUsername(v);
+                  }}
+                  className="h-12 rounded-xl border-border/60 bg-secondary text-base pl-8"
+                  maxLength={30}
+                />
+              </div>
+              {usernameError && (
+                <p className="text-xs text-destructive mt-1 ml-1">{usernameError}</p>
+              )}
+            </div>
             <Input
               placeholder={t("consumer_phone_placeholder")}
               value={editPhone}
@@ -474,7 +521,7 @@ export default function ConsumerPerfil() {
             </div>
             <Button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !!usernameError}
               className="h-14 rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground"
             >
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_save")}
