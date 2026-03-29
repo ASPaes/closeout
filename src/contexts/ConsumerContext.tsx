@@ -39,6 +39,7 @@ type ConsumerContextType = {
   consumptionLimits: ConsumptionLimits | null;
   location: { lat: number; lng: number } | null;
   setActiveEvent: (event: { id: string; name: string; client_id: string } | null) => void;
+  setActiveOrder: (order: ActiveOrder | null) => void;
   setLocation: (loc: { lat: number; lng: number } | null) => void;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
   removeFromCart: (itemId: string) => void;
