@@ -101,8 +101,9 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     try {
       const { data: qrData } = await supabase
         .from("qr_tokens")
-        .select("token, order_id, orders!inner(id, order_number, status, total, event_id)")
+        .select("token, order_id, orders!inner(id, order_number, status, total, event_id, consumer_id)")
         .eq("status", "valid")
+        .eq("orders.consumer_id", user.id)
         .limit(1);
 
       if (qrData && qrData.length > 0) {
