@@ -338,10 +338,14 @@ export default function ConsumerEventos() {
                   onClick={() => handleSelectEvent(event)}
                   className="relative flex w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.98] transition-all"
                 >
-                  {/* Image area */}
-                  <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none">
-                    🎉
-                  </div>
+                   {/* Image area */}
+                   <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none overflow-hidden">
+                     {event.cover_url ? (
+                       <img src={event.cover_url} alt={event.name} className="h-full w-full object-cover" />
+                     ) : (
+                       "🎉"
+                     )}
+                   </div>
                   {/* Info */}
                   <div className="flex flex-1 flex-col justify-center gap-1 p-3.5 min-w-0">
                     <div className="flex items-center gap-1.5">
