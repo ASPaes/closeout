@@ -84,6 +84,7 @@ export default function ConsumerPerfil() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | null>(null);
 
   // Stats
   const [stats, setStats] = useState({ orders: 0, spent: 0, events: 0 });
