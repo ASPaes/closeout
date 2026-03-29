@@ -345,9 +345,10 @@ export default function GestorEventos() {
 
       <ModalForm open={modalOpen} onOpenChange={setModalOpen} title={editingId ? t("edit_event") : t("new_event")} onSubmit={handleSave} saving={saving} disabled={venues.length === 0 && !editingId}>
         <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
-          <TabsList className={`grid w-full ${editingId ? "grid-cols-3" : "grid-cols-2"}`}>
+          <TabsList className={`grid w-full ${editingId ? "grid-cols-4" : "grid-cols-3"}`}>
             <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
             <TabsTrigger value="settings">{t("gevt_tab_settings")}</TabsTrigger>
+            <TabsTrigger value="images">{t("event_images_tab")}</TabsTrigger>
             {editingId && <TabsTrigger value="catalogs">{t("ctlg_title")}</TabsTrigger>}
           </TabsList>
 
