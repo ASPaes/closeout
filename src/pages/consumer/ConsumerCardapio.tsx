@@ -400,36 +400,32 @@ export default function ConsumerCardapio() {
                   </div>
                 </div>
 
-                {/* Add/counter bar */}
-                {!outOfStock && (
+                {/* Add/counter */}
+                {!outOfStock && qty === 0 && (
+                  <button
+                    onClick={() => handleAdd(product)}
+                    className="absolute bottom-[52px] right-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_4px_16px_hsl(24,100%,50%,0.4)] active:scale-90 transition-transform"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                )}
+                {!outOfStock && qty > 0 && (
                   <div className="flex items-center justify-between w-full px-2 py-1.5 border-t border-white/[0.06]">
-                    {qty === 0 ? (
-                      <button
-                        onClick={() => handleAdd(product)}
-                        className="flex h-9 w-full items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform text-sm font-semibold gap-1.5"
-                      >
-                        <Plus className="h-4 w-4" />
-                        {"Adicionar"}
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleDecrease(product.id)}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-foreground active:scale-90 transition-transform"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="text-sm font-bold text-foreground">
-                          {qty}
-                        </span>
-                        <button
-                          onClick={() => handleIncrease(product.id)}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground active:scale-90 transition-transform"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => handleDecrease(product.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-foreground active:scale-90 transition-transform"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="text-sm font-bold text-foreground">
+                      {qty}
+                    </span>
+                    <button
+                      onClick={() => handleIncrease(product.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground active:scale-90 transition-transform"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
                   </div>
                 )}
               </div>
