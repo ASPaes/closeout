@@ -57,6 +57,10 @@ export default function Events() {
     status: EVENT_STATUS.DRAFT as string, geo_radius_meters: "", max_order_value: "",
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
+  const [pendingImages, setPendingImages] = useState<{ id: string; file: File }[]>([]);
+  const handlePendingFiles = useCallback((files: { id: string; file: File }[]) => {
+    setPendingImages(files);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
