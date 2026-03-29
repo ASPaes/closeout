@@ -389,7 +389,7 @@ export default function ConsumerCardapio() {
                   <div className="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06] text-sm font-medium text-muted-foreground select-none overflow-hidden">
                     {product.image_path ? (
                       <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${product.image_path}`}
+                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.image_path}`}
                         alt={product.name}
                         className="h-full w-full object-cover"
                         loading="lazy"
