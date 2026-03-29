@@ -38,6 +38,7 @@ import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
 import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
+import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
 
 /* ── status mappings ── */
 const statusIcons: Record<string, React.ElementType> = {
