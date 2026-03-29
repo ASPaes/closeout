@@ -2234,6 +2234,16 @@ export type Database = {
         Args: { p_closing_balance: number; p_register_id: string }
         Returns: Json
       }
+      consumer_checkin: {
+        Args: {
+          p_event_id: string
+          p_lat?: number
+          p_lng?: number
+          p_method: string
+        }
+        Returns: Json
+      }
+      consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_client_managers: {
