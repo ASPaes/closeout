@@ -20,7 +20,6 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EventBillingOverrides } from "@/components/EventBillingOverrides";
-import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
