@@ -399,25 +399,31 @@ export default function ConsumerPerfil() {
 
       {/* Stats */}
       {loadingStats ? (
-        <Skeleton className="h-16 w-full rounded-2xl" />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-2xl" />
+          ))}
+        </div>
       ) : (
         <ProfileStatsRow
           stats={[
-            { label: "Pedidos", value: stats.orders },
-            { label: "Gasto", value: formatCurrency(stats.spent) },
-            { label: "Eventos", value: stats.events },
+            { label: "Pedidos", value: stats.orders, icon: "orders", onClick: () => setDetailSheet("orders") },
+            { label: "Gasto Total", value: formatCurrency(stats.spent), icon: "spent", onClick: () => setDetailSheet("transactions") },
+            { label: "Eventos", value: stats.events, icon: "events", onClick: () => setDetailSheet("events") },
           ]}
         />
       )}
 
-      {/* Tabs */}
-      <ProfileTabs
-        tabs={[
-          { value: "orders", label: "Pedidos", content: ordersTab },
-          { value: "events", label: "Eventos", content: eventsTab },
-          { value: "transactions", label: "Transações", content: transactionsTab },
-        ]}
-      />
+      {/* Detail sheets */}
+      <ProfileDetailSheet open={detailSheet === "orders"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Meus Pedidos">
+        {ordersTab}
+      </ProfileDetailSheet>
+      <ProfileDetailSheet open={detailSheet === "events"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Eventos Visitados">
+        {eventsTab}
+      </ProfileDetailSheet>
+      <ProfileDetailSheet open={detailSheet === "transactions"} onOpenChange={(o) => !o && setDetailSheet(null)} title="Transações">
+        {transactionsTab}
+      </ProfileDetailSheet>
 
       {/* Privacy card */}
       <PrivacyCard
