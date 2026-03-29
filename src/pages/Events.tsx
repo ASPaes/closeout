@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EventBillingOverrides } from "@/components/EventBillingOverrides";
+import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 
 type Event = {
   id: string; venue_id: string; client_id: string | null; name: string;
