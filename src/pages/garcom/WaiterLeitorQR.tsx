@@ -72,6 +72,14 @@ export default function WaiterLeitorQR() {
   const [resultType, setResultType] = useState<string>("invalid");
   const [deliveryQty, setDeliveryQty] = useState<Record<string, number>>({});
   const [fullyDelivered, setFullyDelivered] = useState<boolean | null>(null);
+  const [cashPendingData, setCashPendingData] = useState<{
+    order_id: string;
+    order_number: number;
+    cash_amount: number;
+    digital_amount: number;
+    is_split: boolean;
+  } | null>(null);
+  const [confirmingCash, setConfirmingCash] = useState(false);
   const autoResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scannerRef = useRef<any>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
