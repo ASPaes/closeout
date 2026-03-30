@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { BarEventGuard } from "@/components/BarEventGuard";
 import { useBar } from "@/contexts/BarContext";
@@ -10,13 +11,25 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
-import { ClipboardList, Clock, Smartphone, User, Monitor, ChefHat, PackageCheck, Truck, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  ClipboardList, Clock, Smartphone, User, Monitor, ChefHat,
+  PackageCheck, Truck, Loader2, Package, Check, QrCode,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type OrderOrigin = Database["public"]["Enums"]["order_origin"];
+
+interface OrderItemWithDelivery {
+  id: string;
+  name: string;
+  quantity: number;
+  delivered_quantity: number;
+}
 
 interface OrderWithItems {
   id: string;
@@ -29,17 +42,18 @@ interface OrderWithItems {
   event_id: string;
   client_id: string;
   consumer_id: string | null;
-  order_items: { id: string; name: string; quantity: number }[];
+  order_items: OrderItemWithDelivery[];
 }
 
-const ACTIVE_STATUSES: OrderStatus[] = ["paid", "preparing", "ready"];
+const ACTIVE_STATUSES: OrderStatus[] = ["paid", "preparing", "ready", "partially_delivered"];
 
-type FilterStatus = "all" | "paid" | "preparing" | "ready";
+type FilterStatus = "all" | "paid" | "preparing" | "ready" | "partially_delivered";
 type FilterOrigin = "all" | "app" | "waiter" | "cashier";
 
 export default function BarFilaPedidos() {
   const { t } = useTranslation();
   const { eventId } = useBar();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [deliveredCount, setDeliveredCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -59,7 +73,7 @@ export default function BarFilaPedidos() {
     if (!eventId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, order_items(id, name, quantity)")
+      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, order_items(id, name, quantity, delivered_quantity)")
       .eq("event_id", eventId)
       .in("status", ACTIVE_STATUSES)
       .order("created_at", { ascending: true });
@@ -99,7 +113,6 @@ export default function BarFilaPedidos() {
             setNewOrderIds((prev) => new Set(prev).add(newRecord.id));
             setTimeout(() => setNewOrderIds((prev) => { const next = new Set(prev); next.delete(newRecord.id); return next; }), 2000);
           }
-          // Refetch on any change
           fetchOrders();
           fetchDeliveredCount();
         }
@@ -137,13 +150,18 @@ export default function BarFilaPedidos() {
   const awaitingCount = orders.filter((o) => o.status === "paid").length;
   const preparingCount = orders.filter((o) => o.status === "preparing").length;
   const readyCount = orders.filter((o) => o.status === "ready").length;
+  const partialCount = orders.filter((o) => o.status === "partially_delivered").length;
 
-  // Filtered orders
-  const filtered = orders.filter((o) => {
-    if (filterStatus !== "all" && o.status !== filterStatus) return false;
+  // Queue orders (exclude partially_delivered from queue tab)
+  const queueOrders = orders.filter((o) => o.status !== "partially_delivered");
+  const filteredQueue = queueOrders.filter((o) => {
+    if (filterStatus !== "all" && filterStatus !== "partially_delivered" && o.status !== filterStatus) return false;
     if (filterOrigin !== "all" && o.origin !== filterOrigin) return false;
     return true;
   });
+
+  // Partial orders
+  const partialOrders = orders.filter((o) => o.status === "partially_delivered");
 
   return (
     <BarEventGuard>
@@ -151,65 +169,110 @@ export default function BarFilaPedidos() {
         <PageHeader title={t("bar_queue")} subtitle={t("bar_queue_desc")} icon={ClipboardList} />
 
         {/* Metric cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <MetricCard label={t("bar_awaiting")} count={awaitingCount} variant="warning" icon={Clock} />
           <MetricCard label={t("bar_preparing_count")} count={preparingCount} variant="info" icon={ChefHat} />
           <MetricCard label={t("bar_ready_count")} count={readyCount} variant="success" pulse icon={PackageCheck} />
+          <MetricCard label={t("bar_partial_tab")} count={partialCount} variant="partial" icon={Package} />
           <MetricCard label={t("bar_delivered_today")} count={deliveredCount} variant="muted" icon={Truck} />
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          <FilterGroup
-            options={[
-              { key: "all", label: t("bar_all") },
-              { key: "paid", label: t("bar_awaiting") },
-              { key: "preparing", label: t("bar_preparing") },
-              { key: "ready", label: t("bar_ready_status") },
-            ]}
-            value={filterStatus}
-            onChange={(v) => setFilterStatus(v as FilterStatus)}
-          />
-          <div className="w-px bg-border/40 mx-1 hidden sm:block" />
-          <FilterGroup
-            options={[
-              { key: "all", label: t("bar_all") },
-              { key: "app", label: t("bar_origin_app") },
-              { key: "waiter", label: t("bar_origin_waiter") },
-              { key: "cashier", label: t("bar_origin_cashier") },
-            ]}
-            value={filterOrigin}
-            onChange={(v) => setFilterOrigin(v as FilterOrigin)}
-          />
-        </div>
+        {/* Tabs: Queue / Partial */}
+        <Tabs defaultValue="queue" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 bg-secondary/50 border border-border/40">
+            <TabsTrigger value="queue" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ClipboardList className="h-4 w-4" />
+              {t("bar_queue_tab")}
+              {queueOrders.length > 0 && (
+                <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px] border-current">
+                  {queueOrders.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="partial" className="gap-2 data-[state=active]:bg-warning data-[state=active]:text-warning-foreground">
+              <Package className="h-4 w-4" />
+              {t("bar_partial_tab")}
+              {partialCount > 0 && (
+                <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px] border-current animate-pulse">
+                  {partialCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Order cards */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-              <ClipboardList className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">{t("bar_no_orders")}</p>
-            <p className="text-xs text-muted-foreground/70">{t("bar_no_orders_desc")}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {filtered.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                isNew={newOrderIds.has(order.id)}
-                isUpdating={updatingIds.has(order.id)}
-                onUpdateStatus={updateStatus}
-                t={t}
+          {/* ── Queue Tab ── */}
+          <TabsContent value="queue" className="mt-4 space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
+              <FilterGroup
+                options={[
+                  { key: "all", label: t("bar_all") },
+                  { key: "paid", label: t("bar_awaiting") },
+                  { key: "preparing", label: t("bar_preparing") },
+                  { key: "ready", label: t("bar_ready_status") },
+                ]}
+                value={filterStatus}
+                onChange={(v) => setFilterStatus(v as FilterStatus)}
               />
-            ))}
-          </div>
-        )}
+              <div className="w-px bg-border/40 mx-1 hidden sm:block" />
+              <FilterGroup
+                options={[
+                  { key: "all", label: t("bar_all") },
+                  { key: "app", label: t("bar_origin_app") },
+                  { key: "waiter", label: t("bar_origin_waiter") },
+                  { key: "cashier", label: t("bar_origin_cashier") },
+                ]}
+                value={filterOrigin}
+                onChange={(v) => setFilterOrigin(v as FilterOrigin)}
+              />
+            </div>
+
+            {/* Order cards */}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : filteredQueue.length === 0 ? (
+              <EmptyQueue t={t} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {filteredQueue.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    isNew={newOrderIds.has(order.id)}
+                    isUpdating={updatingIds.has(order.id)}
+                    onUpdateStatus={updateStatus}
+                    t={t}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── Partial Deliveries Tab ── */}
+          <TabsContent value="partial" className="mt-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : partialOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                  <Package className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">{t("bar_no_partial")}</p>
+                <p className="text-xs text-muted-foreground/70">{t("bar_no_partial_desc")}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {partialOrders.map((order) => (
+                  <PartialOrderCard key={order.id} order={order} t={t} onNavigateQr={() => navigate("/bar/qr")} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </BarEventGuard>
   );
@@ -217,14 +280,27 @@ export default function BarFilaPedidos() {
 
 /* ─── Sub-components ─── */
 
+function EmptyQueue({ t }: { t: (key: any) => string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+        <ClipboardList className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium text-muted-foreground">{t("bar_no_orders")}</p>
+      <p className="text-xs text-muted-foreground/70">{t("bar_no_orders_desc")}</p>
+    </div>
+  );
+}
+
 function MetricCard({ label, count, variant, pulse, icon: Icon }: {
-  label: string; count: number; variant: "warning" | "info" | "success" | "muted"; pulse?: boolean; icon: any;
+  label: string; count: number; variant: "warning" | "info" | "success" | "muted" | "partial"; pulse?: boolean; icon: any;
 }) {
   const colorMap = {
     warning: "text-warning bg-warning/10 border-warning/20",
     info: "text-info bg-info/10 border-info/20",
     success: "text-success bg-success/10 border-success/20",
     muted: "text-muted-foreground bg-muted border-border/40",
+    partial: "text-warning bg-warning/10 border-warning/20",
   };
 
   return (
@@ -290,6 +366,7 @@ const statusToBadge: Record<string, "draft" | "active" | "completed" | "cancelle
   paid: "draft",
   preparing: "active",
   ready: "completed",
+  partially_delivered: "draft",
 };
 
 function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
@@ -386,6 +463,92 @@ function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
           </Button>
         )}
       </div>
+    </Card>
+  );
+}
+
+/* ── Partial Delivery Card ── */
+function PartialOrderCard({ order, t, onNavigateQr }: {
+  order: OrderWithItems;
+  t: (key: any) => string;
+  onNavigateQr: () => void;
+}) {
+  const OriginIcon = originIcons[order.origin] || Smartphone;
+  const totalQty = order.order_items.reduce((s, i) => s + i.quantity, 0);
+  const deliveredQty = order.order_items.reduce((s, i) => s + (i.delivered_quantity || 0), 0);
+  const pendingQty = totalQty - deliveredQty;
+
+  return (
+    <Card className="p-4 border border-warning/40 bg-card">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold text-foreground">
+            #{String(order.order_number).padStart(3, "0")}
+          </span>
+          <Badge variant="outline" className="gap-1 text-[10px] border-border/40 text-muted-foreground">
+            <OriginIcon className="h-3 w-3" />
+            {originLabels[order.origin] || order.origin}
+          </Badge>
+        </div>
+        <Badge className="bg-warning/15 text-warning border-warning/30 text-[10px]">
+          {t("bar_partial_tab")}
+        </Badge>
+      </div>
+
+      {/* Summary */}
+      <div className="rounded-xl bg-warning/5 border border-warning/20 p-3 mb-3">
+        <p className="text-sm font-semibold text-warning">
+          {deliveredQty} {t("bar_of")} {totalQty} {t("bar_partial_items_delivered")}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {pendingQty} {t("bar_partial_items_pending")}
+        </p>
+      </div>
+
+      {/* Items with progress */}
+      <div className="space-y-3 mb-4">
+        {order.order_items.map((item) => {
+          const del = item.delivered_quantity || 0;
+          const qty = item.quantity;
+          const isComplete = del >= qty;
+          const pct = qty > 0 ? Math.round((del / qty) * 100) : 0;
+
+          return (
+            <div key={item.id} className={cn("flex flex-col gap-1.5", isComplete && "opacity-60")}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground flex items-center gap-1.5">
+                  {isComplete && <Check className="h-3.5 w-3.5 text-success shrink-0" />}
+                  {qty}x {item.name}
+                </span>
+                <span className={cn(
+                  "text-xs font-medium",
+                  isComplete ? "text-success" : del > 0 ? "text-warning" : "text-muted-foreground/60"
+                )}>
+                  {isComplete ? t("bar_qr_fully_delivered_item") : `${del} ${t("bar_of")} ${qty}`}
+                </span>
+              </div>
+              <Progress
+                value={pct}
+                className={cn(
+                  "h-1.5",
+                  isComplete ? "[&>div]:bg-success" : del > 0 ? "[&>div]:bg-warning" : "[&>div]:bg-muted-foreground/20"
+                )}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action */}
+      <Button
+        className="w-full h-10 gap-2 bg-warning/15 text-warning border border-warning/30 hover:bg-warning/25"
+        variant="outline"
+        onClick={onNavigateQr}
+      >
+        <QrCode className="h-4 w-4" />
+        {t("bar_partial_deliver_rest")}
+      </Button>
     </Card>
   );
 }
