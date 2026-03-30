@@ -84,7 +84,7 @@ export default function ConsumerPedidos() {
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, total, created_at, event_id, payment_method, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price)")
+      .select("id, order_number, status, total, created_at, event_id, payment_method, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
       .eq("consumer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
