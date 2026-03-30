@@ -201,6 +201,8 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
 
 export function useConsumer() {
   const ctx = useContext(ConsumerContext);
-  if (!ctx) throw new Error("useConsumer must be used within ConsumerProvider");
+  if (!ctx) {
+    throw new Error("useConsumer must be used within ConsumerProvider");
+  }
   return ctx;
 }
