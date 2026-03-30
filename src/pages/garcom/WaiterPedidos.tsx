@@ -249,7 +249,7 @@ export default function WaiterPedidos() {
                         <span className="font-mono font-bold text-foreground">
                           #{String(order.order_number).padStart(3, "0")}
                         </span>
-                        <StatusBadge status={order.status} />
+                        <OrderStatusBadge status={order.status} />
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {timeAgo(order.created_at)}
