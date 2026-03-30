@@ -335,6 +335,68 @@ export default function WaiterLeitorQR() {
           </div>
         )}
 
+        {/* Cash Pending */}
+        {viewState === "cash_pending" && cashPendingData && (
+          <div className="max-w-lg mx-auto space-y-4">
+            <Card className="border-2 border-warning/50 bg-warning/10">
+              <CardContent className="pt-8 pb-8 flex flex-col items-center text-center space-y-4">
+                <div className="relative">
+                  <Banknote className="h-20 w-20 text-warning" />
+                  <AlertTriangle className="h-8 w-8 text-warning absolute -bottom-1 -right-1" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">
+                  {t("waiter_qr_cash_pending")}
+                </h2>
+                <p className="text-2xl font-mono font-bold text-primary">
+                  #{String(cashPendingData.order_number).padStart(3, "0")}
+                </p>
+
+                <div className="w-full space-y-2 text-left px-4">
+                  <div className="flex items-center justify-between rounded-lg bg-warning/10 border border-warning/20 p-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-warning" />
+                      <span className="text-sm text-foreground">{t("waiter_qr_cash_to_receive")}</span>
+                    </div>
+                    <span className="font-mono font-bold text-warning">
+                      R$ {cashPendingData.cash_amount.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {cashPendingData.is_split && cashPendingData.digital_amount > 0 && (
+                    <div className="flex items-center justify-between rounded-lg bg-success/10 border border-success/20 p-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <span className="text-sm text-foreground">{t("waiter_qr_cash_already_paid")}</span>
+                      </div>
+                      <span className="font-mono font-bold text-success">
+                        R$ {cashPendingData.digital_amount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  className="w-full h-14 rounded-2xl text-base"
+                  onClick={handleConfirmCashFromQR}
+                  disabled={confirmingCash}
+                >
+                  {confirmingCash ? (
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <Banknote className="h-5 w-5 mr-2" />
+                  )}
+                  {t("waiter_confirm_cash")} · R$ {cashPendingData.cash_amount.toFixed(2)}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Button variant="ghost" className="w-full" onClick={resetScanner}>
+              <ScanLine className="h-4 w-4 mr-2" />
+              {t("bar_qr_try_another")}
+            </Button>
+          </div>
+        )}
+
         {/* Confirming delivery */}
         {viewState === "confirming" && (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
