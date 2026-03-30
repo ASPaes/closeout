@@ -61,12 +61,12 @@ export default function ConsumerLogin() {
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
         {/* Brand */}
         <div className="mb-10 flex flex-col items-center gap-3">
-          <div
-            className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-lg overflow-hidden"
+          <img
+            src={logoMark}
+            alt="Close Out"
+            className="h-20 w-20 rounded-2xl object-cover shadow-lg"
             style={{ boxShadow: "0 0 40px hsl(24 100% 50% / 0.4)" }}
-          >
-            <img src={logoMark} alt="Close Out" className="h-14 w-14 object-contain" />
-          </div>
+          />
           <h1
             className="text-3xl font-bold tracking-tight"
             style={{ fontFamily: "'Mustica Pro', sans-serif" }}
