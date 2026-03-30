@@ -5,14 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
+import { vibrate } from "@/lib/native-bridge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   ScanLine, CheckCircle2, XCircle, Camera, Keyboard, Loader2,
-  Minus, Plus, Package,
+  Minus, Plus, Package, Banknote, AlertTriangle, Clock,
 } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 
 type OrderItem = {
   order_item_id: string;
