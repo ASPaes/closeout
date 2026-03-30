@@ -70,6 +70,8 @@ export function WaiterSessionGuard({ children }: { children: React.ReactNode }) 
     setStarting(true);
     const { data, error } = await supabase.rpc("start_waiter_session", {
       p_event_id: selectedEvent,
+      p_assignment_type: "free",
+      p_assignment_value: "",
     });
     if (error) {
       toast.error("Erro ao iniciar turno.");

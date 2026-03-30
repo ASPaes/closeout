@@ -14,8 +14,9 @@ function TurnoContent() {
   const handleEnd = async () => {
     if (!session) return;
     setEnding(true);
-    const { data, error } = await supabase.rpc("end_waiter_session", {
+    const { data, error } = await supabase.rpc("close_waiter_session", {
       p_session_id: session.id,
+      p_cash_handed_over: session.cash_collected ?? 0,
     });
     if (error) {
       toast.error("Erro ao encerrar turno.");
