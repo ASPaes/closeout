@@ -61,6 +61,7 @@ function WaiterTabBar() {
           {tabs.map((tab) => {
             const active = isActive(tab.path);
             const isCalls = tab.path === "/garcom/chamados";
+            const isOrders = tab.path === "/garcom/pedidos";
             return (
               <button
                 key={tab.path}
@@ -79,6 +80,11 @@ function WaiterTabBar() {
                   <span className="absolute right-1 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white shadow-[0_0_8px_hsl(0,100%,50%,0.5)]">
                     {pendingCallsCount > 9 ? "9+" : pendingCallsCount}
                     <span className="absolute inset-0 animate-ping rounded-full bg-destructive/60" />
+                  </span>
+                )}
+                {isOrders && hasReadyOrders && (
+                  <span className="absolute right-1 top-0.5 z-20 flex h-3 w-3 items-center justify-center rounded-full bg-success shadow-[0_0_8px_hsl(142,76%,36%,0.5)]">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
                   </span>
                 )}
               </button>
