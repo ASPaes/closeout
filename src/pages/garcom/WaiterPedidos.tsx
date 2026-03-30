@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  ClipboardList, ScanLine, Loader2, PackageX,
+  ClipboardList, ScanLine, Loader2, PackageX, Banknote, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -30,6 +30,17 @@ type OrderRow = {
   created_at: string;
   items: Array<{ name: string; quantity: number; delivered_quantity: number }>;
   consumer_name: string | null;
+};
+
+type CashPendingOrder = {
+  id: string;
+  order_number: number;
+  total: number;
+  consumer_id: string | null;
+  consumer_name: string | null;
+  cash_amount: number;
+  digital_amount: number;
+  is_split: boolean;
 };
 
 const FILTERS = ["all", "preparing", "ready", "partial", "delivered"] as const;
@@ -54,6 +65,7 @@ function timeAgo(dateStr: string) {
 function OrderStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     pending: { label: "Pendente", cls: "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" },
+    partially_paid: { label: "Aguardando Dinheiro", cls: "bg-warning/15 text-warning border-warning/25" },
     paid: { label: "Pago", cls: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
     preparing: { label: "Preparando", cls: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
     ready: { label: "Pronto", cls: "bg-green-500/15 text-green-400 border-green-500/25" },
@@ -78,7 +90,61 @@ export default function WaiterPedidos() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
 
+  // Cash pending
+  const [cashPending, setCashPending] = useState<CashPendingOrder[]>([]);
+  const [confirmingCashId, setConfirmingCashId] = useState<string | null>(null);
+
   const prevReadyIdsRef = useRef<Set<string>>(new Set());
+
+  const fetchCashPending = useCallback(async () => {
+    if (!eventId) return;
+    const { data: ordersData } = await supabase
+      .from("orders")
+      .select("id, order_number, total, consumer_id, is_split_payment")
+      .eq("event_id", eventId)
+      .eq("status", "partially_paid");
+
+    if (!ordersData || ordersData.length === 0) {
+      setCashPending([]);
+      return;
+    }
+
+    const enriched: CashPendingOrder[] = await Promise.all(
+      (ordersData as any[]).map(async (o) => {
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("payment_method, amount, status")
+          .eq("order_id", o.id);
+
+        let consumerName: string | null = null;
+        if (o.consumer_id) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", o.consumer_id)
+            .single();
+          consumerName = prof?.name || null;
+        }
+
+        const cashPayment = (payments || []).find((p: any) => p.payment_method === "cash" && p.status === "created");
+        const digitalPayments = (payments || []).filter((p: any) => p.payment_method !== "cash" && p.status === "approved");
+        const digitalAmount = digitalPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
+
+        return {
+          id: o.id,
+          order_number: o.order_number,
+          total: o.total,
+          consumer_id: o.consumer_id,
+          consumer_name: consumerName,
+          cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
+          digital_amount: digitalAmount,
+          is_split: o.is_split_payment || false,
+        };
+      })
+    );
+
+    setCashPending(enriched);
+  }, [eventId]);
 
   const fetchOrders = useCallback(async () => {
     if (!user?.id || !eventId) return;
@@ -139,7 +205,8 @@ export default function WaiterPedidos() {
 
   useEffect(() => {
     fetchOrders();
-  }, [fetchOrders]);
+    fetchCashPending();
+  }, [fetchOrders, fetchCashPending]);
 
   // Realtime
   useEffect(() => {
@@ -149,10 +216,13 @@ export default function WaiterPedidos() {
       .on("postgres_changes", {
         event: "*", schema: "public", table: "orders",
         filter: `event_id=eq.${eventId}`,
-      }, () => fetchOrders())
+      }, () => {
+        fetchOrders();
+        fetchCashPending();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [eventId, user?.id, fetchOrders]);
+  }, [eventId, user?.id, fetchOrders, fetchCashPending]);
 
   const filtered = orders.filter(o => {
     if (filter === "all") return true;
@@ -162,6 +232,35 @@ export default function WaiterPedidos() {
     if (filter === "delivered") return o.status === "delivered";
     return true;
   });
+
+  const handleConfirmCash = async (orderId: string) => {
+    if (!user?.id) return;
+    setConfirmingCashId(orderId);
+    try {
+      const { data, error } = await supabase.rpc("confirm_cash_split_payment", {
+        p_order_id: orderId,
+        p_staff_id: user.id,
+      });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.fully_paid) {
+        vibrate(200);
+        toast({ title: t("waiter_cash_confirmed_toast") });
+      }
+      await logAudit({
+        action: AUDIT_ACTION.PAYMENT_CASH_CONFIRMED,
+        entityType: "order",
+        entityId: orderId,
+        metadata: { staff_id: user.id },
+      });
+      fetchCashPending();
+      fetchOrders();
+    } catch (err: any) {
+      toast({ title: t("waiter_cash_confirm_error"), description: err.message, variant: "destructive" });
+    } finally {
+      setConfirmingCashId(null);
+    }
+  };
 
   const handleCancel = async () => {
     if (!cancelOrderId || !cancelReason.trim()) return;
@@ -207,6 +306,67 @@ export default function WaiterPedidos() {
     <WaiterSessionGuard>
       <div className="space-y-4">
         <h1 className="text-xl font-bold text-foreground">{t("waiter_orders")}</h1>
+
+        {/* Cash Pending Section */}
+        {cashPending.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-warning" />
+              <h2 className="text-base font-semibold text-warning">{t("waiter_cash_to_receive")}</h2>
+              <Badge variant="outline" className="bg-warning/15 text-warning border-warning/25">
+                {cashPending.length}
+              </Badge>
+            </div>
+            {cashPending.map(order => (
+              <Card key={order.id} className="border-warning/40 bg-warning/5">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-foreground">
+                        #{String(order.order_number).padStart(3, "0")}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {order.consumer_name || "Avulso"}
+                      </span>
+                    </div>
+                    {order.is_split && (
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/25 text-[10px]">
+                        Dividido
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Banknote className="h-4 w-4 text-warning" />
+                    <span className="text-warning font-semibold">
+                      {t("waiter_cash_value")}: R$ {order.cash_amount.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {order.is_split && order.digital_amount > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span>{t("waiter_digital_already_paid")}: R$ {order.digital_amount.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full h-12"
+                    onClick={() => handleConfirmCash(order.id)}
+                    disabled={confirmingCashId === order.id}
+                  >
+                    {confirmingCashId === order.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Banknote className="h-4 w-4 mr-2" />
+                    )}
+                    {t("payment_cash_receive")}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Filter pills */}
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
