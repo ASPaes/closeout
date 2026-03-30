@@ -2444,6 +2444,7 @@ export type Database = {
         Args: { p_cash_handed_over: number; p_session_id: string }
         Returns: Json
       }
+      complete_waiter_call: { Args: { p_call_id: string }; Returns: Json }
       consumer_checkin: {
         Args: {
           p_event_id: string
