@@ -9,6 +9,7 @@ type WaiterContextType = {
   eventName: string | null;
   clientId: string | null;
   sessionId: string | null;
+  startedAt: string | null;
   assignmentType: "tables" | "sector" | "free" | null;
   assignmentValue: string | null;
   pendingCallsCount: number;
@@ -26,6 +27,7 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
   const [eventId, setEventId] = useState<string | null>(null);
   const [eventName, setEventName] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
   const [assignmentType, setAssignmentType] = useState<"tables" | "sector" | "free" | null>(null);
   const [assignmentValue, setAssignmentValue] = useState<string | null>(null);
   const [pendingCallsCount, setPendingCallsCount] = useState(0);
@@ -35,10 +37,9 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     try {
-      // Check for active waiter session
       const { data: sessions } = await supabase
         .from("waiter_sessions" as any)
-        .select("id, event_id, assignment_type, assignment_value, cash_collected")
+        .select("id, event_id, assignment_type, assignment_value, cash_collected, started_at")
         .eq("waiter_id", user.id)
         .is("closed_at", null)
         .limit(1);
@@ -50,8 +51,8 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
         setAssignmentType(session.assignment_type || "free");
         setAssignmentValue(session.assignment_value || null);
         setCashCollected(Number(session.cash_collected) || 0);
+        setStartedAt(session.started_at || null);
 
-        // Fetch event info
         const { data: evt } = await supabase
           .from("events")
           .select("name, client_id")
@@ -66,6 +67,7 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
         setEventId(null);
         setEventName(null);
         setClientId(null);
+        setStartedAt(null);
         setAssignmentType(null);
         setAssignmentValue(null);
         setCashCollected(0);
@@ -81,7 +83,6 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
     refreshSession();
   }, [refreshSession]);
 
-  // Realtime: listen for waiter_calls changes to update pendingCallsCount
   useEffect(() => {
     if (!eventId) { setPendingCallsCount(0); return; }
 
@@ -114,6 +115,7 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
         eventName,
         clientId,
         sessionId,
+        startedAt,
         assignmentType,
         assignmentValue,
         pendingCallsCount,
