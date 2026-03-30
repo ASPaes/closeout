@@ -343,9 +343,8 @@ export default function GestorGarcons() {
         p_notes: "",
       });
       if (error) throw error;
-      await logAudit(supabase, {
+      await logAudit({
         action: AUDIT_ACTION.WAITER_CANCELLATION_AUTHORIZED,
-        userId: user!.id,
         entityType: "waiter_cancellation_request",
         entityId: reqId,
       });
