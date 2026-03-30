@@ -246,6 +246,18 @@ export default function ConsumerEventos() {
             {userLoc ? t("consumer_events_nearby") : t("consumer_events_title")}
           </h1>
         </div>
+        <button
+          onClick={() => navigate("/app/perfil")}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 active:scale-95 transition-transform"
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+          ) : (
+            <span className="text-sm font-bold text-primary">
+              {displayName ? displayName.charAt(0).toUpperCase() : "?"}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Search */}
