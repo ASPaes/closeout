@@ -131,6 +131,15 @@ const App = () => (
               <Route path="historico" element={<BarHistorico />} />
             </Route>
 
+            {/* Waiter (Garçom) area */}
+            <Route path="/garcom" element={<WaiterLayout />}>
+              <Route index element={<GarcomHome />} />
+              <Route path="chamados" element={<GarcomChamados />} />
+              <Route path="pedido" element={<GarcomNovoPedido />} />
+              <Route path="pedidos" element={<GarcomPedidos />} />
+              <Route path="turno" element={<GarcomTurno />} />
+            </Route>
+
             {/* Consumer app — auth (no layout) */}
             <Route path="/app/login" element={<ConsumerLogin />} />
             <Route path="/app/cadastro" element={<ConsumerCadastro />} />
