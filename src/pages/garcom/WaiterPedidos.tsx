@@ -249,7 +249,10 @@ export default function WaiterPedidos() {
           <div className="space-y-3">
             {filtered.map(order => {
               const isReady = order.status === "ready";
+              const isPartial = order.status === "partially_delivered";
               const canCancel = ["paid", "pending"].includes(order.status);
+              const totalItemQty = order.items.reduce((s, i) => s + i.quantity, 0);
+              const deliveredItemQty = order.items.reduce((s, i) => s + (i.delivered_quantity || 0), 0);
               return (
                 <Card
                   key={order.id}
