@@ -4,6 +4,9 @@ import { useWaiter, WaiterProvider } from "@/contexts/WaiterContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { cn } from "@/lib/utils";
+import { useWaiterNotifications } from "@/hooks/useWaiterNotifications";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const tabs = [
   { path: "/garcom", icon: Home, labelKey: "waiter_dashboard" as const },
@@ -17,7 +20,28 @@ function WaiterTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { pendingCallsCount } = useWaiter();
+  const { pendingCallsCount, waiterId, eventId } = useWaiter();
+  const [hasReadyOrders, setHasReadyOrders] = useState(false);
+
+  // Track if there are ready orders for badge
+  useEffect(() => {
+    if (!waiterId || !eventId) { setHasReadyOrders(false); return; }
+    const check = async () => {
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("waiter_id", waiterId)
+        .eq("event_id", eventId)
+        .eq("status", "ready");
+      setHasReadyOrders((count || 0) > 0);
+    };
+    check();
+    const ch = supabase
+      .channel(`waiter-ready-badge-${waiterId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `waiter_id=eq.${waiterId}` }, () => check())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [waiterId, eventId]);
 
   const isActive = (path: string) => {
     if (path === "/garcom") return location.pathname === "/garcom";
@@ -37,6 +61,7 @@ function WaiterTabBar() {
           {tabs.map((tab) => {
             const active = isActive(tab.path);
             const isCalls = tab.path === "/garcom/chamados";
+            const isOrders = tab.path === "/garcom/pedidos";
             return (
               <button
                 key={tab.path}
@@ -55,6 +80,11 @@ function WaiterTabBar() {
                   <span className="absolute right-1 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white shadow-[0_0_8px_hsl(0,100%,50%,0.5)]">
                     {pendingCallsCount > 9 ? "9+" : pendingCallsCount}
                     <span className="absolute inset-0 animate-ping rounded-full bg-destructive/60" />
+                  </span>
+                )}
+                {isOrders && hasReadyOrders && (
+                  <span className="absolute right-1 top-0.5 z-20 flex h-3 w-3 items-center justify-center rounded-full bg-success shadow-[0_0_8px_hsl(142,76%,36%,0.5)]">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
                   </span>
                 )}
               </button>
@@ -116,6 +146,9 @@ function WaiterHeader() {
 }
 
 function WaiterContent() {
+  const { waiterId, eventId } = useWaiter();
+  useWaiterNotifications(waiterId, eventId);
+
   return (
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground" id="waiter-root">
       <WaiterHeader />
