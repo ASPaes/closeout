@@ -95,6 +95,41 @@ export default function WaiterLeitorQR() {
         try { await scannerRef.current.stop(); } catch { /* ignore */ }
       }
 
+      // First check if this QR belongs to a partially_paid order
+      const { data: qrData } = await supabase
+        .from("qr_tokens")
+        .select("order_id, status, orders!inner(id, order_number, status, is_split_payment)")
+        .eq("token", token.trim())
+        .limit(1);
+
+      if (qrData && qrData.length > 0) {
+        const qr = qrData[0] as any;
+        const order = qr.orders;
+        if (order.status === "partially_paid") {
+          // Fetch payment details
+          const { data: payments } = await supabase
+            .from("payments")
+            .select("payment_method, amount, status")
+            .eq("order_id", order.id);
+
+          const cashPayment = (payments || []).find((p: any) => p.payment_method === "cash" && p.status === "created");
+          const digitalPayments = (payments || []).filter((p: any) => p.payment_method !== "cash" && p.status === "approved");
+          const digitalAmount = digitalPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
+
+          setCashPendingData({
+            order_id: order.id,
+            order_number: order.order_number,
+            cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
+            digital_amount: digitalAmount,
+            is_split: order.is_split_payment || false,
+          });
+          playBeep("partial");
+          setViewState("cash_pending");
+          isProcessingRef.current = false;
+          return;
+        }
+      }
+
       const { data, error } = await supabase.rpc("validate_qr", {
         p_token: token.trim(),
         p_staff_id: user.id,
@@ -141,6 +176,34 @@ export default function WaiterLeitorQR() {
     }
   }, [user?.id]);
 
+  const handleConfirmCashFromQR = useCallback(async () => {
+    if (!cashPendingData || !user?.id) return;
+    setConfirmingCash(true);
+    try {
+      const { data, error } = await supabase.rpc("confirm_cash_split_payment", {
+        p_order_id: cashPendingData.order_id,
+        p_staff_id: user.id,
+      });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.fully_paid) {
+        vibrate(200);
+        sonnerToast.success(t("waiter_cash_confirmed_toast"));
+      }
+      await logAudit({
+        action: AUDIT_ACTION.PAYMENT_CASH_CONFIRMED,
+        entityType: "order",
+        entityId: cashPendingData.order_id,
+        metadata: { staff_id: user.id },
+      });
+      // After confirming cash, reset scanner so they can scan again for delivery
+      resetScanner();
+    } catch (err: any) {
+      sonnerToast.error(t("waiter_cash_confirm_error"), { description: err.message });
+    } finally {
+      setConfirmingCash(false);
+    }
+  }, [cashPendingData, user?.id, t]);
   const confirmDelivery = useCallback(async () => {
     if (!result?.order?.id || !user?.id) return;
 
