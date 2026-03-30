@@ -50,8 +50,20 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(mins / 60)}h${mins % 60}min`;
 }
 
+function OrderStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    pending: { label: "Pendente", cls: "bg-yellow-500/15 text-yellow-400 border-yellow-500/25" },
+    paid: { label: "Pago", cls: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
+    preparing: { label: "Preparando", cls: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
+    ready: { label: "Pronto", cls: "bg-green-500/15 text-green-400 border-green-500/25" },
+    delivered: { label: "Entregue", cls: "bg-muted text-muted-foreground border-border" },
+    cancelled: { label: "Cancelado", cls: "bg-destructive/15 text-destructive border-destructive/25" },
+  };
+  const cfg = map[status] || { label: status, cls: "bg-muted text-muted-foreground border-border" };
+  return <Badge variant="outline" className={cfg.cls}>{cfg.label}</Badge>;
+}
+
 export default function WaiterPedidos() {
-  const { t } = useTranslation();
   const { eventId } = useWaiter();
   const { user } = useAuth();
   const navigate = useNavigate();
