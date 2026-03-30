@@ -159,9 +159,9 @@ function StepIdentify({
   const searchProfile = async (field: string, value: string) => {
     setSearching(true);
     setNotFound(false);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("profiles")
-      .select("id, name, cpf, phone")
+      .select("id, name, cpf, phone") as any)
       .eq(field, value)
       .limit(1)
       .maybeSingle();
