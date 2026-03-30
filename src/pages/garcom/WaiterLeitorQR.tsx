@@ -105,7 +105,7 @@ export default function WaiterLeitorQR() {
           setResultType("valid");
           const init: Record<string, number> = {};
           items.forEach((it) => {
-            init[it.order_item_id] = it.remaining;
+            init[it.order_item_id] = 0;
           });
           setDeliveryQty(init);
         }
