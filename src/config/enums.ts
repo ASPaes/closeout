@@ -19,6 +19,7 @@ export const ORDER_STATUS = {
   PAID: 'paid',
   PREPARING: 'preparing',
   READY: 'ready',
+  PARTIALLY_DELIVERED: 'partially_delivered',
   DELIVERED: 'delivered',
   CANCELLED: 'cancelled',
 } as const;
