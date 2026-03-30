@@ -23,6 +23,8 @@ export default function GestorDashboard() {
   const { t } = useTranslation();
   const [openRegisters, setOpenRegisters] = useState(0);
   const [salesToday, setSalesToday] = useState(0);
+  const [activeWaiters, setActiveWaiters] = useState(0);
+  const [pendingCancellations, setPendingCancellations] = useState(0);
 
   // Bar metrics
   const [barQueue, setBarQueue] = useState(0);
