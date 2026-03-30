@@ -226,6 +226,7 @@ export default function WaiterPedidos() {
                   ({orders.filter(o => {
                     if (f === "preparing") return ["paid", "pending", "preparing"].includes(o.status);
                     if (f === "ready") return o.status === "ready";
+                    if (f === "partial") return o.status === "partially_delivered";
                     if (f === "delivered") return o.status === "delivered";
                     return false;
                   }).length})
