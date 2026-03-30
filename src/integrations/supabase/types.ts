@@ -1248,6 +1248,7 @@ export type Database = {
           delivered_by_staff_id: string | null
           event_id: string
           id: string
+          is_split_payment: boolean
           notes: string | null
           order_number: number
           origin: Database["public"]["Enums"]["order_origin"]
@@ -1256,6 +1257,7 @@ export type Database = {
           payment_method: string | null
           preparing_at: string | null
           ready_at: string | null
+          split_paid_amount: number | null
           status: Database["public"]["Enums"]["order_status"]
           total: number
           updated_at: string
@@ -1272,6 +1274,7 @@ export type Database = {
           delivered_by_staff_id?: string | null
           event_id: string
           id?: string
+          is_split_payment?: boolean
           notes?: string | null
           order_number: number
           origin: Database["public"]["Enums"]["order_origin"]
@@ -1280,6 +1283,7 @@ export type Database = {
           payment_method?: string | null
           preparing_at?: string | null
           ready_at?: string | null
+          split_paid_amount?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           total: number
           updated_at?: string
@@ -1296,6 +1300,7 @@ export type Database = {
           delivered_by_staff_id?: string | null
           event_id?: string
           id?: string
+          is_split_payment?: boolean
           notes?: string | null
           order_number?: number
           origin?: Database["public"]["Enums"]["order_origin"]
@@ -1304,6 +1309,7 @@ export type Database = {
           payment_method?: string | null
           preparing_at?: string | null
           ready_at?: string | null
+          split_paid_amount?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           total?: number
           updated_at?: string
@@ -1341,6 +1347,8 @@ export type Database = {
           order_id: string
           paid_at: string | null
           payment_method: string
+          split_index: number
+          split_total: number | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string | null
         }
@@ -1358,6 +1366,8 @@ export type Database = {
           order_id: string
           paid_at?: string | null
           payment_method: string
+          split_index?: number
+          split_total?: number | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string | null
         }
@@ -1375,6 +1385,8 @@ export type Database = {
           order_id?: string
           paid_at?: string | null
           payment_method?: string
+          split_index?: number
+          split_total?: number | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string | null
         }
@@ -1396,7 +1408,7 @@ export type Database = {
           {
             foreignKeyName: "payments_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -2485,11 +2497,16 @@ export type Database = {
         Args: { p_closing_balance: number; p_register_id: string }
         Returns: Json
       }
+      close_event_cancel_unpaid: { Args: { p_event_id: string }; Returns: Json }
       close_waiter_session: {
         Args: { p_cash_handed_over: number; p_session_id: string }
         Returns: Json
       }
       complete_waiter_call: { Args: { p_call_id: string }; Returns: Json }
+      confirm_cash_split_payment: {
+        Args: { p_order_id: string; p_staff_id: string }
+        Returns: Json
+      }
       confirm_partial_delivery: {
         Args: { p_items: Json; p_order_id: string; p_staff_id: string }
         Returns: Json
@@ -2505,6 +2522,7 @@ export type Database = {
       }
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_order: { Args: { params: Json }; Returns: Json }
+      create_consumer_split_order: { Args: { params: Json }; Returns: Json }
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_client_managers: {
@@ -2646,6 +2664,7 @@ export type Database = {
       order_origin: "consumer_app" | "waiter_app" | "cashier"
       order_status:
         | "pending"
+        | "partially_paid"
         | "paid"
         | "preparing"
         | "ready"
@@ -2812,6 +2831,7 @@ export const Constants = {
       order_origin: ["consumer_app", "waiter_app", "cashier"],
       order_status: [
         "pending",
+        "partially_paid",
         "paid",
         "preparing",
         "ready",
