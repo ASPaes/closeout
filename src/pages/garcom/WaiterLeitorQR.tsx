@@ -264,6 +264,8 @@ export default function WaiterLeitorQR() {
     setManualToken("");
     setDeliveryQty({});
     setFullyDelivered(null);
+    setCashPendingData(null);
+    setConfirmingCash(false);
     isProcessingRef.current = false;
   }, []);
 
