@@ -151,6 +151,7 @@ export default function ConsumerPagamento() {
           name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
+          delivered_quantity: 0,
         })),
       });
 
