@@ -7,6 +7,7 @@ import { ConsumerProvider } from "@/contexts/ConsumerContext";
 import { RoleGuard } from "@/components/RoleGuard";
 import { cn } from "@/lib/utils";
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
+import logoMark from "@/assets/brand/logo-mark.png";
 
 const tabs = [
   { path: "/app", icon: Home, labelKey: "consumer_tab_events" as const },
