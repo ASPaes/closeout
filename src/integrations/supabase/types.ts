@@ -1133,9 +1133,52 @@ export type Database = {
           },
         ]
       }
+      order_item_deliveries: {
+        Row: {
+          created_at: string
+          delivered_by: string
+          id: string
+          order_id: string
+          order_item_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          delivered_by: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          delivered_by?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oid_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oid_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           combo_id: string | null
+          delivered_quantity: number
           id: string
           name: string
           notes: string | null
@@ -1147,6 +1190,7 @@ export type Database = {
         }
         Insert: {
           combo_id?: string | null
+          delivered_quantity?: number
           id?: string
           name: string
           notes?: string | null
@@ -1158,6 +1202,7 @@ export type Database = {
         }
         Update: {
           combo_id?: string | null
+          delivered_quantity?: number
           id?: string
           name?: string
           notes?: string | null
@@ -2445,6 +2490,10 @@ export type Database = {
         Returns: Json
       }
       complete_waiter_call: { Args: { p_call_id: string }; Returns: Json }
+      confirm_partial_delivery: {
+        Args: { p_items: Json; p_order_id: string; p_staff_id: string }
+        Returns: Json
+      }
       consumer_checkin: {
         Args: {
           p_event_id: string
@@ -2600,6 +2649,7 @@ export type Database = {
         | "paid"
         | "preparing"
         | "ready"
+        | "partially_delivered"
         | "delivered"
         | "cancelled"
       payment_status:
@@ -2765,6 +2815,7 @@ export const Constants = {
         "paid",
         "preparing",
         "ready",
+        "partially_delivered",
         "delivered",
         "cancelled",
       ],
