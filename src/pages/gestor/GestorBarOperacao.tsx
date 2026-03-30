@@ -43,6 +43,7 @@ const STATUS_MAP: Record<string, { variant: "active" | "inactive" | "draft" | "c
   paid: { variant: "completed", label: "Pago" },
   preparing: { variant: "completed", label: "Preparando" },
   ready: { variant: "active", label: "Pronto" },
+  partially_delivered: { variant: "draft", label: "Entrega Parcial" },
   delivered: { variant: "inactive", label: "Entregue" },
   cancelled: { variant: "cancelled", label: "Cancelado" },
 };
