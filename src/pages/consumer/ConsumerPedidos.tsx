@@ -124,13 +124,25 @@ export default function ConsumerPedidos() {
 
   const totalSpent = orders.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
 
-  const filtered = orders.filter((order) => {
-    const matchFilter = activeFilter === "all" || filterMap[activeFilter]?.includes(order.status);
-    const matchSearch = !search ||
-      order.items.some((i) => i.name.toLowerCase().includes(search.toLowerCase())) ||
-      String(order.order_number).includes(search);
-    return matchFilter && matchSearch;
-  });
+  const statusPriority: Record<string, number> = {
+    ready: 0,
+    partially_delivered: 1,
+    preparing: 2,
+    paid: 3,
+    pending: 4,
+    delivered: 5,
+    cancelled: 6,
+  };
+
+  const filtered = orders
+    .filter((order) => {
+      const matchFilter = activeFilter === "all" || filterMap[activeFilter]?.includes(order.status);
+      const matchSearch = !search ||
+        order.items.some((i) => i.name.toLowerCase().includes(search.toLowerCase())) ||
+        String(order.order_number).includes(search);
+      return matchFilter && matchSearch;
+    })
+    .sort((a, b) => (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99));
 
   const isActiveQr = (order: OrderRow) =>
     order.has_qr && ["paid", "preparing", "ready", "partially_delivered"].includes(order.status);
