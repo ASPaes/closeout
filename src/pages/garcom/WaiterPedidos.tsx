@@ -57,6 +57,7 @@ function OrderStatusBadge({ status }: { status: string }) {
     paid: { label: "Pago", cls: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
     preparing: { label: "Preparando", cls: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
     ready: { label: "Pronto", cls: "bg-green-500/15 text-green-400 border-green-500/25" },
+    partially_delivered: { label: "Entrega Parcial", cls: "bg-warning/15 text-warning border-warning/25" },
     delivered: { label: "Entregue", cls: "bg-muted text-muted-foreground border-border" },
     cancelled: { label: "Cancelado", cls: "bg-destructive/15 text-destructive border-destructive/25" },
   };
