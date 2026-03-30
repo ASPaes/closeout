@@ -130,6 +130,7 @@ export const AUDIT_ACTION = {
   BAR_ORDER_PREPARING: 'bar_order.preparing',
   BAR_ORDER_READY: 'bar_order.ready',
   BAR_ORDER_DELIVERED: 'bar_order.delivered',
+  BAR_ORDER_PARTIAL_DELIVERY: 'bar_order.partial_delivery',
   BAR_QR_VALIDATED: 'bar_qr.validated',
   BAR_QR_REJECTED: 'bar_qr.rejected',
   BAR_ORDER_CANCELLED: 'bar_order.cancelled',
