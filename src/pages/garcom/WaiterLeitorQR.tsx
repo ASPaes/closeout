@@ -5,14 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
+import { vibrate } from "@/lib/native-bridge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   ScanLine, CheckCircle2, XCircle, Camera, Keyboard, Loader2,
-  Minus, Plus, Package,
+  Minus, Plus, Package, Banknote, AlertTriangle, Clock,
 } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 
 type OrderItem = {
   order_item_id: string;
@@ -41,7 +43,7 @@ type DeliveryResult = {
   fully_delivered: boolean;
 };
 
-type ViewState = "scanner" | "loading" | "result" | "confirming" | "done";
+type ViewState = "scanner" | "loading" | "result" | "confirming" | "done" | "cash_pending";
 
 function playBeep(type: "success" | "partial" | "error") {
   try {
@@ -70,6 +72,14 @@ export default function WaiterLeitorQR() {
   const [resultType, setResultType] = useState<string>("invalid");
   const [deliveryQty, setDeliveryQty] = useState<Record<string, number>>({});
   const [fullyDelivered, setFullyDelivered] = useState<boolean | null>(null);
+  const [cashPendingData, setCashPendingData] = useState<{
+    order_id: string;
+    order_number: number;
+    cash_amount: number;
+    digital_amount: number;
+    is_split: boolean;
+  } | null>(null);
+  const [confirmingCash, setConfirmingCash] = useState(false);
   const autoResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scannerRef = useRef<any>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -83,6 +93,41 @@ export default function WaiterLeitorQR() {
     try {
       if (scannerRef.current) {
         try { await scannerRef.current.stop(); } catch { /* ignore */ }
+      }
+
+      // First check if this QR belongs to a partially_paid order
+      const { data: qrData } = await supabase
+        .from("qr_tokens")
+        .select("order_id, status, orders!inner(id, order_number, status, is_split_payment)")
+        .eq("token", token.trim())
+        .limit(1);
+
+      if (qrData && qrData.length > 0) {
+        const qr = qrData[0] as any;
+        const order = qr.orders;
+        if (order.status === "partially_paid") {
+          // Fetch payment details
+          const { data: payments } = await supabase
+            .from("payments")
+            .select("payment_method, amount, status")
+            .eq("order_id", order.id);
+
+          const cashPayment = (payments || []).find((p: any) => p.payment_method === "cash" && p.status === "created");
+          const digitalPayments = (payments || []).filter((p: any) => p.payment_method !== "cash" && p.status === "approved");
+          const digitalAmount = digitalPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
+
+          setCashPendingData({
+            order_id: order.id,
+            order_number: order.order_number,
+            cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
+            digital_amount: digitalAmount,
+            is_split: order.is_split_payment || false,
+          });
+          playBeep("partial");
+          setViewState("cash_pending");
+          isProcessingRef.current = false;
+          return;
+        }
       }
 
       const { data, error } = await supabase.rpc("validate_qr", {
@@ -131,6 +176,34 @@ export default function WaiterLeitorQR() {
     }
   }, [user?.id]);
 
+  const handleConfirmCashFromQR = useCallback(async () => {
+    if (!cashPendingData || !user?.id) return;
+    setConfirmingCash(true);
+    try {
+      const { data, error } = await supabase.rpc("confirm_cash_split_payment", {
+        p_order_id: cashPendingData.order_id,
+        p_staff_id: user.id,
+      });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.fully_paid) {
+        vibrate(200);
+        sonnerToast.success(t("waiter_cash_confirmed_toast"));
+      }
+      await logAudit({
+        action: AUDIT_ACTION.PAYMENT_CASH_CONFIRMED,
+        entityType: "order",
+        entityId: cashPendingData.order_id,
+        metadata: { staff_id: user.id },
+      });
+      // After confirming cash, reset scanner so they can scan again for delivery
+      resetScanner();
+    } catch (err: any) {
+      sonnerToast.error(t("waiter_cash_confirm_error"), { description: err.message });
+    } finally {
+      setConfirmingCash(false);
+    }
+  }, [cashPendingData, user?.id, t]);
   const confirmDelivery = useCallback(async () => {
     if (!result?.order?.id || !user?.id) return;
 
@@ -191,6 +264,8 @@ export default function WaiterLeitorQR() {
     setManualToken("");
     setDeliveryQty({});
     setFullyDelivered(null);
+    setCashPendingData(null);
+    setConfirmingCash(false);
     isProcessingRef.current = false;
   }, []);
 
@@ -257,6 +332,68 @@ export default function WaiterLeitorQR() {
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
             <p className="text-lg text-muted-foreground">{t("bar_qr_validating")}</p>
+          </div>
+        )}
+
+        {/* Cash Pending */}
+        {viewState === "cash_pending" && cashPendingData && (
+          <div className="max-w-lg mx-auto space-y-4">
+            <Card className="border-2 border-warning/50 bg-warning/10">
+              <CardContent className="pt-8 pb-8 flex flex-col items-center text-center space-y-4">
+                <div className="relative">
+                  <Banknote className="h-20 w-20 text-warning" />
+                  <AlertTriangle className="h-8 w-8 text-warning absolute -bottom-1 -right-1" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">
+                  {t("waiter_qr_cash_pending")}
+                </h2>
+                <p className="text-2xl font-mono font-bold text-primary">
+                  #{String(cashPendingData.order_number).padStart(3, "0")}
+                </p>
+
+                <div className="w-full space-y-2 text-left px-4">
+                  <div className="flex items-center justify-between rounded-lg bg-warning/10 border border-warning/20 p-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-warning" />
+                      <span className="text-sm text-foreground">{t("waiter_qr_cash_to_receive")}</span>
+                    </div>
+                    <span className="font-mono font-bold text-warning">
+                      R$ {cashPendingData.cash_amount.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {cashPendingData.is_split && cashPendingData.digital_amount > 0 && (
+                    <div className="flex items-center justify-between rounded-lg bg-success/10 border border-success/20 p-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <span className="text-sm text-foreground">{t("waiter_qr_cash_already_paid")}</span>
+                      </div>
+                      <span className="font-mono font-bold text-success">
+                        R$ {cashPendingData.digital_amount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  className="w-full h-14 rounded-2xl text-base"
+                  onClick={handleConfirmCashFromQR}
+                  disabled={confirmingCash}
+                >
+                  {confirmingCash ? (
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <Banknote className="h-5 w-5 mr-2" />
+                  )}
+                  {t("waiter_confirm_cash")} · R$ {cashPendingData.cash_amount.toFixed(2)}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Button variant="ghost" className="w-full" onClick={resetScanner}>
+              <ScanLine className="h-4 w-4 mr-2" />
+              {t("bar_qr_try_another")}
+            </Button>
           </div>
         )}
 
