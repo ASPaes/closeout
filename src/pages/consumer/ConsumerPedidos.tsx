@@ -110,7 +110,7 @@ export default function ConsumerPedidos() {
         ready_at: o.ready_at,
         delivered_at: o.delivered_at,
         cancelled_at: o.cancelled_at,
-        items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price })),
+        items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, delivered_quantity: i.delivered_quantity || 0 })),
         has_qr: qrOrderIds.has(o.id),
       })));
     }
