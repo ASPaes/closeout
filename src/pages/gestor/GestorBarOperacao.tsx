@@ -111,7 +111,7 @@ export default function GestorBarOperacao() {
   }, [orders, statusFilter, searchQuery]);
 
   // Metrics
-  const queueCount = orders.filter((o) => ["pending", "paid", "preparing"].includes(o.status)).length;
+  const queueCount = orders.filter((o) => ["pending", "paid", "preparing", "partially_delivered"].includes(o.status)).length;
   const readyCount = orders.filter((o) => o.status === "ready").length;
   const deliveredToday = orders.filter((o) => {
     if (o.status !== "delivered" || !o.delivered_at) return false;
