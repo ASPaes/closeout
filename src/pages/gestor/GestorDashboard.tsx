@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any }[] = [
