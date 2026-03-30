@@ -92,10 +92,10 @@ function ConsumerHeader() {
       <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between px-5">
         <div className="flex items-center gap-2.5">
           <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow text-[10px] font-bold text-primary-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow overflow-hidden"
             style={{ boxShadow: "0 0 12px hsl(24 100% 50% / 0.3)" }}
           >
-            CO
+            <img src={logoMark} alt="Close Out" className="h-5 w-5 object-contain" />
           </div>
           <div className="flex flex-col">
             <span
