@@ -278,6 +278,32 @@ export default function GestorEventos() {
 
   // ---- Status actions ----
   const changeStatus = async (ev: Event, newStatus: string) => {
+    // When completing an event, cancel unpaid orders first
+    if (newStatus === "completed") {
+      try {
+        const { data: cancelResult, error: cancelErr } = await supabase.rpc("close_event_cancel_unpaid", {
+          p_event_id: ev.id,
+        });
+        if (cancelErr) {
+          console.error("Error cancelling unpaid orders:", cancelErr);
+        } else {
+          const res = cancelResult as any;
+          const count = res?.cancelled_count ?? 0;
+          if (count > 0) {
+            toast.info(`${count} ${t("event_close_cancelled")}`);
+            await logAudit({
+              action: AUDIT_ACTION.ORDER_AUTO_CANCELLED_EVENT_CLOSE,
+              entityType: "event",
+              entityId: ev.id,
+              metadata: { cancelled_count: count },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("close_event_cancel_unpaid error:", e);
+      }
+    }
+
     const { error } = await supabase.from("events").update({ status: newStatus }).eq("id", ev.id);
     if (error) { toast.error(t("gevt_save_error")); return; }
     await logAudit({ action: AUDIT_ACTION.EVENT_UPDATED, entityType: "event", entityId: ev.id, newData: { status: newStatus }, oldData: { status: ev.status } });
