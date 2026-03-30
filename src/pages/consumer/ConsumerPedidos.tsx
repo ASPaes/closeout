@@ -133,7 +133,7 @@ export default function ConsumerPedidos() {
   });
 
   const isActiveQr = (order: OrderRow) =>
-    order.has_qr && ["paid", "preparing", "ready"].includes(order.status);
+    order.has_qr && ["paid", "preparing", "ready", "partially_delivered"].includes(order.status);
 
   return (
     <div className="flex flex-col gap-5 pb-20">
