@@ -370,13 +370,14 @@ export default function BarLeitorQR() {
 
                 <div className="space-y-3 mt-4">
                   {(result.order.items || []).map((item) => {
-                    const selected = deliveryQty[item.order_item_id] || 0;
+                    const itemId = getOrderItemId(item);
+                    const selected = itemId ? (deliveryQty[itemId] || 0) : 0;
                     const isDone = item.remaining === 0;
                     const isMaxed = selected === item.remaining;
 
                     return (
                       <div
-                        key={item.order_item_id}
+                        key={itemId || item.name}
                         className={`rounded-lg border p-3 transition-colors ${
                           isDone
                             ? "opacity-50 bg-muted/30 border-border/40"
@@ -413,12 +414,12 @@ export default function BarLeitorQR() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full"
                                 onClick={() =>
-                                  setDeliveryQty((prev) => ({
+                                  itemId && setDeliveryQty((prev) => ({
                                     ...prev,
-                                    [item.order_item_id]: Math.max(0, (prev[item.order_item_id] || 0) - 1),
+                                    [itemId]: Math.max(0, (prev[itemId] || 0) - 1),
                                   }))
                                 }
-                                disabled={selected === 0}
+                                disabled={selected === 0 || !itemId}
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
@@ -430,12 +431,12 @@ export default function BarLeitorQR() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full"
                                 onClick={() =>
-                                  setDeliveryQty((prev) => ({
+                                  itemId && setDeliveryQty((prev) => ({
                                     ...prev,
-                                    [item.order_item_id]: Math.min(item.remaining, (prev[item.order_item_id] || 0) + 1),
+                                    [itemId]: Math.min(item.remaining, (prev[itemId] || 0) + 1),
                                   }))
                                 }
-                                disabled={selected === item.remaining}
+                                disabled={selected === item.remaining || !itemId}
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
