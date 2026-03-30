@@ -2549,8 +2549,8 @@ export type Database = {
       }
       start_waiter_session: {
         Args: {
-          p_assignment_type: string
-          p_assignment_value: string
+          p_assignment_type?: string
+          p_assignment_value?: string
           p_event_id: string
         }
         Returns: Json
