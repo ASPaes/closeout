@@ -77,6 +77,7 @@ function ConsumerTabBar() {
 function ConsumerHeader() {
   const { activeEvent } = useConsumer();
   const { profile } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header
