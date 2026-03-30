@@ -29,7 +29,7 @@ type ActiveOrder = {
   status: string;
   total: number;
   qr_token: string;
-  items: { name: string; quantity: number; unit_price: number }[];
+  items: { name: string; quantity: number; unit_price: number; delivered_quantity: number }[];
 };
 
 type ConsumerContextType = {
@@ -112,7 +112,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
 
         const { data: items } = await supabase
           .from("order_items")
-          .select("name, quantity, unit_price")
+          .select("name, quantity, unit_price, delivered_quantity")
           .eq("order_id", order.id);
 
         setActiveOrder({

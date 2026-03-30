@@ -29,7 +29,7 @@ type OrderRow = {
   ready_at: string | null;
   delivered_at: string | null;
   cancelled_at: string | null;
-  items: { name: string; quantity: number; unit_price: number }[];
+  items: { name: string; quantity: number; unit_price: number; delivered_quantity?: number }[];
   has_qr: boolean;
 };
 
@@ -38,6 +38,7 @@ const statusConfig: Record<string, { label: string; variant: "active" | "inactiv
   paid:      { label: "Confirmado", variant: "active",    icon: CheckCircle2 },
   preparing: { label: "Em Preparo", variant: "draft",     icon: ChefHat },
   ready:     { label: "Pronto",     variant: "completed", icon: Package },
+  partially_delivered: { label: "Entrega Parcial", variant: "draft", icon: Package },
   delivered: { label: "Entregue",   variant: "inactive",  icon: CheckCircle2 },
   cancelled: { label: "Cancelado",  variant: "cancelled", icon: XCircle },
 };
@@ -50,7 +51,7 @@ const filters = [
 ];
 const filterMap: Record<string, string[]> = {
   all: [],
-  active: ["pending", "paid", "preparing", "ready"],
+  active: ["pending", "paid", "preparing", "ready", "partially_delivered"],
   done: ["delivered"],
   cancelled: ["cancelled"],
 };
@@ -83,7 +84,7 @@ export default function ConsumerPedidos() {
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, total, created_at, event_id, payment_method, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price)")
+      .select("id, order_number, status, total, created_at, event_id, payment_method, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
       .eq("consumer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -109,7 +110,7 @@ export default function ConsumerPedidos() {
         ready_at: o.ready_at,
         delivered_at: o.delivered_at,
         cancelled_at: o.cancelled_at,
-        items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price })),
+        items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, delivered_quantity: i.delivered_quantity || 0 })),
         has_qr: qrOrderIds.has(o.id),
       })));
     }
@@ -132,7 +133,7 @@ export default function ConsumerPedidos() {
   });
 
   const isActiveQr = (order: OrderRow) =>
-    order.has_qr && ["paid", "preparing", "ready"].includes(order.status);
+    order.has_qr && ["paid", "preparing", "ready", "partially_delivered"].includes(order.status);
 
   return (
     <div className="flex flex-col gap-5 pb-20">
@@ -308,13 +309,28 @@ export default function ConsumerPedidos() {
                     {/* Items */}
                     <div>
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Itens</span>
-                      <div className="mt-2 space-y-1.5">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{item.quantity}x {item.name}</span>
-                            <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
-                          </div>
-                        ))}
+                      <div className="mt-2 space-y-2">
+                        {order.items.map((item, idx) => {
+                          const del = item.delivered_quantity || 0;
+                          const isItemComplete = del >= item.quantity;
+                          const isPartialItem = del > 0 && del < item.quantity;
+                          return (
+                            <div key={idx} className={cn("flex flex-col gap-1", isItemComplete && "opacity-60")}>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-foreground flex items-center gap-1.5">
+                                  {isItemComplete && <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />}
+                                  {item.quantity}x {item.name}
+                                </span>
+                                <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
+                              </div>
+                              {(isPartialItem || isItemComplete) && (
+                                <span className={cn("text-[11px] font-medium", isItemComplete ? "text-success" : "text-warning")}>
+                                  {isItemComplete ? "✓ Retirado" : `${del} de ${item.quantity} retirados`}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -327,6 +343,7 @@ export default function ConsumerPedidos() {
                           { label: "Pago", time: formatTime(order.paid_at), done: !!order.paid_at },
                           { label: "Em preparo", time: formatTime(order.preparing_at), done: !!order.preparing_at },
                           { label: "Pronto", time: formatTime(order.ready_at), done: !!order.ready_at },
+                          ...(order.status === "partially_delivered" ? [{ label: "Entrega Parcial", time: null as string | null, done: true }] : []),
                           { label: "Entregue", time: formatTime(order.delivered_at), done: !!order.delivered_at },
                           ...(order.cancelled_at ? [{ label: "Cancelado", time: formatTime(order.cancelled_at), done: true }] : []),
                         ].map((step, idx, arr) => (
