@@ -59,6 +59,22 @@ export default function GestorDashboard() {
         setSalesToday(sum);
       });
 
+    // Active waiters
+    supabase
+      .from("waiter_sessions" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .is("closed_at", null)
+      .then(({ count }) => setActiveWaiters(count ?? 0));
+
+    // Pending cancellations
+    supabase
+      .from("waiter_cancellation_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .eq("status", "pending")
+      .then(({ count }) => setPendingCancellations(count ?? 0));
+
     // Bar: queue count
     supabase
       .from("orders")
