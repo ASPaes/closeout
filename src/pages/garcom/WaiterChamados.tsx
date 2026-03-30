@@ -93,7 +93,7 @@ export default function WaiterChamados() {
       .eq("event_id", eventId)
       .order("created_at", { ascending: false });
 
-    const result = (data as WaiterCall[]) || [];
+    const result = ((data as unknown) as WaiterCall[]) || [];
     setCalls(result);
 
     // Vibrate on new pending calls
