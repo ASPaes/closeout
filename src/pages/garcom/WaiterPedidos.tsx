@@ -158,6 +158,7 @@ export default function WaiterPedidos() {
     if (filter === "all") return true;
     if (filter === "preparing") return ["paid", "pending", "preparing"].includes(o.status);
     if (filter === "ready") return o.status === "ready";
+    if (filter === "partial") return o.status === "partially_delivered";
     if (filter === "delivered") return o.status === "delivered";
     return true;
   });
