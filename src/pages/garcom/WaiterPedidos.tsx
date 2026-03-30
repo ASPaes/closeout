@@ -96,7 +96,7 @@ export default function WaiterPedidos() {
       (data as any[]).map(async (o) => {
         const { data: items } = await supabase
           .from("order_items")
-          .select("name, quantity")
+          .select("name, quantity, delivered_quantity")
           .eq("order_id", o.id);
 
         let consumerName: string | null = null;
