@@ -112,7 +112,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
 
         const { data: items } = await supabase
           .from("order_items")
-          .select("name, quantity, unit_price")
+          .select("name, quantity, unit_price, delivered_quantity")
           .eq("order_id", order.id);
 
         setActiveOrder({

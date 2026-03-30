@@ -343,6 +343,7 @@ export default function ConsumerPedidos() {
                           { label: "Pago", time: formatTime(order.paid_at), done: !!order.paid_at },
                           { label: "Em preparo", time: formatTime(order.preparing_at), done: !!order.preparing_at },
                           { label: "Pronto", time: formatTime(order.ready_at), done: !!order.ready_at },
+                          ...(order.status === "partially_delivered" ? [{ label: "Entrega Parcial", time: null as string | null, done: true }] : []),
                           { label: "Entregue", time: formatTime(order.delivered_at), done: !!order.delivered_at },
                           ...(order.cancelled_at ? [{ label: "Cancelado", time: formatTime(order.cancelled_at), done: true }] : []),
                         ].map((step, idx, arr) => (
