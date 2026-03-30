@@ -47,6 +47,14 @@ export function useConsumerNotifications() {
               vibrate(100);
               break;
 
+            case "partially_delivered":
+              toast("📦 Parte do seu pedido foi entregue!", {
+                description: "Apresente o QR novamente para retirar o restante.",
+                duration: 6000,
+              });
+              vibrate(200);
+              break;
+
             case "ready":
               toast.success("🎉 SEU PEDIDO ESTÁ PRONTO!", {
                 description: "Apresente o QR Code no balcão para retirar.",
