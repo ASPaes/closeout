@@ -116,6 +116,7 @@ const App = () => (
               <Route path="usuarios" element={<GestorUsuarios />} />
               <Route path="caixas" element={<GestorCaixas />} />
               <Route path="bar" element={<GestorBarOperacao />} />
+              <Route path="garcons" element={<GestorGarcons />} />
             </Route>
 
             {/* Caixa area */}
