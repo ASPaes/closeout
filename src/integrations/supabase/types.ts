@@ -2186,6 +2186,211 @@ export type Database = {
           },
         ]
       }
+      waiter_calls: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          call_type: string
+          client_id: string
+          completed_at: string | null
+          consumer_id: string | null
+          consumer_name: string | null
+          created_at: string | null
+          event_id: string
+          expired_at: string | null
+          id: string
+          location_description: string | null
+          status: string
+          table_number: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          call_type?: string
+          client_id: string
+          completed_at?: string | null
+          consumer_id?: string | null
+          consumer_name?: string | null
+          created_at?: string | null
+          event_id: string
+          expired_at?: string | null
+          id?: string
+          location_description?: string | null
+          status?: string
+          table_number?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          call_type?: string
+          client_id?: string
+          completed_at?: string | null
+          consumer_id?: string | null
+          consumer_name?: string | null
+          created_at?: string | null
+          event_id?: string
+          expired_at?: string | null
+          id?: string
+          location_description?: string | null
+          status?: string
+          table_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_calls_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_calls_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiter_cancellation_requests: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          event_id: string
+          id: string
+          order_id: string
+          reason: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          waiter_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          event_id: string
+          id?: string
+          order_id: string
+          reason: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          waiter_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          order_id?: string
+          reason?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          waiter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_cancellation_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_cancellation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_cancellation_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiter_sessions: {
+        Row: {
+          assignment_type: string
+          assignment_value: string | null
+          cash_collected: number | null
+          cash_confirmed_at: string | null
+          cash_confirmed_by: string | null
+          cash_discrepancy: number | null
+          cash_handed_over: number | null
+          client_id: string
+          closed_at: string | null
+          created_at: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["waiter_session_status"]
+          updated_at: string | null
+          waiter_id: string
+        }
+        Insert: {
+          assignment_type?: string
+          assignment_value?: string | null
+          cash_collected?: number | null
+          cash_confirmed_at?: string | null
+          cash_confirmed_by?: string | null
+          cash_discrepancy?: number | null
+          cash_handed_over?: number | null
+          client_id: string
+          closed_at?: string | null
+          created_at?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["waiter_session_status"]
+          updated_at?: string | null
+          waiter_id: string
+        }
+        Update: {
+          assignment_type?: string
+          assignment_value?: string | null
+          cash_collected?: number | null
+          cash_confirmed_at?: string | null
+          cash_confirmed_by?: string | null
+          cash_discrepancy?: number | null
+          cash_handed_over?: number | null
+          client_id?: string
+          closed_at?: string | null
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["waiter_session_status"]
+          updated_at?: string | null
+          waiter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       consumer_event_stats: {
@@ -2224,6 +2429,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_waiter_call: { Args: { p_call_id: string }; Returns: Json }
       bootstrap_super_admin: { Args: never; Returns: boolean }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       check_username_available: {
@@ -2232,6 +2438,10 @@ export type Database = {
       }
       close_cash_register: {
         Args: { p_closing_balance: number; p_register_id: string }
+        Returns: Json
+      }
+      close_waiter_session: {
+        Args: { p_cash_handed_over: number; p_session_id: string }
         Returns: Json
       }
       consumer_checkin: {
@@ -2245,6 +2455,7 @@ export type Database = {
       }
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_order: { Args: { params: Json }; Returns: Json }
+      create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_client_managers: {
         Args: { p_client_id: string }
@@ -2307,6 +2518,7 @@ export type Database = {
       is_cashier: { Args: { p_client_id: string }; Returns: boolean }
       is_client_manager: { Args: { p_client_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      is_waiter_for_event: { Args: { p_event_id: string }; Returns: boolean }
       log_audit: {
         Args: {
           p_action: string
@@ -2322,10 +2534,26 @@ export type Database = {
       next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
       normalize_product_name: { Args: { input: string }; Returns: string }
       release_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
+      request_waiter_cancellation: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: Json
+      }
       reserve_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
+      review_waiter_cancellation: {
+        Args: { p_decision: string; p_notes: string; p_request_id: string }
+        Returns: Json
+      }
       set_checkin_visibility: {
         Args: { p_visible: boolean }
         Returns: undefined
+      }
+      start_waiter_session: {
+        Args: {
+          p_assignment_type: string
+          p_assignment_value: string
+          p_event_id: string
+        }
+        Returns: Json
       }
       update_stock_entry:
         | {
