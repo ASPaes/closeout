@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import logoMark from "@/assets/brand/logo-mark.png";
 
 export default function ConsumerLogin() {
   const { t } = useTranslation();
@@ -61,10 +62,10 @@ export default function ConsumerLogin() {
         {/* Brand */}
         <div className="mb-10 flex flex-col items-center gap-3">
           <div
-            className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-lg"
+            className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-lg overflow-hidden"
             style={{ boxShadow: "0 0 40px hsl(24 100% 50% / 0.4)" }}
           >
-            <span className="text-2xl font-bold text-primary-foreground tracking-tight">CO</span>
+            <img src={logoMark} alt="Close Out" className="h-14 w-14 object-contain" />
           </div>
           <h1
             className="text-3xl font-bold tracking-tight"
