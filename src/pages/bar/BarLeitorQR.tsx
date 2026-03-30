@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 
 type OrderItem = {
-  order_item_id: string;
+  id?: string;
+  order_item_id?: string;
   name: string;
   quantity: number;
   unit_price: number;
@@ -59,6 +60,10 @@ function playBeep(type: "success" | "partial" | "error") {
   }
 }
 
+function getOrderItemId(item: OrderItem) {
+  return item.order_item_id ?? item.id ?? "";
+}
+
 export default function BarLeitorQR() {
   const { t } = useTranslation();
   const { eventId } = useBar();
@@ -97,7 +102,6 @@ export default function BarLeitorQR() {
       setResult(res);
 
       if (res.success) {
-        // Check if all items already delivered
         const items = res.order?.items || [];
         const allDone = items.every((it) => it.remaining === 0);
 
@@ -106,10 +110,10 @@ export default function BarLeitorQR() {
           playBeep("error");
         } else {
           setResultType("valid");
-          // Init delivery quantities to 0 (user selects manually)
           const init: Record<string, number> = {};
           items.forEach((it) => {
-            init[it.order_item_id] = 0;
+            const itemId = getOrderItemId(it);
+            if (itemId) init[itemId] = 0;
           });
           setDeliveryQty(init);
         }
@@ -139,7 +143,7 @@ export default function BarLeitorQR() {
     if (!result?.order?.id || !user?.id) return;
 
     const items = Object.entries(deliveryQty)
-      .filter(([, qty]) => qty > 0)
+      .filter(([orderItemId, qty]) => orderItemId && qty > 0)
       .map(([order_item_id, quantity]) => ({ order_item_id, quantity }));
 
     if (items.length === 0) return;
@@ -189,7 +193,8 @@ export default function BarLeitorQR() {
     const items = result?.order?.items || [];
     const init: Record<string, number> = {};
     items.forEach((it) => {
-      init[it.order_item_id] = it.remaining;
+      const itemId = getOrderItemId(it);
+      if (itemId) init[itemId] = it.remaining;
     });
     setDeliveryQty(init);
   }, [result]);
