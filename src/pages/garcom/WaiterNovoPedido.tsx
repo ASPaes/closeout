@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useWaiter } from "@/contexts/WaiterContext";
@@ -13,8 +13,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   ScanLine, CreditCard, Phone, Hash, UserCheck, ChevronLeft,
   Search, Plus, Minus, ArrowRight, Loader2, CheckCircle2,
-  Banknote, Smartphone, CreditCard as CreditCardIcon,
-  UserX, DollarSign, PartyPopper,
+  Banknote, Smartphone, UserX, DollarSign, PartyPopper,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────
@@ -60,114 +59,9 @@ export default function WaiterNovoPedido() {
 
   const [step, setStep] = useState<Step>(1);
   const [consumer, setConsumer] = useState<IdentifiedClient | null>(null);
-
-  // Pre-fill consumer from navigation state (e.g., from Chamados)
-  useEffect(() => {
-    const state = location.state as any;
-    if (state?.consumer_id) {
-      supabase
-        .from("profiles")
-        .select("id, name, cpf, phone")
-        .eq("id", state.consumer_id)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setConsumer({ id: data.id, name: data.name, cpf: data.cpf, phone: data.phone });
-            setStep(2);
-          }
-        });
-    }
-  }, [location.state]);
-
-  return (
-    <WaiterSessionGuard>
-      <div className="flex flex-col gap-4 pb-4">
-        {/* Stepper */}
-        <div className="flex items-center justify-between gap-2">
-          {STEPS.map(({ step: s, label }) => (
-            <div key={s} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors",
-                  step >= s
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-white/[0.08] text-muted-foreground"
-                )}
-              >
-                {step > s ? <CheckCircle2 className="h-4 w-4" /> : s}
-              </div>
-              <span className={cn("text-[11px] font-medium", step >= s ? "text-foreground" : "text-muted-foreground")}>
-                {label}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {step === 1 && (
-          <StepIdentify
-            onIdentified={(c) => { setConsumer(c); setStep(2); }}
-            onSkip={() => { setConsumer(null); setStep(2); }}
-          />
-        )}
-
-        {step === 2 && (
-          <StepCatalog
-            eventId={eventId!}
-            clientId={clientId!}
-            consumer={consumer}
-            onBack={() => setStep(1)}
-            onContinue={(items) => {
-              setCartItems(items);
-              setStep(3);
-            }}
-            cartItems={cartItems}
-            setCartItems={setCartItems}
-          />
-        )}
-
-        {step === 3 && (
-          <StepPayment
-            eventId={eventId!}
-            clientId={clientId!}
-            consumer={consumer}
-            cartItems={cartItems}
-            sessionId={sessionId!}
-            onBack={() => setStep(2)}
-            onDone={(addedCash) => {
-              if (addedCash > 0) setCashCollected(cashCollected + addedCash);
-              refreshSession();
-            }}
-          />
-        )}
-      </div>
-    </WaiterSessionGuard>
-  );
-
-  // Lifted cart state so it persists between steps
-  function WaiterNovoPedidoInner() {} // unused, cart is lifted below
-}
-
-// We need cart state at the top level — let me refactor:
-// Actually, let me restructure properly with cart state in the parent.
-
-// ═══════════════════════════════════════════════════
-// Re-export with proper cart state
-// ═══════════════════════════════════════════════════
-
-// The above has a bug — cartItems/setCartItems used before declaration.
-// Let me fix by rewriting the default export properly:
-
-const WaiterNovoPedidoPage = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { eventId, clientId, sessionId, refreshSession, cashCollected, setCashCollected } = useWaiter();
-
-  const [step, setStep] = useState<Step>(1);
-  const [consumer, setConsumer] = useState<IdentifiedClient | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  // Pre-fill consumer from navigation state
+  // Pre-fill consumer from navigation state (e.g., from Chamados)
   useEffect(() => {
     const state = location.state as any;
     if (state?.consumer_id) {
@@ -245,7 +139,7 @@ const WaiterNovoPedidoPage = () => {
       </div>
     </WaiterSessionGuard>
   );
-};
+}
 
 // ═══════════════════════════════════════════════════
 // STEP 1 — Identify Client
@@ -304,23 +198,18 @@ function StepIdentify({
           { fps: 10, qrbox: 220 },
           (decoded: string) => {
             scanner?.stop();
-            // Expect a profile ID or URL with profile ID
             const profileId = decoded.includes("/") ? decoded.split("/").pop() : decoded;
-            if (profileId) {
-              searchProfile("id", profileId);
-            }
+            if (profileId) searchProfile("id", profileId);
           },
           () => {}
         );
-      } catch (e) {
+      } catch {
         toast.error("Não foi possível acessar a câmera");
         setMode("menu");
       }
     };
     startScanner();
-    return () => {
-      scanner?.stop?.().catch(() => {});
-    };
+    return () => { scanner?.stop?.().catch(() => {}); };
   }, [mode]);
 
   if (mode === "qr") {
@@ -344,7 +233,7 @@ function StepIdentify({
     const config = {
       cpf: { label: "CPF", placeholder: "000.000.000-00", mask: maskCPF, icon: CreditCard },
       phone: { label: "Telefone", placeholder: "(11) 98765-4321", mask: maskPhone, icon: Phone },
-      id: { label: "ID do cliente", placeholder: "UUID do perfil", mask: null, icon: Hash },
+      id: { label: "ID do cliente", placeholder: "UUID do perfil", mask: null as null, icon: Hash },
     }[mode]!;
 
     return (
@@ -364,21 +253,14 @@ function StepIdentify({
           autoFocus
           inputMode={mode === "id" ? "text" : "numeric"}
         />
-        <Button
-          onClick={handleSearch}
-          disabled={searching}
-          className="h-14 rounded-xl text-base font-semibold w-full"
-        >
+        <Button onClick={handleSearch} disabled={searching} className="h-14 rounded-xl text-base font-semibold w-full">
           {searching ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Search className="h-5 w-5 mr-2" />}
           Buscar
         </Button>
-
         {notFound && (
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 text-center space-y-3">
             <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
-            <Button variant="outline" onClick={onSkip} className="h-12 rounded-xl w-full">
-              Continuar como avulso
-            </Button>
+            <Button variant="outline" onClick={onSkip} className="h-12 rounded-xl w-full">Continuar como avulso</Button>
           </div>
         )}
       </div>
@@ -392,14 +274,13 @@ function StepIdentify({
         <h2 className="text-xl font-bold">Identificar cliente</h2>
         <p className="text-sm text-muted-foreground mt-1">Opcional — identifique o cliente para vincular o pedido</p>
       </div>
-
       <div className="flex flex-col gap-3">
-        {[
+        {([
           { id: "qr" as const, icon: ScanLine, label: "Ler QR do Perfil", desc: "Escaneie o QR Code do app do cliente" },
           { id: "cpf" as const, icon: CreditCard, label: "Digitar CPF", desc: "Buscar pelo CPF cadastrado" },
           { id: "phone" as const, icon: Phone, label: "Digitar Telefone", desc: "Buscar pelo número de celular" },
           { id: "id" as const, icon: Hash, label: "Digitar ID", desc: "Buscar pelo ID do perfil" },
-        ].map((opt) => (
+        ]).map((opt) => (
           <button
             key={opt.id}
             onClick={() => setMode(opt.id)}
@@ -415,12 +296,7 @@ function StepIdentify({
           </button>
         ))}
       </div>
-
-      <Button
-        variant="outline"
-        onClick={onSkip}
-        className="h-14 rounded-xl text-base font-semibold mt-2 border-white/[0.08]"
-      >
+      <Button variant="outline" onClick={onSkip} className="h-14 rounded-xl text-base font-semibold mt-2 border-white/[0.08]">
         <UserX className="h-5 w-5 mr-2" />
         Pular — Pedido Avulso
       </Button>
@@ -432,13 +308,7 @@ function StepIdentify({
 // STEP 2 — Catalog
 // ═══════════════════════════════════════════════════
 function StepCatalog({
-  eventId,
-  clientId,
-  consumer,
-  onBack,
-  onContinue,
-  cartItems,
-  setCartItems,
+  eventId, clientId, consumer, onBack, onContinue, cartItems, setCartItems,
 }: {
   eventId: string;
   clientId: string;
@@ -446,7 +316,7 @@ function StepCatalog({
   onBack: () => void;
   onContinue: () => void;
   cartItems: CartItem[];
-  setCartItems: (items: CartItem[]) => void;
+  setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }) {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [categories, setCategories] = useState<string[]>(["Todos"]);
@@ -458,46 +328,36 @@ function StepCatalog({
     if (!eventId || !clientId) return;
     const fetchCatalog = async () => {
       setLoading(true);
-
       const { data: eventCatalogs } = await supabase
-        .from("event_catalogs")
-        .select("catalog_id")
-        .eq("event_id", eventId)
-        .eq("is_active", true);
+        .from("event_catalogs").select("catalog_id")
+        .eq("event_id", eventId).eq("is_active", true);
 
       if (!eventCatalogs?.length) { setLoading(false); return; }
       const catalogIds = eventCatalogs.map((ec) => ec.catalog_id);
 
-      const { data: catalogItems } = await supabase
-        .from("catalog_items")
-        .select(`
-          id, item_type, product_id, combo_id,
-          products:product_id (id, name, price, image_path, category_id, is_stock_tracked, categories:category_id (name)),
-          combos:combo_id (id, name, price)
-        `)
-        .in("catalog_id", catalogIds)
-        .eq("is_active", true);
-
-      const { data: stockBalances } = await supabase
-        .from("stock_balances")
-        .select("product_id, quantity_available")
-        .eq("client_id", clientId);
+      const [catalogItemsRes, stockRes] = await Promise.all([
+        supabase.from("catalog_items")
+          .select("id, item_type, product_id, combo_id, products:product_id (id, name, price, image_path, category_id, is_stock_tracked, categories:category_id (name)), combos:combo_id (id, name, price)")
+          .in("catalog_id", catalogIds).eq("is_active", true),
+        supabase.from("stock_balances")
+          .select("product_id, quantity_available")
+          .eq("client_id", clientId),
+      ]);
 
       const stockMap: Record<string, number> = {};
-      stockBalances?.forEach((sb) => { stockMap[sb.product_id] = sb.quantity_available; });
+      (stockRes.data ?? []).forEach((sb: any) => { stockMap[sb.product_id] = sb.quantity_available; });
 
       const items: CatalogProduct[] = [];
       const catSet = new Set<string>();
 
-      catalogItems?.forEach((ci: any) => {
+      (catalogItemsRes.data ?? []).forEach((ci: any) => {
         if (ci.item_type === "product" && ci.products) {
           const p = ci.products;
           const catName = p.categories?.name || null;
           if (catName) catSet.add(catName);
           items.push({
             id: p.id, type: "product", name: p.name, price: Number(p.price),
-            category_name: catName,
-            image_path: p.image_path,
+            category_name: catName, image_path: p.image_path,
             stock_available: p.is_stock_tracked ? (stockMap[p.id] ?? 0) : null,
           });
         } else if (ci.item_type === "combo" && ci.combos) {
@@ -518,13 +378,11 @@ function StepCatalog({
     fetchCatalog();
   }, [eventId, clientId]);
 
-  const filtered = useMemo(() => {
-    return products.filter((p) => {
-      const matchCat = activeCategory === "Todos" || p.category_name === activeCategory;
-      const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
-      return matchCat && matchSearch;
-    });
-  }, [products, activeCategory, search]);
+  const filtered = useMemo(() => products.filter((p) => {
+    const matchCat = activeCategory === "Todos" || p.category_name === activeCategory;
+    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  }), [products, activeCategory, search]);
 
   const cartMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -533,26 +391,24 @@ function StepCatalog({
   }, [cartItems]);
 
   const addItem = (p: CatalogProduct) => {
-    const existing = cartItems.find((i) => i.id === p.id);
-    if (existing) {
-      setCartItems(cartItems.map((i) => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i));
-    } else {
-      setCartItems([...cartItems, { id: p.id, type: p.type, name: p.name, price: p.price, quantity: 1 }]);
-    }
+    setCartItems((prev) => {
+      const existing = prev.find((i) => i.id === p.id);
+      if (existing) return prev.map((i) => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { id: p.id, type: p.type, name: p.name, price: p.price, quantity: 1 }];
+    });
   };
 
   const decreaseItem = (id: string) => {
-    const item = cartItems.find((i) => i.id === id);
-    if (!item) return;
-    if (item.quantity <= 1) {
-      setCartItems(cartItems.filter((i) => i.id !== id));
-    } else {
-      setCartItems(cartItems.map((i) => i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
-    }
+    setCartItems((prev) => {
+      const item = prev.find((i) => i.id === id);
+      if (!item) return prev;
+      if (item.quantity <= 1) return prev.filter((i) => i.id !== id);
+      return prev.map((i) => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
+    });
   };
 
   const increaseItem = (id: string) => {
-    setCartItems(cartItems.map((i) => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
+    setCartItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: i.quantity + 1 } : i));
   };
 
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
@@ -560,22 +416,19 @@ function StepCatalog({
 
   return (
     <div className="flex flex-col gap-4 pb-24">
-      {/* Back + consumer info */}
       <div className="flex items-center justify-between">
         <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground">
           <ChevronLeft className="h-4 w-4" /> Voltar
         </button>
         {consumer && (
           <span className="text-xs text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            {consumer.name}
+            <CheckCircle2 className="h-3 w-3" /> {consumer.name}
           </span>
         )}
       </div>
 
       <h2 className="text-xl font-bold">Monte o pedido</h2>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -586,7 +439,6 @@ function StepCatalog({
         />
       </div>
 
-      {/* Category pills */}
       {categories.length > 1 && (
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
           {categories.map((cat) => (
@@ -606,27 +458,23 @@ function StepCatalog({
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
 
-      {/* Empty */}
       {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
         </div>
       )}
 
-      {/* Product grid */}
       {!loading && (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((product) => {
             const qty = cartMap[product.id] || 0;
             const outOfStock = product.stock_available !== null && product.stock_available <= 0;
-
             return (
               <div
                 key={product.id}
@@ -683,7 +531,6 @@ function StepCatalog({
         </div>
       )}
 
-      {/* Floating cart bar */}
       {cartCount > 0 && (
         <div className="fixed bottom-[76px] left-0 right-0 z-40 px-5">
           <div className="mx-auto max-w-[480px]">
@@ -699,9 +546,7 @@ function StepCatalog({
                 <span className="text-[15px] font-semibold text-primary-foreground">Continuar</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[15px] font-bold text-primary-foreground">
-                  R$ {cartTotal.toFixed(2)}
-                </span>
+                <span className="text-[15px] font-bold text-primary-foreground">R$ {cartTotal.toFixed(2)}</span>
                 <ArrowRight className="h-4 w-4 text-primary-foreground/70" />
               </div>
             </button>
@@ -715,14 +560,15 @@ function StepCatalog({
 // ═══════════════════════════════════════════════════
 // STEP 3 — Payment
 // ═══════════════════════════════════════════════════
+type PaymentOption = {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  desc: string;
+};
+
 function StepPayment({
-  eventId,
-  clientId,
-  consumer,
-  cartItems,
-  sessionId,
-  onBack,
-  onDone,
+  eventId, clientId, consumer, cartItems, sessionId, onBack, onDone,
 }: {
   eventId: string;
   clientId: string;
@@ -736,21 +582,15 @@ function StepPayment({
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [cashReceived, setCashReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [orderResult, setOrderResult] = useState<{ orderId: string; qrToken: string; orderNumber?: number } | null>(null);
+  const [orderResult, setOrderResult] = useState<{ orderId: string; qrToken: string } | null>(null);
 
   const total = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
   const cashValue = parseFloat(cashReceived.replace(",", ".")) || 0;
   const change = cashValue - total;
 
   const handleSubmit = async () => {
-    if (!paymentMethod) {
-      toast.error("Selecione a forma de pagamento");
-      return;
-    }
-    if (paymentMethod === "cash" && cashValue < total) {
-      toast.error("Valor recebido insuficiente");
-      return;
-    }
+    if (!paymentMethod) { toast.error("Selecione a forma de pagamento"); return; }
+    if (paymentMethod === "cash" && cashValue < total) { toast.error("Valor recebido insuficiente"); return; }
 
     setSubmitting(true);
 
@@ -759,39 +599,32 @@ function StepPayment({
       quantity: i.quantity,
     }));
 
-    const params: any = {
+    // consumer_app means the consumer pays in their app — create order as pending with pix method
+    const method = paymentMethod === "consumer_app" ? "pix" : paymentMethod;
+
+    const params: Record<string, unknown> = {
       event_id: eventId,
       items,
-      payment_method: paymentMethod === "pos" ? "pos" : paymentMethod,
+      payment_method: method,
     };
     if (consumer) params.consumer_id = consumer.id;
 
-    const { data, error } = await supabase.rpc("create_waiter_order", { params });
+    const { data, error } = await supabase.rpc("create_waiter_order", {
+      params: params as any,
+    });
 
     setSubmitting(false);
 
-    if (error) {
-      console.error("create_waiter_order error:", error);
-      toast.error("Erro ao criar pedido");
-      return;
-    }
+    if (error) { console.error("create_waiter_order error:", error); toast.error("Erro ao criar pedido"); return; }
 
     const result = data as any;
-    if (!result?.ok) {
-      toast.error(result?.error || "Erro ao criar pedido");
-      return;
-    }
+    if (!result?.ok) { toast.error(result?.error || "Erro ao criar pedido"); return; }
 
     toast.success("Pedido criado com sucesso!");
-    setOrderResult({
-      orderId: result.order_id,
-      qrToken: result.qr_token,
-    });
-
+    setOrderResult({ orderId: result.order_id, qrToken: result.qr_token });
     onDone(paymentMethod === "cash" ? total : 0);
   };
 
-  // Success screen
   if (orderResult) {
     return (
       <div className="flex flex-col items-center gap-6 py-8">
@@ -804,24 +637,15 @@ function StepPayment({
             {consumer ? `Cliente: ${consumer.name}` : "Pedido avulso"}
           </p>
         </div>
-
         <div className="rounded-2xl bg-white p-4">
           <QRCodeSVG value={orderResult.qrToken} size={180} />
         </div>
         <p className="text-xs text-muted-foreground">QR Code para retirada</p>
-
         <div className="flex flex-col gap-3 w-full mt-4">
-          <Button
-            className="h-14 rounded-xl text-base font-semibold w-full"
-            onClick={() => navigate("/garcom/pedidos")}
-          >
+          <Button className="h-14 rounded-xl text-base font-semibold w-full" onClick={() => navigate("/garcom/pedidos")}>
             Ver meus pedidos
           </Button>
-          <Button
-            variant="outline"
-            className="h-14 rounded-xl text-base font-semibold w-full border-white/[0.08]"
-            onClick={() => navigate("/garcom/pedido")}
-          >
+          <Button variant="outline" className="h-14 rounded-xl text-base font-semibold w-full border-white/[0.08]" onClick={() => navigate("/garcom/pedido", { replace: true })}>
             Novo pedido
           </Button>
         </div>
@@ -829,12 +653,12 @@ function StepPayment({
     );
   }
 
-  const paymentOptions = [
+  const paymentOptions: PaymentOption[] = [
     ...(consumer
       ? [{ id: "consumer_app", icon: Smartphone, label: "Cobrar pelo app do cliente", desc: "Pedido aparece no app para pagamento" }]
       : []),
     { id: "cash", icon: Banknote, label: "Dinheiro", desc: "Receber em espécie" },
-    { id: "pos", icon: CreditCardIcon, label: "Maquininha (POS)", desc: "Cartão de crédito/débito" },
+    { id: "pos", icon: CreditCard, label: "Maquininha (POS)", desc: "Cartão de crédito/débito" },
     { id: "pix", icon: DollarSign, label: "PIX", desc: "QR Code PIX" },
   ];
 
@@ -851,12 +675,8 @@ function StepPayment({
         <p className="text-sm font-semibold text-foreground">Resumo do pedido</p>
         {cartItems.map((item) => (
           <div key={item.id} className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {item.quantity}x {item.name}
-            </span>
-            <span className="text-foreground font-medium">
-              R$ {(item.price * item.quantity).toFixed(2)}
-            </span>
+            <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
+            <span className="text-foreground font-medium">R$ {(item.price * item.quantity).toFixed(2)}</span>
           </div>
         ))}
         <div className="border-t border-white/[0.06] pt-3 flex items-center justify-between">
@@ -877,7 +697,6 @@ function StepPayment({
         </div>
       )}
 
-      {/* Payment method selection */}
       <p className="text-sm font-semibold text-foreground">Forma de pagamento</p>
       <div className="flex flex-col gap-3">
         {paymentOptions.map((opt) => (
@@ -886,15 +705,10 @@ function StepPayment({
             onClick={() => setPaymentMethod(opt.id)}
             className={cn(
               "flex items-center gap-4 rounded-2xl border p-4 text-left active:scale-[0.98] transition-all",
-              paymentMethod === opt.id
-                ? "border-primary bg-primary/10"
-                : "border-white/[0.06] bg-white/[0.03]"
+              paymentMethod === opt.id ? "border-primary bg-primary/10" : "border-white/[0.06] bg-white/[0.03]"
             )}
           >
-            <div className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-              paymentMethod === opt.id ? "bg-primary/20" : "bg-white/[0.06]"
-            )}>
+            <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl", paymentMethod === opt.id ? "bg-primary/20" : "bg-white/[0.06]")}>
               <opt.icon className={cn("h-6 w-6", paymentMethod === opt.id ? "text-primary" : "text-muted-foreground")} />
             </div>
             <div>
@@ -905,7 +719,6 @@ function StepPayment({
         ))}
       </div>
 
-      {/* Cash input */}
       {paymentMethod === "cash" && (
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
           <label className="text-sm font-semibold text-foreground">Valor recebido</label>
@@ -926,7 +739,6 @@ function StepPayment({
         </div>
       )}
 
-      {/* Consumer app info */}
       {paymentMethod === "consumer_app" && (
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
           <p className="text-sm text-muted-foreground">
@@ -936,18 +748,10 @@ function StepPayment({
         </div>
       )}
 
-      {/* Submit */}
-      <Button
-        onClick={handleSubmit}
-        disabled={!paymentMethod || submitting}
-        className="h-14 rounded-xl text-base font-semibold w-full mt-2"
-      >
-        {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+      <Button onClick={handleSubmit} disabled={!paymentMethod || submitting} className="h-14 rounded-xl text-base font-semibold w-full mt-2">
+        {submitting && <Loader2 className="h-5 w-5 animate-spin mr-2" />}
         Finalizar Pedido · R$ {total.toFixed(2)}
       </Button>
     </div>
   );
 }
-
-// Fix: the original default export had a bug, replace it
-export default WaiterNovoPedidoPage;
