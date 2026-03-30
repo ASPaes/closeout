@@ -23,6 +23,12 @@ type ConsumptionLimits = {
   is_active: boolean;
 };
 
+type PaymentDetail = {
+  method: string;
+  amount: number;
+  status: string;
+};
+
 type ActiveOrder = {
   id: string;
   order_number: number;
@@ -30,6 +36,8 @@ type ActiveOrder = {
   total: number;
   qr_token: string;
   items: { name: string; quantity: number; unit_price: number; delivered_quantity: number }[];
+  payments?: PaymentDetail[];
+  is_split_payment?: boolean;
 };
 
 type ConsumerContextType = {
@@ -101,7 +109,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     try {
       const { data: qrData } = await supabase
         .from("qr_tokens")
-        .select("token, order_id, orders!inner(id, order_number, status, total, event_id, consumer_id)")
+        .select("token, order_id, orders!inner(id, order_number, status, total, event_id, consumer_id, is_split_payment)")
         .eq("status", "valid")
         .eq("orders.consumer_id", user.id)
         .limit(1);
@@ -110,10 +118,23 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         const qr = qrData[0] as any;
         const order = qr.orders;
 
+        // Fetch items
         const { data: items } = await supabase
           .from("order_items")
           .select("name, quantity, unit_price, delivered_quantity")
           .eq("order_id", order.id);
+
+        // Fetch payments
+        const { data: paymentsData } = await supabase
+          .from("payments")
+          .select("payment_method, amount, status")
+          .eq("order_id", order.id);
+
+        const payments: PaymentDetail[] = (paymentsData || []).map((p: any) => ({
+          method: p.payment_method,
+          amount: p.amount,
+          status: p.status,
+        }));
 
         setActiveOrder({
           id: order.id,
@@ -122,6 +143,8 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
           total: order.total,
           qr_token: qr.token,
           items: items || [],
+          payments: payments.length > 0 ? payments : undefined,
+          is_split_payment: order.is_split_payment || false,
         });
       } else {
         setActiveOrder(null);
