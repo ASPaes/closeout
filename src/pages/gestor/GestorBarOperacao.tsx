@@ -43,6 +43,7 @@ const STATUS_MAP: Record<string, { variant: "active" | "inactive" | "draft" | "c
   paid: { variant: "completed", label: "Pago" },
   preparing: { variant: "completed", label: "Preparando" },
   ready: { variant: "active", label: "Pronto" },
+  partially_delivered: { variant: "draft", label: "Entrega Parcial" },
   delivered: { variant: "inactive", label: "Entregue" },
   cancelled: { variant: "cancelled", label: "Cancelado" },
 };
@@ -110,7 +111,7 @@ export default function GestorBarOperacao() {
   }, [orders, statusFilter, searchQuery]);
 
   // Metrics
-  const queueCount = orders.filter((o) => ["pending", "paid", "preparing"].includes(o.status)).length;
+  const queueCount = orders.filter((o) => ["pending", "paid", "preparing", "partially_delivered"].includes(o.status)).length;
   const readyCount = orders.filter((o) => o.status === "ready").length;
   const deliveredToday = orders.filter((o) => {
     if (o.status !== "delivered" || !o.delivered_at) return false;
@@ -294,7 +295,7 @@ export default function GestorBarOperacao() {
             className="pl-9"
           />
         </div>
-        {["all", "pending", "paid", "preparing", "ready", "delivered", "cancelled"].map((s) => (
+        {["all", "pending", "paid", "preparing", "ready", "partially_delivered", "delivered", "cancelled"].map((s) => (
           <Badge
             key={s}
             variant={statusFilter === s ? "default" : "outline"}

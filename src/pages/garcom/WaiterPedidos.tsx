@@ -28,17 +28,18 @@ type OrderRow = {
   payment_method: string | null;
   consumer_id: string | null;
   created_at: string;
-  items: Array<{ name: string; quantity: number }>;
+  items: Array<{ name: string; quantity: number; delivered_quantity: number }>;
   consumer_name: string | null;
 };
 
-const FILTERS = ["all", "preparing", "ready", "delivered"] as const;
+const FILTERS = ["all", "preparing", "ready", "partial", "delivered"] as const;
 type Filter = typeof FILTERS[number];
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "Todos",
   preparing: "Em Preparo",
   ready: "Prontos",
+  partial: "Parciais",
   delivered: "Entregues",
 };
 
@@ -56,6 +57,7 @@ function OrderStatusBadge({ status }: { status: string }) {
     paid: { label: "Pago", cls: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
     preparing: { label: "Preparando", cls: "bg-orange-500/15 text-orange-400 border-orange-500/25" },
     ready: { label: "Pronto", cls: "bg-green-500/15 text-green-400 border-green-500/25" },
+    partially_delivered: { label: "Entrega Parcial", cls: "bg-warning/15 text-warning border-warning/25" },
     delivered: { label: "Entregue", cls: "bg-muted text-muted-foreground border-border" },
     cancelled: { label: "Cancelado", cls: "bg-destructive/15 text-destructive border-destructive/25" },
   };
@@ -94,7 +96,7 @@ export default function WaiterPedidos() {
       (data as any[]).map(async (o) => {
         const { data: items } = await supabase
           .from("order_items")
-          .select("name, quantity")
+          .select("name, quantity, delivered_quantity")
           .eq("order_id", o.id);
 
         let consumerName: string | null = null;
@@ -156,6 +158,7 @@ export default function WaiterPedidos() {
     if (filter === "all") return true;
     if (filter === "preparing") return ["paid", "pending", "preparing"].includes(o.status);
     if (filter === "ready") return o.status === "ready";
+    if (filter === "partial") return o.status === "partially_delivered";
     if (filter === "delivered") return o.status === "delivered";
     return true;
   });
@@ -223,6 +226,7 @@ export default function WaiterPedidos() {
                   ({orders.filter(o => {
                     if (f === "preparing") return ["paid", "pending", "preparing"].includes(o.status);
                     if (f === "ready") return o.status === "ready";
+                    if (f === "partial") return o.status === "partially_delivered";
                     if (f === "delivered") return o.status === "delivered";
                     return false;
                   }).length})
@@ -245,14 +249,19 @@ export default function WaiterPedidos() {
           <div className="space-y-3">
             {filtered.map(order => {
               const isReady = order.status === "ready";
+              const isPartial = order.status === "partially_delivered";
               const canCancel = ["paid", "pending"].includes(order.status);
+              const totalItemQty = order.items.reduce((s, i) => s + i.quantity, 0);
+              const deliveredItemQty = order.items.reduce((s, i) => s + (i.delivered_quantity || 0), 0);
               return (
                 <Card
                   key={order.id}
                   className={`border ${
                     isReady
                       ? "border-green-500/50 bg-green-500/10"
-                      : "border-border/40 bg-card/60"
+                      : isPartial
+                        ? "border-warning/50 bg-warning/5"
+                        : "border-border/40 bg-card/60"
                   }`}
                 >
                   <CardContent className="p-4 space-y-2">
@@ -279,6 +288,13 @@ export default function WaiterPedidos() {
                       {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
                     </p>
 
+                    {/* Delivery progress for partial */}
+                    {isPartial && totalItemQty > 0 && (
+                      <p className="text-xs font-medium text-warning">
+                        {deliveredItemQty} de {totalItemQty} itens entregues
+                      </p>
+                    )}
+
                     {/* Total + payment */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-foreground">
@@ -290,13 +306,13 @@ export default function WaiterPedidos() {
                     </div>
 
                     {/* Actions */}
-                    {isReady && (
+                    {(isReady || isPartial) && (
                       <Button
                         className="w-full h-12 mt-1"
                         onClick={() => navigate("/garcom/leitor-qr")}
                       >
                         <ScanLine className="h-4 w-4 mr-2" />
-                        Ir Retirar
+                        {isPartial ? "Entregar Restante" : "Ir Retirar"}
                       </Button>
                     )}
                     {canCancel && (
