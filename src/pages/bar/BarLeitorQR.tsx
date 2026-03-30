@@ -106,10 +106,10 @@ export default function BarLeitorQR() {
           playBeep("error");
         } else {
           setResultType("valid");
-          // Init delivery quantities to remaining (deliver all by default)
+          // Init delivery quantities to 0 (user selects manually)
           const init: Record<string, number> = {};
           items.forEach((it) => {
-            init[it.order_item_id] = it.remaining;
+            init[it.order_item_id] = 0;
           });
           setDeliveryQty(init);
         }
