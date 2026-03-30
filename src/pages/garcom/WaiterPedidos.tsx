@@ -32,13 +32,14 @@ type OrderRow = {
   consumer_name: string | null;
 };
 
-const FILTERS = ["all", "preparing", "ready", "delivered"] as const;
+const FILTERS = ["all", "preparing", "ready", "partial", "delivered"] as const;
 type Filter = typeof FILTERS[number];
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "Todos",
   preparing: "Em Preparo",
   ready: "Prontos",
+  partial: "Parciais",
   delivered: "Entregues",
 };
 
