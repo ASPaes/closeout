@@ -90,6 +90,14 @@ export const AUDIT_ACTION = {
   WAITER_SESSION_CLOSED: 'waiter_session.closed',
   WAITER_CANCELLATION_REQUESTED: 'waiter.cancellation_requested',
   WAITER_CANCELLATION_AUTHORIZED: 'waiter.cancellation_authorized',
+  WAITER_CALL_ACCEPTED: 'waiter_call.accepted',
+  WAITER_CALL_COMPLETED: 'waiter_call.completed',
+  WAITER_ORDER_CREATED: 'waiter_order.created',
+  WAITER_PAYMENT_CASH: 'waiter_payment.cash',
+  WAITER_PAYMENT_PIX: 'waiter_payment.pix',
+  WAITER_PAYMENT_POS: 'waiter_payment.pos',
+  WAITER_CASH_HANDOVER: 'waiter_cash.handover',
+  WAITER_PICKUP_CONFIRMED: 'waiter_pickup.confirmed',
 
   // Users
   USER_ROLE_ASSIGNED: 'user.role_assigned',
