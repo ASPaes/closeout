@@ -38,6 +38,7 @@ const statusConfig: Record<string, { label: string; variant: "active" | "inactiv
   paid:      { label: "Confirmado", variant: "active",    icon: CheckCircle2 },
   preparing: { label: "Em Preparo", variant: "draft",     icon: ChefHat },
   ready:     { label: "Pronto",     variant: "completed", icon: Package },
+  partially_delivered: { label: "Entrega Parcial", variant: "draft", icon: Package },
   delivered: { label: "Entregue",   variant: "inactive",  icon: CheckCircle2 },
   cancelled: { label: "Cancelado",  variant: "cancelled", icon: XCircle },
 };
