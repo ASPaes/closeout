@@ -142,6 +142,10 @@ export const AUDIT_ACTION = {
   CONSUMER_PAYMENT_FAILED: 'consumer_payment.failed',
   CONSUMER_CHECKIN: 'consumer.checkin',
   CONSUMER_CHECKOUT: 'consumer.checkout',
+
+  // Cash payments
+  PAYMENT_CASH_CONFIRMED: 'payment.cash_confirmed',
+  ORDER_AUTO_CANCELLED_EVENT_CLOSE: 'order.auto_cancelled_event_close',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];

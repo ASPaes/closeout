@@ -16,6 +16,7 @@ export type AppRole = typeof APP_ROLE[keyof typeof APP_ROLE];
 
 export const ORDER_STATUS = {
   PENDING: 'pending',
+  PARTIALLY_PAID: 'partially_paid',
   PAID: 'paid',
   PREPARING: 'preparing',
   READY: 'ready',
