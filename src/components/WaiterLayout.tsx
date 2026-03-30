@@ -117,7 +117,7 @@ function WaiterHeader() {
 
 function WaiterContent() {
   return (
-    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
+    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground" id="waiter-root">
       <WaiterHeader />
       <main className="px-5 pb-24 pt-4">
         <Outlet />
