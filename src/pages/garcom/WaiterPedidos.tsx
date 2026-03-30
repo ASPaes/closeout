@@ -288,6 +288,13 @@ export default function WaiterPedidos() {
                       {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
                     </p>
 
+                    {/* Delivery progress for partial */}
+                    {isPartial && totalItemQty > 0 && (
+                      <p className="text-xs font-medium text-warning">
+                        {deliveredItemQty} de {totalItemQty} itens entregues
+                      </p>
+                    )}
+
                     {/* Total + payment */}
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-foreground">
