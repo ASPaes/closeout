@@ -405,7 +405,7 @@ export default function GestorGarcons() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <PageHeader
           title={t("gestor_waiters" as TranslationKey)}
-          description={t("gestor_waiters_desc" as TranslationKey)}
+          subtitle={t("gestor_waiters_desc" as TranslationKey)}
         />
         <Select value={selectedEventId || ""} onValueChange={setSelectedEventId}>
           <SelectTrigger className="w-[280px]">
