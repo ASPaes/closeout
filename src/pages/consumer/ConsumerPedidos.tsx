@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Clock, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox,
   Receipt, DollarSign, ChevronDown, QrCode, CreditCard, Smartphone,
-  Banknote, ArrowDown,
+  Banknote, ArrowDown, Split,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,12 @@ import { useTranslation } from "@/i18n/use-translation";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type PaymentRow = {
+  payment_method: string;
+  amount: number;
+  status: string;
+};
+
 type OrderRow = {
   id: string;
   order_number: number;
@@ -24,6 +30,7 @@ type OrderRow = {
   event_id: string;
   event_name: string;
   payment_method: string | null;
+  is_split_payment: boolean;
   paid_at: string | null;
   preparing_at: string | null;
   ready_at: string | null;
@@ -31,9 +38,11 @@ type OrderRow = {
   cancelled_at: string | null;
   items: { name: string; quantity: number; unit_price: number; delivered_quantity?: number }[];
   has_qr: boolean;
+  payments: PaymentRow[];
 };
 
 const statusConfig: Record<string, { label: string; variant: "active" | "inactive" | "draft" | "completed" | "cancelled"; icon: React.ElementType }> = {
+  partially_paid: { label: "Aguardando Dinheiro", variant: "draft", icon: Clock },
   pending:   { label: "Pendente",   variant: "draft",     icon: Clock },
   paid:      { label: "Confirmado", variant: "active",    icon: CheckCircle2 },
   preparing: { label: "Em Preparo", variant: "draft",     icon: ChefHat },
@@ -51,16 +60,24 @@ const filters = [
 ];
 const filterMap: Record<string, string[]> = {
   all: [],
-  active: ["pending", "paid", "preparing", "ready", "partially_delivered"],
+  active: ["partially_paid", "pending", "paid", "preparing", "ready", "partially_delivered"],
   done: ["delivered"],
   cancelled: ["cancelled"],
 };
 
 const paymentIcon: Record<string, React.ElementType> = {
   pix: Smartphone,
-  credit: CreditCard,
-  debit: CreditCard,
+  credit_card: CreditCard,
+  debit_card: CreditCard,
   cash: Banknote,
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  pix: "PIX",
+  credit_card: "Crédito",
+  debit_card: "Débito",
+  cash: "Dinheiro",
+  split: "Dividido",
 };
 
 function formatTime(iso: string | null) {
@@ -84,17 +101,30 @@ export default function ConsumerPedidos() {
     if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, total, created_at, event_id, payment_method, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
+      .select("id, order_number, status, total, created_at, event_id, payment_method, is_split_payment, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
       .eq("consumer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
 
     if (data) {
-      const { data: qrData } = await supabase
-        .from("qr_tokens")
-        .select("order_id")
-        .eq("status", "valid");
-      const qrOrderIds = new Set((qrData || []).map((q: any) => q.order_id));
+      const orderIds = data.map((o: any) => o.id);
+
+      // Fetch QR tokens and payments in parallel
+      const [qrResult, paymentsResult] = await Promise.all([
+        supabase.from("qr_tokens").select("order_id").eq("status", "valid"),
+        supabase.from("payments").select("order_id, payment_method, amount, status").in("order_id", orderIds),
+      ]);
+
+      const qrOrderIds = new Set((qrResult.data || []).map((q: any) => q.order_id));
+      const paymentsByOrder: Record<string, PaymentRow[]> = {};
+      (paymentsResult.data || []).forEach((p: any) => {
+        if (!paymentsByOrder[p.order_id]) paymentsByOrder[p.order_id] = [];
+        paymentsByOrder[p.order_id].push({
+          payment_method: p.payment_method,
+          amount: p.amount,
+          status: p.status,
+        });
+      });
 
       setOrders(data.map((o: any) => ({
         id: o.id,
@@ -105,6 +135,7 @@ export default function ConsumerPedidos() {
         event_id: o.event_id,
         event_name: o.events?.name || "",
         payment_method: o.payment_method,
+        is_split_payment: o.is_split_payment || false,
         paid_at: o.paid_at,
         preparing_at: o.preparing_at,
         ready_at: o.ready_at,
@@ -112,6 +143,7 @@ export default function ConsumerPedidos() {
         cancelled_at: o.cancelled_at,
         items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, delivered_quantity: i.delivered_quantity || 0 })),
         has_qr: qrOrderIds.has(o.id),
+        payments: paymentsByOrder[o.id] || [],
       })));
     }
     setLoading(false);
@@ -129,9 +161,10 @@ export default function ConsumerPedidos() {
     partially_delivered: 1,
     preparing: 2,
     paid: 3,
-    pending: 4,
-    delivered: 5,
-    cancelled: 6,
+    partially_paid: 4,
+    pending: 5,
+    delivered: 6,
+    cancelled: 7,
   };
 
   const filtered = orders
@@ -145,7 +178,7 @@ export default function ConsumerPedidos() {
     .sort((a, b) => (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99));
 
   const isActiveQr = (order: OrderRow) =>
-    order.has_qr && ["paid", "preparing", "ready", "partially_delivered"].includes(order.status);
+    order.has_qr && ["partially_paid", "paid", "preparing", "ready", "partially_delivered"].includes(order.status);
 
   return (
     <div className="flex flex-col gap-5 pb-20">
@@ -248,9 +281,16 @@ export default function ConsumerPedidos() {
             const expanded = expandedId === order.id;
             const date = new Date(order.created_at);
             const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-            const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-            const PayIcon = paymentIcon[order.payment_method || ""] || CreditCard;
             const itemsSummary = order.items.slice(0, 3).map(i => `${i.quantity}x ${i.name}`).join(", ");
+
+            // Payment method display
+            const paymentDisplay = order.payments.length > 1
+              ? order.payments.map(p => `${METHOD_LABELS[p.payment_method] || p.payment_method} R$${Number(p.amount).toFixed(2)}`).join(" + ")
+              : METHOD_LABELS[order.payment_method || ""] || order.payment_method || "";
+
+            const PayIcon = order.is_split_payment
+              ? Split
+              : paymentIcon[order.payment_method || ""] || CreditCard;
 
             return (
               <div
@@ -268,11 +308,17 @@ export default function ConsumerPedidos() {
                         <StIcon className={cn("h-5 w-5", st.variant === "active" ? "text-success" : st.variant === "draft" ? "text-warning" : st.variant === "completed" ? "text-info" : st.variant === "cancelled" ? "text-destructive" : "text-muted-foreground")} />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-base font-bold text-primary">
                             #{String(order.order_number).padStart(3, "0")}
                           </span>
                           <StatusBadge status={st.variant} label={st.label} />
+                          {order.is_split_payment && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                              <Split className="h-3 w-3" />
+                              Dividido
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                           {order.event_name} · {dateStr}
@@ -293,12 +339,10 @@ export default function ConsumerPedidos() {
                   </p>
 
                   {/* Payment method */}
-                  {order.payment_method && (
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <PayIcon className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <span className="text-[11px] text-muted-foreground capitalize">{order.payment_method}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <PayIcon className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <span className="text-[11px] text-muted-foreground">{paymentDisplay}</span>
+                  </div>
                 </button>
 
                 {/* QR button */}
@@ -310,7 +354,7 @@ export default function ConsumerPedidos() {
                       onClick={() => navigate(`/app/qr?order=${order.id}`)}
                     >
                       <QrCode className="h-4 w-4 mr-2" />
-                      Ver QR Code
+                      {order.status === "partially_paid" ? "Ver QR Code — pagar dinheiro" : "Ver QR Code"}
                     </Button>
                   </div>
                 )}
@@ -346,12 +390,35 @@ export default function ConsumerPedidos() {
                       </div>
                     </div>
 
+                    {/* Payment details (for split) */}
+                    {order.payments.length > 1 && (
+                      <div>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pagamentos</span>
+                        <div className="mt-2 space-y-1.5">
+                          {order.payments.map((p, idx) => {
+                            const PIcon = paymentIcon[p.payment_method] || CreditCard;
+                            const isApproved = p.status === "approved";
+                            return (
+                              <div key={idx} className="flex items-center gap-2">
+                                <PIcon className={cn("h-3.5 w-3.5", isApproved ? "text-success" : "text-amber-400")} />
+                                <span className={cn("text-xs font-medium", isApproved ? "text-success" : "text-amber-300")}>
+                                  {isApproved ? "✓ " : "⏳ "}
+                                  {METHOD_LABELS[p.payment_method] || p.payment_method}: R$ {Number(p.amount).toFixed(2)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Timeline */}
                     <div>
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Timeline</span>
                       <div className="mt-2 space-y-0">
                         {[
                           { label: "Criado", time: formatTime(order.created_at), done: true },
+                          ...(order.status === "partially_paid" ? [{ label: "Aguardando Dinheiro", time: null as string | null, done: true }] : []),
                           { label: "Pago", time: formatTime(order.paid_at), done: !!order.paid_at },
                           { label: "Em preparo", time: formatTime(order.preparing_at), done: !!order.preparing_at },
                           { label: "Pronto", time: formatTime(order.ready_at), done: !!order.ready_at },
@@ -364,7 +431,9 @@ export default function ConsumerPedidos() {
                               <div className={cn(
                                 "h-2.5 w-2.5 rounded-full mt-1.5",
                                 step.done
-                                  ? step.label === "Cancelado" ? "bg-destructive" : "bg-primary"
+                                  ? step.label === "Cancelado" ? "bg-destructive"
+                                    : step.label === "Aguardando Dinheiro" ? "bg-amber-500"
+                                    : "bg-primary"
                                   : "bg-white/[0.1]"
                               )} />
                               {idx < arr.length - 1 && (

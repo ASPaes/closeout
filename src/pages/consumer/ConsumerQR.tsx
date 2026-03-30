@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper, ShoppingBag, QrCode, Check } from "lucide-react";
+import {
+  CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper,
+  ShoppingBag, QrCode, Check, Clock, CreditCard, Smartphone, Banknote,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { useTranslation } from "@/i18n/use-translation";
@@ -14,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const timelineSteps = [
+  { key: "partially_paid", label: "Aguardando Dinheiro", icon: Clock },
   { key: "paid", label: "Confirmado", icon: CheckCircle2 },
   { key: "preparing", label: "Em Preparo", icon: ChefHat },
   { key: "ready", label: "Pronto", icon: Package },
@@ -22,11 +26,18 @@ const timelineSteps = [
 ];
 
 const stepIndex: Record<string, number> = {
-  paid: 0,
-  preparing: 1,
-  ready: 2,
-  partially_delivered: 3,
-  delivered: 4,
+  partially_paid: 0,
+  paid: 1,
+  preparing: 2,
+  ready: 3,
+  partially_delivered: 4,
+  delivered: 5,
+};
+
+type PaymentDetail = {
+  method: string;
+  amount: number;
+  status: string;
 };
 
 type OrderItem = {
@@ -44,6 +55,20 @@ type OrderQR = {
   total: number;
   qr_token: string;
   items: OrderItem[];
+  payments?: PaymentDetail[];
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  pix: "PIX",
+  credit_card: "Crédito",
+  debit_card: "Débito",
+  cash: "Dinheiro",
+};
+const METHOD_ICONS: Record<string, React.ElementType> = {
+  pix: Smartphone,
+  credit_card: CreditCard,
+  debit_card: CreditCard,
+  cash: Banknote,
 };
 
 export default function ConsumerQR() {
@@ -59,6 +84,7 @@ export default function ConsumerQR() {
   const [loadingSpecific, setLoadingSpecific] = useState(false);
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const [liveItems, setLiveItems] = useState<OrderItem[] | null>(null);
+  const [livePayments, setLivePayments] = useState<PaymentDetail[] | null>(null);
   const prevStatusRef = useRef<string | null>(null);
 
   const fetchOrderItems = useCallback(async (orderId: string): Promise<OrderItem[]> => {
@@ -67,6 +93,18 @@ export default function ConsumerQR() {
       .select("id, name, quantity, unit_price, delivered_quantity")
       .eq("order_id", orderId);
     return (data as OrderItem[]) || [];
+  }, []);
+
+  const fetchPayments = useCallback(async (orderId: string): Promise<PaymentDetail[]> => {
+    const { data } = await supabase
+      .from("payments")
+      .select("payment_method, amount, status")
+      .eq("order_id", orderId);
+    return (data || []).map((p: any) => ({
+      method: p.payment_method,
+      amount: p.amount,
+      status: p.status,
+    }));
   }, []);
 
   // Fetch specific order by ID from query param
@@ -91,7 +129,10 @@ export default function ConsumerQR() {
         .single();
 
       if (orderData) {
-        const items = await fetchOrderItems(orderData.id);
+        const [items, payments] = await Promise.all([
+          fetchOrderItems(orderData.id),
+          fetchPayments(orderData.id),
+        ]);
         setSpecificOrder({
           id: orderData.id,
           order_number: orderData.order_number,
@@ -99,21 +140,24 @@ export default function ConsumerQR() {
           total: orderData.total,
           qr_token: qrToken,
           items,
+          payments: payments.length > 0 ? payments : undefined,
         });
       }
       setLoadingSpecific(false);
     })();
-  }, [paramOrderId, user, fetchOrderItems]);
+  }, [paramOrderId, user, fetchOrderItems, fetchPayments]);
 
   // Determine which order to display
   const displayOrder = paramOrderId ? specificOrder : activeOrder;
   const isLoading = paramOrderId ? loadingSpecific : loadingOrder;
 
-  // Use liveItems if available, otherwise fall back to displayOrder items
   const displayItems: OrderItem[] = liveItems || (displayOrder?.items as OrderItem[]) || [];
+  const displayPayments: PaymentDetail[] | undefined =
+    livePayments || (displayOrder as OrderQR | null)?.payments || (activeOrder?.payments as PaymentDetail[] | undefined);
 
   const orderStatus = liveStatus || displayOrder?.status || null;
   const currentStep = orderStatus ? (stepIndex[orderStatus] ?? 0) : 0;
+  const isPartiallyPaid = orderStatus === "partially_paid";
   const isReady = orderStatus === "ready";
   const isPartial = orderStatus === "partially_delivered";
   const isDelivered = orderStatus === "delivered";
@@ -137,10 +181,17 @@ export default function ConsumerQR() {
           if (newStatus) {
             setLiveStatus(newStatus);
 
-            // Refresh items on status change to get updated delivered_quantity
-            const freshItems = await fetchOrderItems(displayOrder.id);
+            const [freshItems, freshPayments] = await Promise.all([
+              fetchOrderItems(displayOrder.id),
+              fetchPayments(displayOrder.id),
+            ]);
             setLiveItems(freshItems);
+            setLivePayments(freshPayments);
 
+            if (newStatus === "paid" && prevStatusRef.current === "partially_paid") {
+              vibrate(300);
+              toast("Pagamento confirmado! Pedido enviado ao bar", { duration: 5000 });
+            }
             if (newStatus === "ready" && prevStatusRef.current !== "ready") {
               vibrate(300);
             }
@@ -157,7 +208,7 @@ export default function ConsumerQR() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [displayOrder?.id, fetchOrderItems, t]);
+  }, [displayOrder?.id, fetchOrderItems, fetchPayments, t]);
 
   // Sync prevStatusRef
   useEffect(() => {
@@ -166,10 +217,11 @@ export default function ConsumerQR() {
     }
   }, [displayOrder?.status]);
 
-  // Reset live status and items when order changes
+  // Reset live state when order changes
   useEffect(() => {
     setLiveStatus(null);
     setLiveItems(null);
+    setLivePayments(null);
   }, [displayOrder?.id]);
 
   // Delivery stats
@@ -222,7 +274,6 @@ export default function ConsumerQR() {
           </p>
         </div>
 
-        {/* Greyed out QR */}
         <div className="rounded-3xl border border-border/40 bg-card/50 p-6 opacity-40 grayscale">
           <div className="rounded-2xl bg-white p-3">
             <QRCodeSVG value={displayOrder.qr_token} size={160} level="H" bgColor="#ffffff" fgColor="#0A0A0A" />
@@ -246,6 +297,19 @@ export default function ConsumerQR() {
   // ── Active order with QR ──
   return (
     <div className="flex flex-col items-center gap-5 pb-4">
+      {/* Partially paid banner */}
+      {isPartiallyPaid && (
+        <div className="w-full rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-center animate-pulse">
+          <Clock className="mx-auto h-8 w-8 text-amber-400 mb-1" />
+          <h1 className="text-lg font-extrabold text-amber-300">
+            Procure um garçom para pagar em dinheiro
+          </h1>
+          <p className="text-xs text-amber-200/70 mt-0.5">
+            Apresente seu QR Code ao garçom
+          </p>
+        </div>
+      )}
+
       {/* Ready banner */}
       {isReady && (
         <div className="w-full rounded-2xl border border-success/40 bg-success/10 p-4 text-center animate-pulse">
@@ -281,11 +345,13 @@ export default function ConsumerQR() {
       <div
         className={cn(
           "relative rounded-3xl border bg-card p-6 transition-all",
-          isReady
-            ? "border-success/40 shadow-[0_0_60px_hsl(145_100%_39%/0.2)]"
-            : isPartial
-              ? "border-warning/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
-              : "border-border/60"
+          isPartiallyPaid
+            ? "border-amber-500/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
+            : isReady
+              ? "border-success/40 shadow-[0_0_60px_hsl(145_100%_39%/0.2)]"
+              : isPartial
+                ? "border-warning/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
+                : "border-border/60"
         )}
       >
         <div className="rounded-2xl bg-white p-4">
@@ -298,9 +364,46 @@ export default function ConsumerQR() {
           />
         </div>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          {isPartial ? t("consumer_qr_partial_show_again") : t("consumer_qr_show_counter")}
+          {isPartiallyPaid
+            ? "Mostre ao garçom para pagar em dinheiro"
+            : isPartial
+              ? t("consumer_qr_partial_show_again")
+              : t("consumer_qr_show_counter")}
         </p>
       </div>
+
+      {/* Payment details card (for partially_paid or split) */}
+      {displayPayments && displayPayments.length > 0 && (isPartiallyPaid || displayPayments.length > 1) && (
+        <div className="w-full rounded-2xl border border-border/60 bg-card p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Detalhes do Pagamento</h3>
+          <div className="flex flex-col gap-2.5">
+            {displayPayments.map((p, idx) => {
+              const Icon = METHOD_ICONS[p.method] || CreditCard;
+              const label = METHOD_LABELS[p.method] || p.method;
+              const isApproved = p.status === "approved";
+              const isPending = p.status === "created";
+              return (
+                <div key={idx} className="flex items-center gap-3">
+                  <Icon className={cn("h-4 w-4 shrink-0", isApproved ? "text-success" : "text-amber-400")} />
+                  <div className="flex-1">
+                    <span className={cn("text-sm font-medium", isApproved ? "text-success" : "text-amber-300")}>
+                      {isApproved ? "✓ " : "⏳ "}{label}: R$ {Number(p.amount).toFixed(2)}
+                    </span>
+                    {isPending && (
+                      <p className="text-[11px] text-amber-200/60">— procure um garçom</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {isPartiallyPaid && (
+            <p className="text-[11px] text-muted-foreground/60 mt-3 leading-relaxed">
+              Seu pedido será enviado ao bar assim que o dinheiro for confirmado.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Vertical timeline */}
       <OrderTimeline currentStep={currentStep} orderStatus={orderStatus} />
@@ -318,6 +421,7 @@ export default function ConsumerQR() {
 /* ── Timeline Component ── */
 function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orderStatus: string | null }) {
   const isWarningStep = orderStatus === "partially_delivered";
+  const isCashWaiting = orderStatus === "partially_paid";
 
   return (
     <div className="w-full px-2">
@@ -327,6 +431,7 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
           const isCurrent = currentStep === i;
           const isFuture = currentStep < i;
           const isWarningCurrent = isCurrent && isWarningStep;
+          const isCashCurrent = isCurrent && isCashWaiting;
           const StepIcon = step.icon;
 
           return (
@@ -336,8 +441,9 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-full transition-all shrink-0",
                     isPast && "bg-success/20 border-2 border-success",
-                    isCurrent && !isWarningCurrent && "bg-primary/20 border-2 border-primary shadow-[0_0_16px_hsl(24,100%,50%,0.3)] scale-110",
+                    isCurrent && !isWarningCurrent && !isCashCurrent && "bg-primary/20 border-2 border-primary shadow-[0_0_16px_hsl(24,100%,50%,0.3)] scale-110",
                     isWarningCurrent && "bg-warning/20 border-2 border-warning shadow-[0_0_16px_hsl(45,100%,50%,0.3)] scale-110",
+                    isCashCurrent && "bg-amber-500/20 border-2 border-amber-500 shadow-[0_0_16px_hsl(45,100%,50%,0.3)] scale-110",
                     isFuture && "bg-secondary border-2 border-white/10"
                   )}
                 >
@@ -345,8 +451,9 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                     className={cn(
                       "h-4 w-4",
                       isPast && "text-success",
-                      isCurrent && !isWarningCurrent && "text-primary",
+                      isCurrent && !isWarningCurrent && !isCashCurrent && "text-primary",
                       isWarningCurrent && "text-warning",
+                      isCashCurrent && "text-amber-400",
                       isFuture && "text-muted-foreground/40"
                     )}
                   />
@@ -355,7 +462,7 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                   <div
                     className={cn(
                       "w-0.5 h-8",
-                      isPast ? "bg-success/40" : isCurrent && isWarningCurrent ? "bg-warning/30" : isCurrent ? "bg-primary/30" : "bg-white/[0.06]"
+                      isPast ? "bg-success/40" : isCurrent && (isWarningCurrent || isCashCurrent) ? "bg-amber-500/30" : isCurrent ? "bg-primary/30" : "bg-white/[0.06]"
                     )}
                   />
                 )}
@@ -365,8 +472,9 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                   className={cn(
                     "text-sm font-semibold",
                     isPast && "text-success",
-                    isCurrent && !isWarningCurrent && "text-primary",
+                    isCurrent && !isWarningCurrent && !isCashCurrent && "text-primary",
                     isWarningCurrent && "text-warning",
+                    isCashCurrent && "text-amber-400",
                     isFuture && "text-muted-foreground/40"
                   )}
                 >
