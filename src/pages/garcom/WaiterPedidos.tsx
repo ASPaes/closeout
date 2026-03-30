@@ -28,7 +28,7 @@ type OrderRow = {
   payment_method: string | null;
   consumer_id: string | null;
   created_at: string;
-  items: Array<{ name: string; quantity: number }>;
+  items: Array<{ name: string; quantity: number; delivered_quantity: number }>;
   consumer_name: string | null;
 };
 
