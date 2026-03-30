@@ -29,7 +29,7 @@ type OrderRow = {
   ready_at: string | null;
   delivered_at: string | null;
   cancelled_at: string | null;
-  items: { name: string; quantity: number; unit_price: number }[];
+  items: { name: string; quantity: number; unit_price: number; delivered_quantity?: number }[];
   has_qr: boolean;
 };
 
