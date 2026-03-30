@@ -64,6 +64,7 @@ function OrderStatusBadge({ status }: { status: string }) {
 }
 
 export default function WaiterPedidos() {
+  const { t } = useTranslation();
   const { eventId } = useWaiter();
   const { user } = useAuth();
   const navigate = useNavigate();
