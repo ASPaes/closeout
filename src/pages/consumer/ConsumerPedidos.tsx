@@ -51,7 +51,7 @@ const filters = [
 ];
 const filterMap: Record<string, string[]> = {
   all: [],
-  active: ["pending", "paid", "preparing", "ready"],
+  active: ["pending", "paid", "preparing", "ready", "partially_delivered"],
   done: ["delivered"],
   cancelled: ["cancelled"],
 };
