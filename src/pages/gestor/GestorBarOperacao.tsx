@@ -295,7 +295,7 @@ export default function GestorBarOperacao() {
             className="pl-9"
           />
         </div>
-        {["all", "pending", "paid", "preparing", "ready", "delivered", "cancelled"].map((s) => (
+        {["all", "pending", "paid", "preparing", "ready", "partially_delivered", "delivered", "cancelled"].map((s) => (
           <Badge
             key={s}
             variant={statusFilter === s ? "default" : "outline"}

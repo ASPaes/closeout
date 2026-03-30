@@ -306,13 +306,13 @@ export default function WaiterPedidos() {
                     </div>
 
                     {/* Actions */}
-                    {isReady && (
+                    {(isReady || isPartial) && (
                       <Button
                         className="w-full h-12 mt-1"
                         onClick={() => navigate("/garcom/leitor-qr")}
                       >
                         <ScanLine className="h-4 w-4 mr-2" />
-                        Ir Retirar
+                        {isPartial ? "Entregar Restante" : "Ir Retirar"}
                       </Button>
                     )}
                     {canCancel && (
