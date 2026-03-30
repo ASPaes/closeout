@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/use-translation";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -93,9 +93,11 @@ export default function ConsumerPerfil() {
   const avatarUrl = localAvatarUrl || profile?.avatar_url || null;
   const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-  /* ── data fetching ── */
-  useEffect(() => {
+  /* ── data fetching — refetch every time page gains focus ── */
+  const fetchAllData = useCallback(() => {
     if (!user) return;
+
+    // Stats
     setLoadingStats(true);
     supabase.rpc("get_consumer_profile_stats").then(({ data, error }) => {
       if (data && !error) {
@@ -104,10 +106,8 @@ export default function ConsumerPerfil() {
       }
       setLoadingStats(false);
     });
-  }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
+    // Active checkin
     supabase
       .from("event_checkins")
       .select("id, event_id, is_visible, events!inner(name)")
@@ -122,12 +122,12 @@ export default function ConsumerPerfil() {
             event_name: row.events?.name || "Evento",
             is_visible: row.is_visible ?? true,
           });
+        } else {
+          setActiveCheckin(null);
         }
       });
-  }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
+    // Tabs
     setLoadingTabs(true);
     Promise.all([
       supabase.from("orders").select("id, order_number, status, total, created_at, payment_method, events!inner(name)").eq("consumer_id", user.id).order("created_at", { ascending: false }).limit(10),
@@ -140,6 +140,22 @@ export default function ConsumerPerfil() {
       setLoadingTabs(false);
     });
   }, [user]);
+
+  // Fetch on mount
+  useEffect(() => { fetchAllData(); }, [fetchAllData]);
+
+  // Re-fetch when tab/window regains focus
+  useEffect(() => {
+    const onFocus = () => fetchAllData();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") fetchAllData();
+    });
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [fetchAllData]);
 
   /* ── actions ── */
   const openEdit = () => {
