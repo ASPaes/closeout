@@ -309,13 +309,28 @@ export default function ConsumerPedidos() {
                     {/* Items */}
                     <div>
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Itens</span>
-                      <div className="mt-2 space-y-1.5">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{item.quantity}x {item.name}</span>
-                            <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
-                          </div>
-                        ))}
+                      <div className="mt-2 space-y-2">
+                        {order.items.map((item, idx) => {
+                          const del = item.delivered_quantity || 0;
+                          const isItemComplete = del >= item.quantity;
+                          const isPartialItem = del > 0 && del < item.quantity;
+                          return (
+                            <div key={idx} className={cn("flex flex-col gap-1", isItemComplete && "opacity-60")}>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-foreground flex items-center gap-1.5">
+                                  {isItemComplete && <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />}
+                                  {item.quantity}x {item.name}
+                                </span>
+                                <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
+                              </div>
+                              {(isPartialItem || isItemComplete) && (
+                                <span className={cn("text-[11px] font-medium", isItemComplete ? "text-success" : "text-warning")}>
+                                  {isItemComplete ? "✓ Retirado" : `${del} de ${item.quantity} retirados`}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
