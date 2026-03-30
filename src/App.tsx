@@ -46,6 +46,13 @@ import BarFilaPedidos from "@/pages/bar/BarFilaPedidos";
 import BarProntos from "@/pages/bar/BarProntos";
 import BarLeitorQR from "@/pages/bar/BarLeitorQR";
 import BarHistorico from "@/pages/bar/BarHistorico";
+// Waiter (Garçom) pages
+import { WaiterLayout } from "@/components/WaiterLayout";
+import GarcomHome from "@/pages/garcom/GarcomHome";
+import GarcomChamados from "@/pages/garcom/GarcomChamados";
+import GarcomNovoPedido from "@/pages/garcom/GarcomNovoPedido";
+import GarcomPedidos from "@/pages/garcom/GarcomPedidos";
+import GarcomTurno from "@/pages/garcom/GarcomTurno";
 // Consumer pages
 import ConsumerLogin from "@/pages/consumer/ConsumerLogin";
 import ConsumerCadastro from "@/pages/consumer/ConsumerCadastro";
