@@ -1100,6 +1100,12 @@ const enUS: Record<TranslationKey, string> = {
   consumer_qr_ready_title: "YOUR ORDER IS READY!",
   consumer_qr_ready_desc: "Show the QR Code at the counter to pick up",
   consumer_qr_show_counter: "Show at counter",
+  consumer_qr_partial_toast: "📦 Part of your order has been delivered!",
+  consumer_qr_partial_title: "PARTIAL DELIVERY",
+  consumer_qr_partial_desc: "You already picked up part of the order. Show the QR again to pick up the rest.",
+  consumer_qr_partial_of: "of",
+  consumer_qr_partial_items_picked: "items picked up",
+  consumer_qr_partial_show_again: "Show again to pick up the rest",
 
   // Event Images
   event_images_title: "Event photos",
