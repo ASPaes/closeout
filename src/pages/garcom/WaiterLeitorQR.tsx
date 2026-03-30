@@ -43,7 +43,7 @@ type DeliveryResult = {
   fully_delivered: boolean;
 };
 
-type ViewState = "scanner" | "loading" | "result" | "confirming" | "done";
+type ViewState = "scanner" | "loading" | "result" | "confirming" | "done" | "cash_pending";
 
 function playBeep(type: "success" | "partial" | "error") {
   try {
