@@ -40,6 +40,15 @@ export function useConsumerNotifications() {
           prevStatusRef.current = newStatus;
 
           switch (newStatus) {
+            case "paid":
+              if (prev === "partially_paid") {
+                toast.success("💰 Pagamento confirmado! Pedido enviado ao bar", {
+                  duration: 6000,
+                });
+                vibrate(300);
+              }
+              break;
+
             case "preparing":
               toast("🍳 Seu pedido está sendo preparado!", {
                 duration: 4000,
