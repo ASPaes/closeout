@@ -29,7 +29,7 @@ type ActiveOrder = {
   status: string;
   total: number;
   qr_token: string;
-  items: { name: string; quantity: number; unit_price: number }[];
+  items: { name: string; quantity: number; unit_price: number; delivered_quantity: number }[];
 };
 
 type ConsumerContextType = {
