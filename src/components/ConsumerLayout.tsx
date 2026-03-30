@@ -77,6 +77,7 @@ function ConsumerTabBar() {
 function ConsumerHeader() {
   const { activeEvent } = useConsumer();
   const { profile } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header
@@ -109,7 +110,10 @@ function ConsumerHeader() {
             )}
           </div>
         </div>
-        <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.06] text-xs font-semibold text-foreground active:scale-95 transition-transform">
+        <button
+          onClick={() => navigate("/app/perfil")}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] border border-white/[0.06] text-xs font-semibold text-foreground active:scale-95 transition-transform"
+        >
           {profile?.name?.charAt(0)?.toUpperCase() || "?"}
         </button>
       </div>
