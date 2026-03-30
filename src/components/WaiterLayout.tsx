@@ -146,6 +146,9 @@ function WaiterHeader() {
 }
 
 function WaiterContent() {
+  const { waiterId, eventId } = useWaiter();
+  useWaiterNotifications(waiterId, eventId);
+
   return (
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground" id="waiter-root">
       <WaiterHeader />
