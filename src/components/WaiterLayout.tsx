@@ -4,6 +4,9 @@ import { useWaiter, WaiterProvider } from "@/contexts/WaiterContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { cn } from "@/lib/utils";
+import { useWaiterNotifications } from "@/hooks/useWaiterNotifications";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const tabs = [
   { path: "/garcom", icon: Home, labelKey: "waiter_dashboard" as const },
