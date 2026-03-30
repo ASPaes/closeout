@@ -1098,6 +1098,12 @@ const ptBR = {
   consumer_qr_ready_title: "SEU PEDIDO ESTÁ PRONTO!",
   consumer_qr_ready_desc: "Apresente o QR Code no balcão para retirar",
   consumer_qr_show_counter: "Apresente no balcão",
+  consumer_qr_partial_toast: "📦 Parte do seu pedido foi entregue!",
+  consumer_qr_partial_title: "ENTREGA PARCIAL",
+  consumer_qr_partial_desc: "Você já retirou parte do pedido. Apresente o QR novamente para retirar o restante.",
+  consumer_qr_partial_of: "de",
+  consumer_qr_partial_items_picked: "itens retirados",
+  consumer_qr_partial_show_again: "Apresente novamente para retirar o restante",
 
   // Event Images
   event_images_title: "Fotos do evento",
