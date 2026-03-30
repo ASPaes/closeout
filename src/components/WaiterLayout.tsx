@@ -20,7 +20,28 @@ function WaiterTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { pendingCallsCount } = useWaiter();
+  const { pendingCallsCount, waiterId, eventId } = useWaiter();
+  const [hasReadyOrders, setHasReadyOrders] = useState(false);
+
+  // Track if there are ready orders for badge
+  useEffect(() => {
+    if (!waiterId || !eventId) { setHasReadyOrders(false); return; }
+    const check = async () => {
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("waiter_id", waiterId)
+        .eq("event_id", eventId)
+        .eq("status", "ready");
+      setHasReadyOrders((count || 0) > 0);
+    };
+    check();
+    const ch = supabase
+      .channel(`waiter-ready-badge-${waiterId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `waiter_id=eq.${waiterId}` }, () => check())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [waiterId, eventId]);
 
   const isActive = (path: string) => {
     if (path === "/garcom") return location.pathname === "/garcom";
