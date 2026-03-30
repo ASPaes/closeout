@@ -259,7 +259,9 @@ export default function WaiterPedidos() {
                   className={`border ${
                     isReady
                       ? "border-green-500/50 bg-green-500/10"
-                      : "border-border/40 bg-card/60"
+                      : isPartial
+                        ? "border-warning/50 bg-warning/5"
+                        : "border-border/40 bg-card/60"
                   }`}
                 >
                   <CardContent className="p-4 space-y-2">
