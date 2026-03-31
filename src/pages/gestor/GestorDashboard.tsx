@@ -9,13 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
-const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any }[] = [
-  { titleKey: "gestor_products", descKey: "gestor_products_desc", icon: Package },
-  { titleKey: "gestor_categories", descKey: "gestor_categories_desc", icon: Tags },
-  { titleKey: "gestor_combos", descKey: "gestor_combos_desc", icon: Layers },
-  { titleKey: "gestor_campaigns", descKey: "gestor_campaigns_desc", icon: Megaphone },
-  { titleKey: "gestor_stock", descKey: "gestor_stock_desc", icon: Warehouse },
-  { titleKey: "events", descKey: "manage_events", icon: CalendarDays },
+const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
+  { titleKey: "gestor_products", descKey: "gestor_products_desc", icon: Package, url: "/gestor/produtos" },
+  { titleKey: "gestor_categories", descKey: "gestor_categories_desc", icon: Tags, url: "/gestor/categorias" },
+  { titleKey: "gestor_combos", descKey: "gestor_combos_desc", icon: Layers, url: "/gestor/combos" },
+  { titleKey: "gestor_campaigns", descKey: "gestor_campaigns_desc", icon: Megaphone, url: "/gestor/campanhas" },
+  { titleKey: "gestor_stock", descKey: "gestor_stock_desc", icon: Warehouse, url: "/gestor/estoque" },
+  { titleKey: "events", descKey: "manage_events", icon: CalendarDays, url: "/gestor/eventos" },
 ];
 
 export default function GestorDashboard() {
