@@ -20,7 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 
 type Event = {
@@ -55,6 +56,8 @@ export default function GestorEventos() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [checkinCounts, setCheckinCounts] = useState<Record<string, number>>({});
+  const [checkinLoading, setCheckinLoading] = useState(false);
 
   // Form state
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,13 +108,27 @@ export default function GestorEventos() {
     setVenues(vns);
     const venueMap = new Map(vns.map((v) => [v.id, v.name]));
 
-    setEvents(
-      (eventsRes.data ?? []).map((e) => ({
-        ...e,
-        venue_name: venueMap.get(e.venue_id) ?? "—",
-      }))
-    );
+    const evList = (eventsRes.data ?? []).map((e) => ({
+      ...e,
+      venue_name: venueMap.get(e.venue_id) ?? "—",
+    }));
+    setEvents(evList);
     setLoading(false);
+
+    // Fetch checkin counts in parallel (non-blocking)
+    const eventIds = evList.map((e) => e.id);
+    if (eventIds.length > 0) {
+      setCheckinLoading(true);
+      const { data: counts, error: countsErr } = await supabase.rpc("get_event_checkin_counts", { p_event_ids: eventIds });
+      if (countsErr) {
+        console.error("checkin counts error:", countsErr);
+        toast.error(t("gevt_checkin_error"));
+      }
+      const map: Record<string, number> = {};
+      (counts ?? []).forEach((c: any) => { map[c.event_id] = Number(c.active_checkins); });
+      setCheckinCounts(map);
+      setCheckinLoading(false);
+    }
   }, [clientId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -341,6 +358,17 @@ export default function GestorEventos() {
     {
       key: "end", header: t("end"), className: "w-40",
       render: (r) => r.end_at ? <span className="text-sm">{new Date(r.end_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</span> : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: "checkins", header: t("gevt_present"), className: "w-28 text-center",
+      render: (r) => checkinLoading ? (
+        <Skeleton className="h-6 w-10 mx-auto" />
+      ) : (
+        <Badge variant="secondary" className="gap-1">
+          <Users className="h-3 w-3" />
+          {checkinCounts[r.id] ?? 0}
+        </Badge>
+      ),
     },
     { key: "status", header: "Status", className: "w-32", render: (r) => <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} /> },
     {
