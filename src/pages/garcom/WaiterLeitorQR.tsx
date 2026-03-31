@@ -95,41 +95,6 @@ export default function WaiterLeitorQR() {
         try { await scannerRef.current.stop(); } catch { /* ignore */ }
       }
 
-      // First check if this QR belongs to a partially_paid order
-      const { data: qrData } = await supabase
-        .from("qr_tokens")
-        .select("order_id, status, orders!inner(id, order_number, status, is_split_payment)")
-        .eq("token", token.trim())
-        .limit(1);
-
-      if (qrData && qrData.length > 0) {
-        const qr = qrData[0] as any;
-        const order = qr.orders;
-        if (order.status === "partially_paid") {
-          // Fetch payment details
-          const { data: payments } = await supabase
-            .from("payments")
-            .select("payment_method, amount, status")
-            .eq("order_id", order.id);
-
-          const cashPayment = (payments || []).find((p: any) => p.payment_method === "cash" && p.status === "created");
-          const digitalPayments = (payments || []).filter((p: any) => p.payment_method !== "cash" && p.status === "approved");
-          const digitalAmount = digitalPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
-
-          setCashPendingData({
-            order_id: order.id,
-            order_number: order.order_number,
-            cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
-            digital_amount: digitalAmount,
-            is_split: order.is_split_payment || false,
-          });
-          playBeep("partial");
-          setViewState("cash_pending");
-          isProcessingRef.current = false;
-          return;
-        }
-      }
-
       const { data, error } = await supabase.rpc("validate_qr", {
         p_token: token.trim(),
         p_staff_id: user.id,
