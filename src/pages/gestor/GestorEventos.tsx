@@ -56,6 +56,8 @@ export default function GestorEventos() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [checkinCounts, setCheckinCounts] = useState<Record<string, number>>({});
+  const [checkinLoading, setCheckinLoading] = useState(false);
 
   // Form state
   const [modalOpen, setModalOpen] = useState(false);
