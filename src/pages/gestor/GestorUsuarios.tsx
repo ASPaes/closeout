@@ -100,6 +100,16 @@ export default function GestorUsuarios() {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Keep editUser in sync after data refresh
+  useEffect(() => {
+    if (editUser) {
+      const updated = users.find((u) => u.user_id === editUser.user_id);
+      if (updated && JSON.stringify(updated.roles) !== JSON.stringify(editUser.roles)) {
+        setEditUser(updated);
+      }
+    }
+  }, [users]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!effectiveClientId) return;
     supabase.from("venues").select("id, name, client_id").eq("client_id", effectiveClientId).eq("status", "active").order("name").then(({ data }) => setVenues(data ?? []));
