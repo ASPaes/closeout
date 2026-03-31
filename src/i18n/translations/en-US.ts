@@ -436,6 +436,8 @@ const enUS: Record<TranslationKey, string> = {
   gevt_no_limit: "No limit",
   gevt_no_venues_hint: "Create a venue before creating events.",
   gevt_create_venue: "Create venue",
+  gevt_present: "Present",
+  gevt_checkin_error: "Error fetching check-ins",
 
   // Catalogs
   ctlg_title: "Catalogs",
