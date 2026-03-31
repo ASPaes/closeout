@@ -359,6 +359,17 @@ export default function GestorEventos() {
       key: "end", header: t("end"), className: "w-40",
       render: (r) => r.end_at ? <span className="text-sm">{new Date(r.end_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</span> : <span className="text-muted-foreground">—</span>,
     },
+    {
+      key: "checkins", header: t("gevt_present"), className: "w-28 text-center",
+      render: (r) => checkinLoading ? (
+        <Skeleton className="h-6 w-10 mx-auto" />
+      ) : (
+        <Badge variant="secondary" className="gap-1">
+          <Users className="h-3 w-3" />
+          {checkinCounts[r.id] ?? 0}
+        </Badge>
+      ),
+    },
     { key: "status", header: "Status", className: "w-32", render: (r) => <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} /> },
     {
       key: "actions", header: "", className: "w-40 text-right",
