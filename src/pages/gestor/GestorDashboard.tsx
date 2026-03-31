@@ -294,7 +294,7 @@ export default function GestorDashboard() {
       {/* Feature cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
-          <Card key={c.titleKey}>
+          <Card key={c.titleKey} className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/50" onClick={() => navigate(c.url)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t(c.titleKey)}</CardTitle>
               <c.icon className="h-4 w-4 text-muted-foreground" />
