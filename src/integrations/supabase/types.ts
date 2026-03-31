@@ -2542,6 +2542,13 @@ export type Database = {
         Returns: string[]
       }
       get_consumer_profile_stats: { Args: never; Returns: Json }
+      get_event_checkin_counts: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          active_checkins: number
+          event_id: string
+        }[]
+      }
       get_my_roles: {
         Args: never
         Returns: {
