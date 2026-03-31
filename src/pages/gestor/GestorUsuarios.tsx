@@ -89,21 +89,26 @@ export default function GestorUsuarios() {
       }
       const result = Object.values(grouped);
       setUsers(result);
-      // Update editUser if open
-      if (editUser) {
-        const updated = result.find((u) => u.user_id === editUser.user_id);
-        if (updated) setEditUser(updated);
-      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [effectiveClientId, editUser]);
+  }, [effectiveClientId]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  // Keep editUser in sync after data refresh
+  useEffect(() => {
+    if (editUser) {
+      const updated = users.find((u) => u.user_id === editUser.user_id);
+      if (updated && JSON.stringify(updated.roles) !== JSON.stringify(editUser.roles)) {
+        setEditUser(updated);
+      }
+    }
+  }, [users]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!effectiveClientId) return;
