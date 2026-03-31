@@ -22,6 +22,7 @@ export default function GestorDashboard() {
   const { profile } = useAuth();
   const { clientName, effectiveClientId } = useGestor();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [openRegisters, setOpenRegisters] = useState(0);
   const [salesToday, setSalesToday] = useState(0);
   const [activeWaiters, setActiveWaiters] = useState(0);
