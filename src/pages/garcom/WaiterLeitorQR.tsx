@@ -106,13 +106,29 @@ export default function WaiterLeitorQR() {
       const res = data as unknown as ValidationResult;
       setResult(res);
 
-      if (res.success) {
+      if (res.success && res.cash_pending) {
+        // Order is partially_paid — show cash confirmation screen
+        const cashPayment = (res.payments || []).find((p) => p.payment_method === "cash" && p.status === "created");
+        const digitalPayments = (res.payments || []).filter((p) => p.payment_method !== "cash" && p.status === "approved");
+        const digitalAmount = digitalPayments.reduce((s, p) => s + Number(p.amount), 0);
+
+        setCashPendingData({
+          order_id: res.order?.id || "",
+          order_number: res.order?.order_number || 0,
+          cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
+          digital_amount: digitalAmount,
+          is_split: digitalAmount > 0,
+        });
+        playBeep("partial");
+        setViewState("cash_pending");
+      } else if (res.success) {
         const items = res.order?.items || [];
         const allDone = items.every((it) => it.remaining === 0);
 
         if (allDone) {
           setResultType("all_delivered");
           playBeep("error");
+          setViewState("result");
         } else {
           setResultType("valid");
           const init: Record<string, number> = {};
@@ -120,19 +136,21 @@ export default function WaiterLeitorQR() {
             init[it.order_item_id] = 0;
           });
           setDeliveryQty(init);
+          setViewState("result");
         }
       } else if (res.error === "ALREADY_USED") {
         setResultType("already_used");
         playBeep("error");
+        setViewState("result");
       } else if (res.error === "CANCELLED") {
         setResultType("cancelled");
         playBeep("error");
+        setViewState("result");
       } else {
         setResultType("invalid");
         playBeep("error");
+        setViewState("result");
       }
-
-      setViewState("result");
     } catch (err: any) {
       setResult({ success: false, error: "UNKNOWN", message: err.message || "Erro desconhecido" });
       setResultType("invalid");
