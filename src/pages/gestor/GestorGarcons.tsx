@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -15,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "sonner";
-import { UserCheck, Clock, DollarSign, ShoppingCart, AlertTriangle, ArrowUpDown } from "lucide-react";
+import { UserCheck, Clock, DollarSign, ShoppingCart, AlertTriangle, ArrowUpDown, QrCode, Copy, Printer, Plus, XCircle, Loader2 } from "lucide-react";
 import { AUDIT_ACTION } from "@/config/audit-actions";
+import { QRCodeSVG } from "qrcode.react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 type ActiveSession = {
@@ -65,6 +68,16 @@ type PerformanceRow = {
   calls_answered: number;
 };
 
+type WaiterInvite = {
+  id: string;
+  waiter_name: string;
+  join_code: string;
+  status: string;
+  used_by: string | null;
+  used_by_name: string | null;
+  created_at: string;
+};
+
 export default function GestorGarcons() {
   const { effectiveClientId } = useGestor();
   const { user } = useAuth();
@@ -83,6 +96,14 @@ export default function GestorGarcons() {
   const [rejectRequestId, setRejectRequestId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  // QR Invite state
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrWaiterName, setQrWaiterName] = useState("");
+  const [qrGenerating, setQrGenerating] = useState(false);
+  const [generatedQr, setGeneratedQr] = useState<{ joinCode: string; waiterName: string } | null>(null);
+  const [invites, setInvites] = useState<WaiterInvite[]>([]);
+  const qrPrintRef = useRef<HTMLDivElement>(null);
 
   // Fetch active events for selector
   useEffect(() => {
@@ -129,7 +150,6 @@ export default function GestorGarcons() {
       .eq("id", selectedEventId)
       .single();
 
-    // Orders per waiter
     const { data: orders } = await supabase
       .from("orders")
       .select("waiter_id, total, status")
@@ -190,7 +210,6 @@ export default function GestorGarcons() {
       .eq("id", selectedEventId)
       .single();
 
-    // Total sold per waiter
     const { data: orders } = await supabase
       .from("orders")
       .select("waiter_id, total, status")
@@ -280,7 +299,6 @@ export default function GestorGarcons() {
       .in("id", waiterIds);
     const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.name]));
 
-    // Calls answered
     const { data: calls } = await supabase
       .from("waiter_calls" as any)
       .select("accepted_by")
@@ -315,14 +333,53 @@ export default function GestorGarcons() {
     setPerformance(rows);
   }, [selectedEventId, effectiveClientId]);
 
+  // Fetch waiter invites
+  const fetchInvites = useCallback(async () => {
+    if (!selectedEventId || !effectiveClientId) return;
+    const { data, error } = await supabase
+      .from("waiter_invites" as any)
+      .select("id, waiter_name, join_code, status, used_by, created_at")
+      .eq("event_id", selectedEventId)
+      .eq("client_id", effectiveClientId)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      setInvites([]);
+      return;
+    }
+
+    const usedByIds = (data as any[]).map((d: any) => d.used_by).filter(Boolean);
+    let profileMap = new Map<string, string>();
+    if (usedByIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", usedByIds);
+      profileMap = new Map((profiles ?? []).map((p) => [p.id, p.name]));
+    }
+
+    setInvites(
+      (data as any[]).map((d: any) => ({
+        id: d.id,
+        waiter_name: d.waiter_name,
+        join_code: d.join_code,
+        status: d.status,
+        used_by: d.used_by,
+        used_by_name: d.used_by ? profileMap.get(d.used_by) || "—" : null,
+        created_at: d.created_at,
+      }))
+    );
+  }, [selectedEventId, effectiveClientId]);
+
   useEffect(() => {
     fetchActive();
     fetchClosed();
     fetchCancellations();
     fetchPerformance();
-  }, [fetchActive, fetchClosed, fetchCancellations, fetchPerformance]);
+    fetchInvites();
+  }, [fetchActive, fetchClosed, fetchCancellations, fetchPerformance, fetchInvites]);
 
-  // Realtime for cancellations & sessions
+  // Realtime
   useEffect(() => {
     if (!selectedEventId) return;
     const ch = supabase
@@ -330,9 +387,10 @@ export default function GestorGarcons() {
       .on("postgres_changes", { event: "*", schema: "public", table: "waiter_cancellation_requests", filter: `event_id=eq.${selectedEventId}` }, () => fetchCancellations())
       .on("postgres_changes", { event: "*", schema: "public", table: "waiter_sessions", filter: `event_id=eq.${selectedEventId}` }, () => { fetchActive(); fetchClosed(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `event_id=eq.${selectedEventId}` }, () => { fetchActive(); fetchPerformance(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "waiter_invites", filter: `event_id=eq.${selectedEventId}` }, () => fetchInvites())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [selectedEventId, fetchCancellations, fetchActive, fetchClosed, fetchPerformance]);
+  }, [selectedEventId, fetchCancellations, fetchActive, fetchClosed, fetchPerformance, fetchInvites]);
 
   const handleApprove = async (reqId: string) => {
     setActionLoading(true);
@@ -381,6 +439,78 @@ export default function GestorGarcons() {
     }
   };
 
+  // Generate QR invite
+  const handleGenerateQr = async () => {
+    if (!qrWaiterName.trim() || !selectedEventId) return;
+    setQrGenerating(true);
+    try {
+      const { data, error } = await supabase.rpc("create_waiter_invite", {
+        p_event_id: selectedEventId,
+        p_waiter_name: qrWaiterName.trim(),
+      });
+      if (error) throw error;
+      const result = data as any;
+      setGeneratedQr({ joinCode: result.join_code, waiterName: result.waiter_name });
+      toast.success(t("gw_qr_generated" as TranslationKey));
+      fetchInvites();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setQrGenerating(false);
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      const { error } = await supabase
+        .from("waiter_invites" as any)
+        .update({ status: "revoked" })
+        .eq("id", inviteId);
+      if (error) throw error;
+      toast.success(t("gw_invite_revoked" as TranslationKey));
+      fetchInvites();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleRegenerateInvite = (waiterName: string) => {
+    setQrWaiterName(waiterName);
+    setGeneratedQr(null);
+    setQrDialogOpen(true);
+  };
+
+  const getInviteUrl = (joinCode: string) =>
+    `${window.location.origin}/garcom/join/${joinCode}`;
+
+  const handleCopyLink = (joinCode: string) => {
+    navigator.clipboard.writeText(getInviteUrl(joinCode));
+    toast.success(t("gw_link_copied" as TranslationKey));
+  };
+
+  const handlePrintQr = () => {
+    const printContent = qrPrintRef.current;
+    if (!printContent) return;
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>QR Code</title>
+      <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;margin:0}
+      .code{font-size:32px;font-weight:bold;letter-spacing:4px;margin-top:16px}
+      .name{font-size:20px;margin-top:8px;color:#333}</style></head>
+      <body>${printContent.innerHTML}</body></html>
+    `);
+    win.document.close();
+    win.print();
+    win.close();
+  };
+
+  const openQrDialog = () => {
+    setQrWaiterName("");
+    setGeneratedQr(null);
+    setQrDialogOpen(true);
+  };
+
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
@@ -397,6 +527,21 @@ export default function GestorGarcons() {
     if (m < 60) return `${m} min`;
     return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
   };
+  const fmtDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const inviteStatusBadge = (status: string) => {
+    const map: Record<string, { label: TranslationKey; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      active: { label: "gw_invite_active", variant: "default" },
+      used: { label: "gw_invite_used", variant: "secondary" },
+      revoked: { label: "gw_invite_status_revoked", variant: "destructive" },
+      expired: { label: "gw_invite_status_expired", variant: "outline" },
+    };
+    const cfg = map[status] || map.active;
+    return <Badge variant={cfg.variant}>{t(cfg.label)}</Badge>;
+  };
 
   const sortedPerformance = [...performance].sort((a, b) => (b[sortBy] as number) - (a[sortBy] as number));
 
@@ -407,16 +552,22 @@ export default function GestorGarcons() {
           title={t("gestor_waiters" as TranslationKey)}
           subtitle={t("gestor_waiters_desc" as TranslationKey)}
         />
-        <Select value={selectedEventId || ""} onValueChange={setSelectedEventId}>
-          <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder={t("gw_select_event" as TranslationKey)} />
-          </SelectTrigger>
-          <SelectContent>
-            {events.map((ev) => (
-              <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Button onClick={openQrDialog} disabled={!selectedEventId}>
+            <QrCode className="mr-2 h-4 w-4" />
+            {t("gw_generate_qr" as TranslationKey)}
+          </Button>
+          <Select value={selectedEventId || ""} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder={t("gw_select_event" as TranslationKey)} />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((ev) => (
+                <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -457,6 +608,10 @@ export default function GestorGarcons() {
                 {cancellations.length}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="invites">
+            <QrCode className="mr-1.5 h-3.5 w-3.5" />
+            {t("gw_invites_tab" as TranslationKey)}
           </TabsTrigger>
         </TabsList>
 
@@ -580,6 +735,86 @@ export default function GestorGarcons() {
             </div>
           )}
         </TabsContent>
+
+        {/* INVITES TAB */}
+        <TabsContent value="invites" className="mt-4 space-y-4">
+          {invites.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <QrCode className="mx-auto h-12 w-12 text-muted-foreground/40 mb-4" />
+                <p>{t("gw_no_invites" as TranslationKey)}</p>
+                <Button className="mt-4" onClick={openQrDialog} disabled={!selectedEventId}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("gw_generate_qr" as TranslationKey)}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("gw_waiter_name" as TranslationKey)}</TableHead>
+                    <TableHead>{t("gw_invite_code" as TranslationKey)}</TableHead>
+                    <TableHead>{t("gw_invite_status" as TranslationKey)}</TableHead>
+                    <TableHead>{t("gw_invite_used_by" as TranslationKey)}</TableHead>
+                    <TableHead>{t("gw_invite_date" as TranslationKey)}</TableHead>
+                    <TableHead className="text-right"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invites.map((inv) => (
+                    <TableRow key={inv.id}>
+                      <TableCell className="font-medium">{inv.waiter_name}</TableCell>
+                      <TableCell>
+                        <code className="bg-muted px-2 py-1 rounded text-xs font-mono tracking-wider">
+                          {inv.join_code}
+                        </code>
+                      </TableCell>
+                      <TableCell>{inviteStatusBadge(inv.status)}</TableCell>
+                      <TableCell>{inv.used_by_name || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{fmtDate(inv.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {inv.status === "active" && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleCopyLink(inv.join_code)}
+                                title={t("gw_copy_link" as TranslationKey)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleRevokeInvite(inv.id)}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {(inv.status === "used" || inv.status === "revoked" || inv.status === "expired") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRegenerateInvite(inv.waiter_name)}
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              {t("gw_invite_new" as TranslationKey)}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Performance comparison */}
@@ -644,6 +879,99 @@ export default function GestorGarcons() {
               {t("gw_reject" as TranslationKey)}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Generate Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              {t("gw_generate_qr" as TranslationKey)}
+            </DialogTitle>
+          </DialogHeader>
+
+          {!generatedQr ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t("gw_waiter_name" as TranslationKey)}</Label>
+                <Input
+                  placeholder={t("gw_waiter_name_placeholder" as TranslationKey)}
+                  value={qrWaiterName}
+                  onChange={(e) => setQrWaiterName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
+                  {t("cancel" as TranslationKey)}
+                </Button>
+                <Button
+                  onClick={handleGenerateQr}
+                  disabled={!qrWaiterName.trim() || qrGenerating}
+                >
+                  {qrGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t("gw_generating" as TranslationKey)}
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      {t("gw_generate_qr_btn" as TranslationKey)}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div ref={qrPrintRef} className="flex flex-col items-center gap-4 py-4">
+                <QRCodeSVG
+                  value={getInviteUrl(generatedQr.joinCode)}
+                  size={250}
+                  level="M"
+                  includeMargin
+                  bgColor="white"
+                  fgColor="black"
+                />
+                <p className="text-lg font-semibold">{generatedQr.waiterName}</p>
+                <p className="font-mono text-2xl tracking-[6px] font-bold text-primary">
+                  {generatedQr.joinCode}
+                </p>
+              </div>
+
+              <p className="text-sm text-muted-foreground text-center">
+                {t("gw_qr_scan_hint" as TranslationKey)}
+              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleCopyLink(generatedQr.joinCode)}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {t("gw_copy_link" as TranslationKey)}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handlePrintQr}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  {t("gw_print_qr" as TranslationKey)}
+                </Button>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
+                  {t("close" as TranslationKey)}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
