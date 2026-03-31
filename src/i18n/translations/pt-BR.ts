@@ -185,6 +185,10 @@ const ptBR = {
   gusr_revoke_desc: "Tem certeza que deseja revogar o papel {role} de {name}?",
   gusr_revoke_error: "Erro ao revogar papel",
   gusr_assign_error: "Erro ao atribuir papel",
+  gusr_edit_roles: "Gerenciar papéis",
+  gusr_current_roles: "Papéis atuais",
+  gusr_no_roles: "Nenhum papel atribuído",
+  gusr_new_role: "Novo papel",
   gestor_invite_team_help: "Use o botão acima para gerar um link de convite. Os convidados receberão o papel selecionado automaticamente ao aceitar.",
 
   // Audit Logs
