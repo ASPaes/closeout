@@ -108,13 +108,27 @@ export default function GestorEventos() {
     setVenues(vns);
     const venueMap = new Map(vns.map((v) => [v.id, v.name]));
 
-    setEvents(
-      (eventsRes.data ?? []).map((e) => ({
-        ...e,
-        venue_name: venueMap.get(e.venue_id) ?? "—",
-      }))
-    );
+    const evList = (eventsRes.data ?? []).map((e) => ({
+      ...e,
+      venue_name: venueMap.get(e.venue_id) ?? "—",
+    }));
+    setEvents(evList);
     setLoading(false);
+
+    // Fetch checkin counts in parallel (non-blocking)
+    const eventIds = evList.map((e) => e.id);
+    if (eventIds.length > 0) {
+      setCheckinLoading(true);
+      const { data: counts, error: countsErr } = await supabase.rpc("get_event_checkin_counts", { p_event_ids: eventIds });
+      if (countsErr) {
+        console.error("checkin counts error:", countsErr);
+        toast.error(t("gevt_checkin_error"));
+      }
+      const map: Record<string, number> = {};
+      (counts ?? []).forEach((c: any) => { map[c.event_id] = Number(c.active_checkins); });
+      setCheckinCounts(map);
+      setCheckinLoading(false);
+    }
   }, [clientId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
