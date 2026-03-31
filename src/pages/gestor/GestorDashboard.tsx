@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/use-translation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,19 +9,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
-const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any }[] = [
-  { titleKey: "gestor_products", descKey: "gestor_products_desc", icon: Package },
-  { titleKey: "gestor_categories", descKey: "gestor_categories_desc", icon: Tags },
-  { titleKey: "gestor_combos", descKey: "gestor_combos_desc", icon: Layers },
-  { titleKey: "gestor_campaigns", descKey: "gestor_campaigns_desc", icon: Megaphone },
-  { titleKey: "gestor_stock", descKey: "gestor_stock_desc", icon: Warehouse },
-  { titleKey: "events", descKey: "manage_events", icon: CalendarDays },
+const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
+  { titleKey: "gestor_products", descKey: "gestor_products_desc", icon: Package, url: "/gestor/produtos" },
+  { titleKey: "gestor_categories", descKey: "gestor_categories_desc", icon: Tags, url: "/gestor/categorias" },
+  { titleKey: "gestor_combos", descKey: "gestor_combos_desc", icon: Layers, url: "/gestor/combos" },
+  { titleKey: "gestor_campaigns", descKey: "gestor_campaigns_desc", icon: Megaphone, url: "/gestor/campanhas" },
+  { titleKey: "gestor_stock", descKey: "gestor_stock_desc", icon: Warehouse, url: "/gestor/estoque" },
+  { titleKey: "events", descKey: "manage_events", icon: CalendarDays, url: "/gestor/eventos" },
 ];
 
 export default function GestorDashboard() {
   const { profile } = useAuth();
   const { clientName, effectiveClientId } = useGestor();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [openRegisters, setOpenRegisters] = useState(0);
   const [salesToday, setSalesToday] = useState(0);
   const [activeWaiters, setActiveWaiters] = useState(0);
@@ -292,7 +294,7 @@ export default function GestorDashboard() {
       {/* Feature cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
-          <Card key={c.titleKey}>
+          <Card key={c.titleKey} className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/50" onClick={() => navigate(c.url)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t(c.titleKey)}</CardTitle>
               <c.icon className="h-4 w-4 text-muted-foreground" />
