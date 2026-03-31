@@ -89,17 +89,12 @@ export default function GestorUsuarios() {
       }
       const result = Object.values(grouped);
       setUsers(result);
-      // Update editUser if open
-      if (editUser) {
-        const updated = result.find((u) => u.user_id === editUser.user_id);
-        if (updated) setEditUser(updated);
-      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [effectiveClientId, editUser]);
+  }, [effectiveClientId]);
 
   useEffect(() => {
     fetchUsers();
