@@ -30,6 +30,7 @@ type ValidationResult = {
   success: boolean;
   error?: string;
   message?: string;
+  cash_pending?: boolean;
   order?: {
     id: string;
     order_number: number;
@@ -37,6 +38,7 @@ type ValidationResult = {
     items?: OrderItem[];
     delivered_at?: string;
   };
+  payments?: Array<{ payment_method: string; amount: number; status: string }>;
 };
 
 type DeliveryResult = {
@@ -95,41 +97,6 @@ export default function WaiterLeitorQR() {
         try { await scannerRef.current.stop(); } catch { /* ignore */ }
       }
 
-      // First check if this QR belongs to a partially_paid order
-      const { data: qrData } = await supabase
-        .from("qr_tokens")
-        .select("order_id, status, orders!inner(id, order_number, status, is_split_payment)")
-        .eq("token", token.trim())
-        .limit(1);
-
-      if (qrData && qrData.length > 0) {
-        const qr = qrData[0] as any;
-        const order = qr.orders;
-        if (order.status === "partially_paid") {
-          // Fetch payment details
-          const { data: payments } = await supabase
-            .from("payments")
-            .select("payment_method, amount, status")
-            .eq("order_id", order.id);
-
-          const cashPayment = (payments || []).find((p: any) => p.payment_method === "cash" && p.status === "created");
-          const digitalPayments = (payments || []).filter((p: any) => p.payment_method !== "cash" && p.status === "approved");
-          const digitalAmount = digitalPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
-
-          setCashPendingData({
-            order_id: order.id,
-            order_number: order.order_number,
-            cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
-            digital_amount: digitalAmount,
-            is_split: order.is_split_payment || false,
-          });
-          playBeep("partial");
-          setViewState("cash_pending");
-          isProcessingRef.current = false;
-          return;
-        }
-      }
-
       const { data, error } = await supabase.rpc("validate_qr", {
         p_token: token.trim(),
         p_staff_id: user.id,
@@ -139,13 +106,29 @@ export default function WaiterLeitorQR() {
       const res = data as unknown as ValidationResult;
       setResult(res);
 
-      if (res.success) {
+      if (res.success && res.cash_pending) {
+        // Order is partially_paid — show cash confirmation screen
+        const cashPayment = (res.payments || []).find((p) => p.payment_method === "cash" && p.status === "created");
+        const digitalPayments = (res.payments || []).filter((p) => p.payment_method !== "cash" && p.status === "approved");
+        const digitalAmount = digitalPayments.reduce((s, p) => s + Number(p.amount), 0);
+
+        setCashPendingData({
+          order_id: res.order?.id || "",
+          order_number: res.order?.order_number || 0,
+          cash_amount: cashPayment ? Number(cashPayment.amount) : 0,
+          digital_amount: digitalAmount,
+          is_split: digitalAmount > 0,
+        });
+        playBeep("partial");
+        setViewState("cash_pending");
+      } else if (res.success) {
         const items = res.order?.items || [];
         const allDone = items.every((it) => it.remaining === 0);
 
         if (allDone) {
           setResultType("all_delivered");
           playBeep("error");
+          setViewState("result");
         } else {
           setResultType("valid");
           const init: Record<string, number> = {};
@@ -153,19 +136,21 @@ export default function WaiterLeitorQR() {
             init[it.order_item_id] = 0;
           });
           setDeliveryQty(init);
+          setViewState("result");
         }
       } else if (res.error === "ALREADY_USED") {
         setResultType("already_used");
         playBeep("error");
+        setViewState("result");
       } else if (res.error === "CANCELLED") {
         setResultType("cancelled");
         playBeep("error");
+        setViewState("result");
       } else {
         setResultType("invalid");
         playBeep("error");
+        setViewState("result");
       }
-
-      setViewState("result");
     } catch (err: any) {
       setResult({ success: false, error: "UNKNOWN", message: err.message || "Erro desconhecido" });
       setResultType("invalid");
