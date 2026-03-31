@@ -434,6 +434,8 @@ const ptBR = {
   gevt_no_limit: "Sem limite",
   gevt_no_venues_hint: "Cadastre um local antes de criar eventos.",
   gevt_create_venue: "Criar local",
+  gevt_present: "Presentes",
+  gevt_checkin_error: "Erro ao buscar check-ins",
 
   // Catalogs
   ctlg_title: "Catálogos",
