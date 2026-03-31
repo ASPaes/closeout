@@ -30,6 +30,7 @@ type ValidationResult = {
   success: boolean;
   error?: string;
   message?: string;
+  cash_pending?: boolean;
   order?: {
     id: string;
     order_number: number;
@@ -37,6 +38,7 @@ type ValidationResult = {
     items?: OrderItem[];
     delivered_at?: string;
   };
+  payments?: Array<{ payment_method: string; amount: number; status: string }>;
 };
 
 type DeliveryResult = {
