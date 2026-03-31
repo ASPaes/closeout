@@ -20,7 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 
 type Event = {
