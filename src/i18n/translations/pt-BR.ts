@@ -1239,6 +1239,31 @@ const ptBR = {
   event_close_unpaid_title: "Pedidos com pagamento pendente",
   event_close_unpaid_desc: "Ao encerrar o evento, pedidos com pagamento pendente serão cancelados automaticamente.",
   event_close_confirm: "Encerrar evento",
+
+  // Waiter QR invites (Gestor)
+  gw_invites_tab: "Convites QR",
+  gw_generate_qr: "Gerar QR de Garçom",
+  gw_waiter_name: "Nome do garçom",
+  gw_waiter_name_placeholder: "Ex: João Silva",
+  gw_generate_qr_btn: "Gerar QR Code",
+  gw_qr_generated: "QR Code gerado com sucesso",
+  gw_qr_scan_hint: "O garçom deve escanear este QR no app para entrar no evento",
+  gw_copy_link: "Copiar Link",
+  gw_print_qr: "Imprimir QR",
+  gw_link_copied: "Link copiado!",
+  gw_invite_code: "Código",
+  gw_invite_status: "Status",
+  gw_invite_used_by: "Usado por",
+  gw_invite_date: "Data",
+  gw_invite_revoke: "Revogar",
+  gw_invite_revoked: "Convite revogado",
+  gw_invite_new: "Gerar novo",
+  gw_no_invites: "Nenhum convite gerado para este evento",
+  gw_invite_active: "Ativo",
+  gw_invite_used: "Usado",
+  gw_invite_status_revoked: "Revogado",
+  gw_invite_status_expired: "Expirado",
+  gw_generating: "Gerando...",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

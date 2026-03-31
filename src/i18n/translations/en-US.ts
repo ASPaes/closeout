@@ -1241,6 +1241,31 @@ const enUS: Record<TranslationKey, string> = {
   event_close_unpaid_title: "Orders with pending payment",
   event_close_unpaid_desc: "When closing the event, orders with pending payment will be automatically cancelled.",
   event_close_confirm: "Close event",
+
+  // Waiter QR invites (Gestor)
+  gw_invites_tab: "QR Invites",
+  gw_generate_qr: "Generate Waiter QR",
+  gw_waiter_name: "Waiter name",
+  gw_waiter_name_placeholder: "e.g. John Smith",
+  gw_generate_qr_btn: "Generate QR Code",
+  gw_qr_generated: "QR Code generated successfully",
+  gw_qr_scan_hint: "The waiter must scan this QR in the app to join the event",
+  gw_copy_link: "Copy Link",
+  gw_print_qr: "Print QR",
+  gw_link_copied: "Link copied!",
+  gw_invite_code: "Code",
+  gw_invite_status: "Status",
+  gw_invite_used_by: "Used by",
+  gw_invite_date: "Date",
+  gw_invite_revoke: "Revoke",
+  gw_invite_revoked: "Invite revoked",
+  gw_invite_new: "Generate new",
+  gw_no_invites: "No invites generated for this event",
+  gw_invite_active: "Active",
+  gw_invite_used: "Used",
+  gw_invite_status_revoked: "Revoked",
+  gw_invite_status_expired: "Expired",
+  gw_generating: "Generating...",
 };
 
 export default enUS;
