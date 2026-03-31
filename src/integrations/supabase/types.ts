@@ -2373,6 +2373,60 @@ export type Database = {
           },
         ]
       }
+      waiter_invites: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          event_id: string
+          id: string
+          join_code: string
+          status: string
+          used_at: string | null
+          used_by: string | null
+          waiter_name: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          event_id: string
+          id?: string
+          join_code: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+          waiter_name: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          id?: string
+          join_code?: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+          waiter_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_invites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       waiter_sessions: {
         Row: {
           assignment_type: string
@@ -2487,6 +2541,7 @@ export type Database = {
     }
     Functions: {
       accept_waiter_call: { Args: { p_call_id: string }; Returns: Json }
+      accept_waiter_invite: { Args: { p_join_code: string }; Returns: Json }
       bootstrap_super_admin: { Args: never; Returns: boolean }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       check_username_available: {
@@ -2523,6 +2578,10 @@ export type Database = {
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_order: { Args: { params: Json }; Returns: Json }
       create_consumer_split_order: { Args: { params: Json }; Returns: Json }
+      create_waiter_invite: {
+        Args: { p_event_id: string; p_waiter_name: string }
+        Returns: Json
+      }
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       get_client_managers: {
