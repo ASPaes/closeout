@@ -100,11 +100,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshRoles = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("id, role, client_id, venue_id, event_id")
+      .eq("user_id", user.id);
+    if (data) setRoles(data as UserRole[]);
+  };
+
   const hasRole = (role: string) => roles.some((r) => r.role === role);
   const isSuperAdmin = hasRole("super_admin");
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, roles, loading, signOut, hasRole, isSuperAdmin }}>
+    <AuthContext.Provider value={{ session, user, profile, roles, loading, signOut, hasRole, isSuperAdmin, refreshRoles }}>
       {children}
     </AuthContext.Provider>
   );
