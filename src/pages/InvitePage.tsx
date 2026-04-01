@@ -95,9 +95,9 @@ export default function InvitePage() {
       if (data?.data?.accepted) {
         const role = data.data.role || "";
         setRoleName(role);
+        await refreshRoles();
         setStatus("success");
         toast.success(t("invite_accepted"));
-        await refreshRoles();
       } else {
         setErrorMsg(t("invite_error_generic"));
         setStatus("error");
