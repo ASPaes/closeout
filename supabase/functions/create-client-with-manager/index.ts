@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function errorResponse(status: number, title: string, detail: string, requestId: string) {
@@ -56,12 +56,20 @@ Deno.serve(async (req) => {
       return errorResponse(400, "Bad Request", "client_name, manager_email, manager_password, manager_name are required", requestId);
     }
 
+    // Generate unique slug from client name
+    const baseSlug = client_name
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const slug = baseSlug + "-" + crypto.randomUUID().slice(0, 6);
+
     // 1. Create the client
     const { data: clientData, error: clientError } = await adminClient
       .from("clients")
       .insert({
         name: client_name,
-        slug: "",
+        slug,
         email: client_email || null,
         phone: client_phone || null,
         document: client_document || null,
