@@ -37,6 +37,7 @@ import GestorUsuarios from "@/pages/gestor/GestorUsuarios";
 import GestorCaixas from "@/pages/gestor/GestorCaixas";
 import GestorBarOperacao from "@/pages/gestor/GestorBarOperacao";
 import GestorGarcons from "@/pages/gestor/GestorGarcons";
+import GestorEventoFechamento from "@/pages/gestor/GestorEventoFechamento";
 import CaixaDashboard from "@/pages/caixa/CaixaDashboard";
 import CaixaVenda from "@/pages/caixa/CaixaVenda";
 import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
@@ -113,6 +114,7 @@ const App = () => (
               <Route path="catalogos" element={<GestorCatalogos />} />
               <Route path="locais" element={<GestorLocais />} />
               <Route path="eventos" element={<GestorEventos />} />
+              <Route path="eventos/:eventId/fechamento" element={<GestorEventoFechamento />} />
               <Route path="equipe" element={<GestorEquipe />} />
               <Route path="usuarios" element={<GestorUsuarios />} />
               <Route path="caixas" element={<GestorCaixas />} />

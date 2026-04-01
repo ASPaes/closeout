@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -378,6 +378,7 @@ export default function GestorEventos() {
           {r.status === "draft" && <Button size="sm" variant="ghost" onClick={() => changeStatus(r, "active")} title={t("gevt_activate")}><Play className="h-4 w-4 text-success" /></Button>}
           {r.status === "active" && <Button size="sm" variant="ghost" onClick={() => changeStatus(r, "completed")} title={t("complete_event")}><CheckCircle2 className="h-4 w-4 text-info" /></Button>}
           {(r.status === "draft" || r.status === "active") && <Button size="sm" variant="ghost" onClick={() => changeStatus(r, "cancelled")} title={t("gevt_cancel")}><XCircle className="h-4 w-4 text-destructive" /></Button>}
+          <Button size="sm" variant="ghost" onClick={() => navigate(`/gestor/eventos/${r.id}/fechamento`)} title={t("gef_view_closing")}><FileText className="h-4 w-4 text-info" /></Button>
           <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title={t("edit_event")}><Settings2 className="h-4 w-4" /></Button>
         </div>
       ),
