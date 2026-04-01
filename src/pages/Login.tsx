@@ -16,6 +16,8 @@ type LoginStep = "credentials" | "mfa";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const { t } = useTranslation();
   const [step, setStep] = useState<LoginStep>("credentials");
   const [email, setEmail] = useState("");
