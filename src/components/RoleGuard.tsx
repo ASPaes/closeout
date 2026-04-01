@@ -8,7 +8,7 @@ type Area = "admin" | "gestor" | "caixa" | "bar" | "consumer" | "garcom";
 
 const areaRoles: Record<Area, string[]> = {
   admin: ["super_admin"],
-  gestor: ["super_admin", "client_admin", "client_manager"],
+  gestor: ["super_admin", "client_admin", "client_manager", "venue_manager", "event_manager"],
   caixa: ["cashier", "super_admin", "client_admin", "client_manager"],
   bar: ["bar_staff", "staff", "super_admin", "client_admin", "client_manager"],
   consumer: ["consumer", "super_admin"],
