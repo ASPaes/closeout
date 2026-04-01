@@ -140,6 +140,7 @@ const App = () => (
 
             {/* Waiter area */}
             <Route path="/garcom/login" element={<WaiterLogin />} />
+            <Route path="/garcom/join/:joinCode" element={<WaiterJoinEvent />} />
             <Route path="/garcom" element={<WaiterLayout />}>
               <Route index element={<WaiterDashboard />} />
               <Route path="chamados" element={<WaiterChamados />} />

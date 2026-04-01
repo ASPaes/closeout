@@ -1264,6 +1264,40 @@ const ptBR = {
   gw_invite_status_revoked: "Revogado",
   gw_invite_status_expired: "Expirado",
   gw_generating: "Gerando...",
+
+  // Waiter Login & Join
+  wl_title: "App do Garçom",
+  wl_subtitle: "Entre com suas credenciais para acessar",
+  wl_or: "ou",
+  wl_have_qr: "Tem um QR Code do evento?",
+  wl_scan_qr: "Escanear QR Code",
+  wl_type_code: "Código",
+  wl_go: "Ir",
+  wl_login_first: "Faça login primeiro para entrar no evento",
+  wl_login_error: "Erro ao fazer login",
+  wl_camera_error: "Não foi possível acessar a câmera",
+
+  // Waiter Join Event
+  wj_joining: "Entrando no evento...",
+  wj_welcome: "Bem-vindo! Turno iniciado.",
+  wj_redirecting: "Redirecionando...",
+  wj_invalid_code: "Código inválido ou já utilizado",
+  wj_event_closed: "Este evento já foi encerrado",
+  wj_already_used: "Este convite já foi utilizado",
+  wj_generic_error: "Erro ao entrar no evento",
+  wj_back: "Voltar",
+
+  // Waiter Session Guard
+  wsg_scan_or_select: "Escaneie o QR Code do evento ou selecione manualmente",
+  wsg_scan_qr: "Escanear QR do Evento",
+  wsg_select_manual: "Selecionar evento manualmente",
+  wsg_event: "Evento",
+  wsg_no_events: "Nenhum evento disponível",
+  wsg_select_event: "Selecione um evento",
+  wsg_already_active: "Você já tem um turno ativo",
+  wsg_event_not_found: "Evento não encontrado",
+  wsg_start_error: "Erro ao iniciar turno",
+  wsg_shift_started: "Turno iniciado com sucesso!",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;
