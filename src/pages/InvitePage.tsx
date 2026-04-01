@@ -17,10 +17,33 @@ const ERROR_MAP: Record<string, string> = {
   INVITE_EXPIRED: "Este convite expirou.",
 };
 
+function getRouteByRole(role: string): string {
+  switch (role) {
+    case "super_admin":
+      return "/admin";
+    case "client_admin":
+    case "client_manager":
+    case "venue_manager":
+    case "event_manager":
+      return "/gestor";
+    case "waiter":
+      return "/garcom";
+    case "cashier":
+      return "/caixa";
+    case "bar_staff":
+    case "staff":
+      return "/bar";
+    case "consumer":
+      return "/app";
+    default:
+      return "/gestor";
+  }
+}
+
 export default function InvitePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshRoles } = useAuth();
   const { t } = useTranslation();
   const [status, setStatus] = useState<InviteStatus>("loading");
   const [errorMsg, setErrorMsg] = useState("");
@@ -51,7 +74,6 @@ export default function InvitePage() {
 
       if (error) {
         console.error("[InvitePage] error", error);
-        // Try to parse the error body for specific codes
         const detail = (error as any)?.context?.body
           ? await tryParseDetail((error as any).context.body)
           : null;
@@ -62,9 +84,11 @@ export default function InvitePage() {
       }
 
       if (data?.data?.accepted) {
-        setRoleName(data.data.role || "");
+        const role = data.data.role || "";
+        setRoleName(role);
         setStatus("success");
         toast.success(t("invite_accepted"));
+        await refreshRoles();
       } else {
         setErrorMsg(t("invite_error_generic"));
         setStatus("error");
@@ -75,6 +99,8 @@ export default function InvitePage() {
       setStatus("error");
     }
   };
+
+  const targetRoute = roleName ? getRouteByRole(roleName) : "/";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -125,7 +151,7 @@ export default function InvitePage() {
                   {t("invite_role_assigned_as")} <strong className="capitalize">{roleName.replace(/_/g, " ")}</strong>
                 </p>
               )}
-              <Button onClick={() => navigate("/")}>{t("invite_go_to_panel")}</Button>
+              <Button onClick={() => navigate(targetRoute)}>{t("invite_go_to_panel")}</Button>
             </div>
           )}
 
