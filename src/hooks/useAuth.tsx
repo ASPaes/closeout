@@ -135,6 +135,7 @@ export function useAuth() {
       signOut: async () => {},
       hasRole: () => false,
       isSuperAdmin: false,
+      isOwner: false,
       refreshRoles: async () => {},
     } as AuthContextType;
   }
