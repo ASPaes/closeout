@@ -100,7 +100,7 @@ export default function InvitePage() {
     }
   };
 
-  const targetRoute = roleName ? getRouteByRole(roleName) : "/";
+  const targetRoute = roleName ? getRouteByRole(roleName) : "/gestor";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
