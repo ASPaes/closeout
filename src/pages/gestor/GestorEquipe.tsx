@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Link2, UserPlus, Trash2, Users, CheckCircle, Clock } from "lucide-react";
 import InviteLinkDialog from "@/components/InviteLinkDialog";
 import { GestorClientGuard } from "@/components/GestorClientGuard";
@@ -31,12 +32,16 @@ type InviteRow = {
   created_by: string;
 };
 
+type ProfileInfo = { id: string; name: string; status: string };
+
 type EnrichedInvite = InviteRow & {
   usedByName: string | null;
+  usedByStatus: string | null;
   createdByName: string | null;
   venueName: string | null;
   eventName: string | null;
-  status: "accepted" | "expired" | "pending";
+  inviteStatus: "accepted" | "expired" | "pending";
+  activityStatus: "online" | "offline" | "disabled" | null;
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -49,7 +54,7 @@ const ROLE_LABELS: Record<string, string> = {
   staff: "Equipe",
   bar_staff: "Equipe de Bar",
   waiter: "Garçom",
-  cashier: "Operador de Caixa",
+  cashier: "Caixa",
   consumer: "Consumidor",
 };
 
@@ -59,11 +64,37 @@ function getInviteStatus(invite: InviteRow): "accepted" | "expired" | "pending" 
   return "pending";
 }
 
-const statusMap: Record<string, { variant: "active" | "inactive" | "draft"; label: string }> = {
+const inviteStatusMap: Record<string, { variant: "active" | "inactive" | "draft"; label: string }> = {
   accepted: { variant: "active", label: "Aceito" },
   expired: { variant: "inactive", label: "Expirado" },
   pending: { variant: "draft", label: "Pendente" },
 };
+
+type StatusFilter = "all" | "accepted" | "pending" | "expired";
+
+function ActivityBadge({ status }: { status: "online" | "offline" | "disabled" | null }) {
+  if (!status) return <span className="text-sm text-muted-foreground">—</span>;
+  if (status === "online") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success">
+        <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+        Online
+      </span>
+    );
+  }
+  if (status === "disabled") {
+    return (
+      <Badge variant="outline" className="text-xs bg-destructive/15 text-destructive border-destructive/25">
+        Desativado
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
+      Offline
+    </Badge>
+  );
+}
 
 export default function GestorEquipe() {
   const { t } = useTranslation();
@@ -75,6 +106,7 @@ export default function GestorEquipe() {
   const [invites, setInvites] = useState<EnrichedInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const canInvite =
@@ -101,38 +133,69 @@ export default function GestorEquipe() {
     const profileIds = new Set<string>();
     const venueIds = new Set<string>();
     const eventIds = new Set<string>();
+    const waiterIds: string[] = [];
+    const cashierIds: string[] = [];
 
     for (const inv of rawInvites) {
       if (inv.used_by) profileIds.add(inv.used_by);
       if (inv.created_by) profileIds.add(inv.created_by);
       if (inv.venue_id) venueIds.add(inv.venue_id);
       if (inv.event_id) eventIds.add(inv.event_id);
+      if (inv.used_by && inv.role === "waiter") waiterIds.push(inv.used_by);
+      if (inv.used_by && inv.role === "cashier") cashierIds.push(inv.used_by);
     }
 
-    const [profilesRes, venuesRes, eventsRes] = await Promise.all([
+    const [profilesRes, venuesRes, eventsRes, waiterSessionsRes, cashRegRes] = await Promise.all([
       profileIds.size > 0
-        ? supabase.from("profiles").select("id, name").in("id", [...profileIds])
-        : Promise.resolve({ data: [] }),
+        ? supabase.from("profiles").select("id, name, status").in("id", [...profileIds])
+        : Promise.resolve({ data: [] as ProfileInfo[] }),
       venueIds.size > 0
         ? supabase.from("venues").select("id, name").in("id", [...venueIds])
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
       eventIds.size > 0
         ? supabase.from("events").select("id, name").in("id", [...eventIds])
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      waiterIds.length > 0
+        ? supabase.from("waiter_sessions").select("waiter_id").in("waiter_id", waiterIds).eq("status", "active")
+        : Promise.resolve({ data: [] as { waiter_id: string }[] }),
+      cashierIds.length > 0
+        ? supabase.from("cash_registers").select("operator_id").in("operator_id", cashierIds).eq("status", "open")
+        : Promise.resolve({ data: [] as { operator_id: string }[] }),
     ]);
 
-    const profileMap = new Map((profilesRes.data ?? []).map((p: { id: string; name: string }) => [p.id, p.name]));
+    const profileMap = new Map((profilesRes.data ?? []).map((p: ProfileInfo) => [p.id, p]));
     const venueMap = new Map((venuesRes.data ?? []).map((v: { id: string; name: string }) => [v.id, v.name]));
     const eventMap = new Map((eventsRes.data ?? []).map((e: { id: string; name: string }) => [e.id, e.name]));
+    const activeWaiters = new Set((waiterSessionsRes.data ?? []).map((s: { waiter_id: string }) => s.waiter_id));
+    const activeCashiers = new Set((cashRegRes.data ?? []).map((s: { operator_id: string }) => s.operator_id));
 
-    const enriched: EnrichedInvite[] = rawInvites.map((inv) => ({
-      ...inv,
-      usedByName: inv.used_by ? profileMap.get(inv.used_by) ?? null : null,
-      createdByName: profileMap.get(inv.created_by) ?? null,
-      venueName: inv.venue_id ? venueMap.get(inv.venue_id) ?? null : null,
-      eventName: inv.event_id ? eventMap.get(inv.event_id) ?? null : null,
-      status: getInviteStatus(inv),
-    }));
+    const enriched: EnrichedInvite[] = rawInvites.map((inv) => {
+      const profile = inv.used_by ? profileMap.get(inv.used_by) : null;
+      let activityStatus: EnrichedInvite["activityStatus"] = null;
+
+      if (inv.used_by && profile) {
+        if (profile.status === "inactive") {
+          activityStatus = "disabled";
+        } else if (inv.role === "waiter" && activeWaiters.has(inv.used_by)) {
+          activityStatus = "online";
+        } else if (inv.role === "cashier" && activeCashiers.has(inv.used_by)) {
+          activityStatus = "online";
+        } else {
+          activityStatus = "offline";
+        }
+      }
+
+      return {
+        ...inv,
+        usedByName: profile?.name ?? null,
+        usedByStatus: profile?.status ?? null,
+        createdByName: profileMap.get(inv.created_by)?.name ?? null,
+        venueName: inv.venue_id ? venueMap.get(inv.venue_id) ?? null : null,
+        eventName: inv.event_id ? eventMap.get(inv.event_id) ?? null : null,
+        inviteStatus: getInviteStatus(inv),
+        activityStatus,
+      };
+    });
 
     setInvites(enriched);
     setLoading(false);
@@ -162,19 +225,36 @@ export default function GestorEquipe() {
 
   // Stats
   const totalCount = invites.length;
-  const acceptedCount = invites.filter((i) => i.status === "accepted").length;
-  const pendingCount = invites.filter((i) => i.status === "pending").length;
+  const acceptedCount = invites.filter((i) => i.inviteStatus === "accepted").length;
+  const pendingCount = invites.filter((i) => i.inviteStatus === "pending").length;
 
   // Filtered data
   const filteredInvites = useMemo(() => {
-    if (!search) return invites;
-    const q = search.toLowerCase();
-    return invites.filter(
-      (i) =>
-        (i.email && i.email.toLowerCase().includes(q)) ||
-        (ROLE_LABELS[i.role] ?? i.role).toLowerCase().includes(q)
-    );
-  }, [invites, search]);
+    let list = invites;
+
+    if (statusFilter !== "all") {
+      list = list.filter((i) => i.inviteStatus === statusFilter);
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (i) =>
+          (i.email && i.email.toLowerCase().includes(q)) ||
+          (i.usedByName && i.usedByName.toLowerCase().includes(q)) ||
+          (ROLE_LABELS[i.role] ?? i.role).toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [invites, search, statusFilter]);
+
+  const filterPills: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: "Todos" },
+    { key: "accepted", label: "Aceitos" },
+    { key: "pending", label: "Pendentes" },
+    { key: "expired", label: "Expirados" },
+  ];
 
   const columns: DataTableColumn<EnrichedInvite>[] = [
     {
@@ -201,10 +281,10 @@ export default function GestorEquipe() {
       },
     },
     {
-      key: "status",
+      key: "inviteStatus",
       header: "Status",
       render: (row) => {
-        const s = statusMap[row.status];
+        const s = inviteStatusMap[row.inviteStatus];
         return <StatusBadge status={s.variant} label={s.label} />;
       },
     },
@@ -214,6 +294,11 @@ export default function GestorEquipe() {
       render: (row) => (
         <span className="text-sm">{row.usedByName || "—"}</span>
       ),
+    },
+    {
+      key: "activity",
+      header: "Situação Atual",
+      render: (row) => <ActivityBadge status={row.activityStatus} />,
     },
     {
       key: "createdAt",
@@ -236,7 +321,7 @@ export default function GestorEquipe() {
       header: "",
       className: "w-[80px]",
       render: (row) => {
-        if (row.status !== "pending") return null;
+        if (row.inviteStatus !== "pending") return null;
         return (
           <Button
             variant="ghost"
@@ -300,7 +385,7 @@ export default function GestorEquipe() {
           </Card>
         </div>
 
-        {/* Invites table */}
+        {/* Filter pills + table */}
         <DataTable
           columns={columns}
           data={filteredInvites}
@@ -308,9 +393,24 @@ export default function GestorEquipe() {
           loading={loading}
           search={search}
           onSearchChange={setSearch}
-          searchPlaceholder="Buscar por email ou função..."
+          searchPlaceholder="Buscar por email, nome ou função..."
           emptyMessage="Nenhum convite encontrado"
           emptyHint="Gere um link de convite para adicionar membros à equipe"
+          filters={
+            <div className="flex gap-1.5">
+              {filterPills.map((pill) => (
+                <Button
+                  key={pill.key}
+                  variant={statusFilter === pill.key ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setStatusFilter(pill.key)}
+                >
+                  {pill.label}
+                </Button>
+              ))}
+            </div>
+          }
         />
 
         {canInvite && effectiveClientId && clientName && (
