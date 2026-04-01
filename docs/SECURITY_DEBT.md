@@ -2,7 +2,7 @@
 
 ## Resolved
 
-### 2026-04-01 — Security Scan Hardening (8 findings)
+### 2026-04-01 — Security Scan Hardening (10 findings)
 
 - ✅ **waiter_invites overpermissive RLS**: Replaced `wi_all_manager` policy to use `is_client_manager()` instead of `get_user_client_ids()` — prevents waiters/bar_staff/cashiers from reading/managing invite codes
 - ✅ **clients table sensitive data exposure**: Created `clients_limited` view (id, name, slug, logo_url, status) for lower-privileged roles. Policies `cl_select_venue_manager` and `cl_select_event_assigned` still grant row-level SELECT, but sensitive fields (CPF, owner data, financial info) should be accessed via the limited view for non-admin users
