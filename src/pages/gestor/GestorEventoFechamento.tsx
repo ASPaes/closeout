@@ -215,7 +215,7 @@ export default function GestorEventoFechamento() {
                           {c.origin === "cashier" ? t("gef_origin_cashier") : t("gef_origin_app")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-destructive font-medium">{fmt(c.total)}</TableCell>
+                      <TableCell className="text-right text-destructive font-medium">{fmt(c.cancelled_amount)}</TableCell>
                       <TableCell className="max-w-[200px] truncate text-muted-foreground">{c.cancel_reason || "—"}</TableCell>
                       <TableCell>{fmtDate(c.cancelled_at)}</TableCell>
                     </TableRow>
