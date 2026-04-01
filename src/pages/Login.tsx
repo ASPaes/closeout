@@ -64,9 +64,9 @@ export default function Login() {
       const { data: profile } = await supabase.from("profiles").select("status").eq("id", session.user.id).single();
       if (profile?.status === "inactive") { await supabase.auth.signOut(); toast.error(t("account_deactivated")); setLoading(false); return; }
     }
-    navigate("/");
+    navigate(redirectTo || "/");
     setLoading(false);
-  }, [factorId, challengeId, mfaCode, navigate, t]);
+  }, [factorId, challengeId, mfaCode, navigate, redirectTo, t]);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 relative overflow-hidden" style={{ backgroundColor: '#000' }}>
