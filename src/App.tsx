@@ -37,6 +37,7 @@ import GestorUsuarios from "@/pages/gestor/GestorUsuarios";
 import GestorCaixas from "@/pages/gestor/GestorCaixas";
 import GestorBarOperacao from "@/pages/gestor/GestorBarOperacao";
 import GestorGarcons from "@/pages/gestor/GestorGarcons";
+import GestorEventoFechamento from "@/pages/gestor/GestorEventoFechamento";
 import CaixaDashboard from "@/pages/caixa/CaixaDashboard";
 import CaixaVenda from "@/pages/caixa/CaixaVenda";
 import CaixaMovimentacoes from "@/pages/caixa/CaixaMovimentacoes";
