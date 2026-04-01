@@ -48,10 +48,10 @@ export default function Login() {
       }
       const { data: profile } = await supabase.from("profiles").select("status").eq("id", data.session.user.id).single();
       if (profile?.status === "inactive") { await supabase.auth.signOut(); toast.error(t("account_deactivated")); setLoading(false); return; }
-      navigate("/");
+      navigate(redirectTo || "/");
     }
     setLoading(false);
-  }, [email, password, navigate, t]);
+  }, [email, password, navigate, redirectTo, t]);
 
   const handleMfaVerify = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
