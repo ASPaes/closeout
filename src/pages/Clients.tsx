@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Building2, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Building2, Upload, X, Image as ImageIcon, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { ENTITY_STATUS } from "@/config";
@@ -43,9 +44,16 @@ const emptyForm = (): FormState => ({
   contact_name: "", contact_phone: "",
 });
 
+function generatePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let pass = "";
+  for (let i = 0; i < 8; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+  return pass;
+}
+
 export default function Clients() {
-  const { isSuperAdmin, hasRole } = useAuth();
-  const canManage = isSuperAdmin || hasRole("client_admin");
+  const { isSuperAdmin, hasRole, isOwner } = useAuth();
+  const canManage = isSuperAdmin || isOwner || hasRole("client_admin");
   const { t } = useTranslation();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
@@ -59,6 +67,14 @@ export default function Clients() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Manager state (for creation)
+  const [managerName, setManagerName] = useState("");
+  const [managerEmail, setManagerEmail] = useState("");
+  const [managerPassword, setManagerPassword] = useState(() => generatePassword());
+  const [managerPhone, setManagerPhone] = useState("");
+  const [successData, setSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -75,6 +91,10 @@ export default function Clients() {
     setForm(emptyForm());
     setLogoFile(null);
     setLogoPreview(null);
+    setManagerName("");
+    setManagerEmail("");
+    setManagerPassword(generatePassword());
+    setManagerPhone("");
     setSheetOpen(true);
   };
 
@@ -104,14 +124,8 @@ export default function Clients() {
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== "image/png") {
-      toast.error(t("cl_logo_png_only"));
-      return;
-    }
-    if (file.size > 512 * 1024) {
-      toast.error(t("cl_logo_too_large"));
-      return;
-    }
+    if (file.type !== "image/png") { toast.error(t("cl_logo_png_only")); return; }
+    if (file.size > 512 * 1024) { toast.error(t("cl_logo_too_large")); return; }
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
   };
@@ -126,54 +140,75 @@ export default function Clients() {
     if (!logoFile) return editing?.logo_path || null;
     const path = `clients/${clientId}/logo.png`;
     const { error } = await supabase.storage.from("client-logos").upload(path, logoFile, {
-      upsert: true,
-      contentType: "image/png",
+      upsert: true, contentType: "image/png",
     });
-    if (error) {
-      toast.error(t("cl_logo_upload_error") + ": " + error.message);
-      return editing?.logo_path || null;
-    }
+    if (error) { toast.error(t("cl_logo_upload_error") + ": " + error.message); return editing?.logo_path || null; }
     return path;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const payload: Record<string, any> = {
-      name: form.name, email: form.email || null, phone: form.phone || null,
-      document: form.document || null, address: form.address || null, status: form.status,
-      owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
-      owner_phone: form.owner_phone || null,
-      contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
-    };
 
     if (editing) {
-      // Upload logo
+      // UPDATE existing client
+      const payload: Record<string, any> = {
+        name: form.name, email: form.email || null, phone: form.phone || null,
+        document: form.document || null, address: form.address || null, status: form.status,
+        owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
+        owner_phone: form.owner_phone || null,
+        contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
+      };
       const logoPath = await uploadLogo(editing.id);
       payload.logo_path = logoPath;
-
       const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("client_updated"));
+      setSaving(false);
+      setSheetOpen(false);
+      fetchClients();
     } else {
-      // On create, slug is auto-generated by DB trigger — send empty/null slug
-      payload.slug = "";
-      const { data, error } = await supabase.from("clients").insert(payload as any).select("id, slug").single();
-      if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
-      if (data) {
-        // Upload logo with the new client ID
-        const logoPath = await uploadLogo(data.id);
-        if (logoPath) {
-          await supabase.from("clients").update({ logo_path: logoPath }).eq("id", data.id);
-        }
-        await logAudit({ action: "client.created", entityType: "client", entityId: data.id, metadata: { name: form.name }, newData: payload });
+      // CREATE via edge function
+      const { data, error } = await supabase.functions.invoke("create-client-with-manager", {
+        body: {
+          client_name: form.name,
+          client_email: form.email || undefined,
+          client_phone: form.phone || undefined,
+          client_document: form.document || undefined,
+          client_address: form.address || undefined,
+          owner_name: form.owner_name || undefined,
+          owner_cpf: form.owner_cpf || undefined,
+          owner_phone: form.owner_phone || undefined,
+          manager_email: managerEmail,
+          manager_password: managerPassword,
+          manager_name: managerName,
+          manager_phone: managerPhone || undefined,
+        },
+      });
+
+      if (error) {
+        let detail = "Erro ao ativar cliente";
+        try {
+          if (error?.context?.body) {
+            const bodyText = await error.context.body.text?.();
+            if (bodyText) {
+              const parsed = JSON.parse(bodyText);
+              detail = parsed.detail || detail;
+            }
+          }
+        } catch { /* ignore parse errors */ }
+        toast.error(detail);
+        setSaving(false);
+        return;
       }
-      toast.success(t("client_created"));
+
+      setSuccessData({ name: form.name, email: managerEmail, password: managerPassword });
+      setSuccessOpen(true);
+      setSaving(false);
+      setSheetOpen(false);
+      fetchClients();
     }
-    setSaving(false);
-    setSheetOpen(false);
-    fetchClients();
   };
 
   const toggleStatus = async (client: Client) => {
@@ -210,7 +245,7 @@ export default function Clients() {
         title={t("clients")}
         subtitle={t("manage_clients")}
         icon={Building2}
-        actions={canManage ? <Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("add_client")}</Button> : undefined}
+        actions={canManage ? <Button onClick={openCreate} className="glow-hover"><Plus className="mr-2 h-4 w-4" />{t("activate_client")}</Button> : undefined}
       />
 
       <DataTable
@@ -222,17 +257,17 @@ export default function Clients() {
         onSearchChange={setSearch}
         searchPlaceholder={t("search_clients")}
         emptyMessage={t("no_clients_found")}
-        emptyActionLabel={canManage ? t("add_client") : undefined}
+        emptyActionLabel={canManage ? t("activate_client") : undefined}
         onEmptyAction={canManage ? openCreate : undefined}
       />
 
       <ModalForm
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        title={editing ? t("edit_client") : t("new_client")}
+        title={editing ? t("edit_client") : t("activate_client")}
         onSubmit={handleSubmit}
         saving={saving}
-        submitLabel={editing ? t("update") : t("create")}
+        submitLabel={editing ? t("update") : t("activate_client")}
       >
         {editing ? (
           <Tabs defaultValue="dados" className="w-full">
@@ -248,9 +283,69 @@ export default function Clients() {
             </TabsContent>
           </Tabs>
         ) : (
-          <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+          <Tabs defaultValue="dados" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="dados">{t("cl_section_data")}</TabsTrigger>
+              <TabsTrigger value="gestor">{t("manager_tab")}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dados">
+              <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+            </TabsContent>
+            <TabsContent value="gestor">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>{t("manager_name_label")} *</Label>
+                  <Input value={managerName} onChange={(e) => setManagerName(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("manager_email_label")} *</Label>
+                  <Input type="email" value={managerEmail} onChange={(e) => setManagerEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("manager_password_label")}</Label>
+                  <div className="flex gap-2">
+                    <Input type="text" value={managerPassword} onChange={(e) => setManagerPassword(e.target.value)} className="font-mono" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setManagerPassword(generatePassword())}>
+                      {t("generate_password")}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("manager_phone_label")}</Label>
+                  <Input value={maskPhone(managerPhone)} onChange={(e) => setManagerPhone(unmask(e.target.value))} placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </ModalForm>
+
+      {/* Success Dialog */}
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <h3 className="text-lg font-semibold">{t("client_activated_success")}</h3>
+            <div className="w-full space-y-2 rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <p><span className="text-muted-foreground">{t("activation_establishment")}:</span> {successData?.name}</p>
+              <p><span className="text-muted-foreground">{t("email")}:</span> {successData?.email}</p>
+              <p><span className="text-muted-foreground">{t("password")}:</span> <span className="font-mono">{successData?.password}</span></p>
+              <p><span className="text-muted-foreground">{t("activation_access_url")}:</span> https://closeout.lovable.app/gestor</p>
+            </div>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(
+                `Close Out — Dados de Acesso\nEstabelecimento: ${successData?.name}\nEmail: ${successData?.email}\nSenha: ${successData?.password}\nAcesso: https://closeout.lovable.app/gestor`
+              );
+              toast.success(t("access_data_copied"));
+            }} className="w-full">
+              {t("copy_access_data")}
+            </Button>
+            <Button variant="outline" onClick={() => setSuccessOpen(false)} className="w-full">
+              {t("close")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -270,7 +365,6 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left column */}
           <div className="space-y-5">
-            {/* Section: Client Data */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_data")}</h3>
               <div className="space-y-3">
@@ -280,12 +374,7 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("slug")}</Label>
-                  <Input
-                    value={editing ? form.slug : ""}
-                    readOnly
-                    className="bg-muted/50 font-mono text-xs"
-                    placeholder={t("cl_slug_auto")}
-                  />
+                  <Input value={editing ? form.slug : ""} readOnly className="bg-muted/50 font-mono text-xs" placeholder={t("cl_slug_auto")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("document")}</Label>
@@ -320,7 +409,6 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
 
             <Separator />
 
-            {/* Section: Owner */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_owner")}</h3>
               <div className="space-y-3">
@@ -343,7 +431,6 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
 
             <Separator />
 
-            {/* Section: Contact */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_contact")}</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -361,52 +448,25 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
 
           {/* Right column */}
           <div className="space-y-5">
-            {/* Section: Logo */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">{t("cl_section_logo")}</h3>
               <div className="space-y-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png"
-                  className="hidden"
-                  onChange={handleLogoSelect}
-                />
+                <input ref={fileInputRef} type="file" accept="image/png" className="hidden" onChange={handleLogoSelect} />
                 {logoPreview ? (
                   <div className="relative w-full aspect-video rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="max-w-full max-h-full object-contain p-4"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-7 w-7"
-                      onClick={removeLogo}
-                    >
+                    <img src={logoPreview} alt="Logo preview" className="max-w-full max-h-full object-contain p-4" />
+                    <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={removeLogo}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full aspect-video rounded-lg border-2 border-dashed border-border hover:border-primary/50 bg-muted/20 hover:bg-muted/30 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full aspect-video rounded-lg border-2 border-dashed border-border hover:border-primary/50 bg-muted/20 hover:bg-muted/30 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground cursor-pointer">
                     <ImageIcon className="h-10 w-10" />
                     <span className="text-sm">{t("cl_logo_upload")}</span>
                   </button>
                 )}
                 {logoPreview && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full"
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="w-full">
                     <Upload className="mr-2 h-4 w-4" />
                     {t("cl_logo_upload")}
                   </Button>
