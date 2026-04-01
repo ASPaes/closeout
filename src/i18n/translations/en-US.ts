@@ -1336,6 +1336,23 @@ const enUS: Record<TranslationKey, string> = {
   gef_origin_cashier: "POS",
   gef_origin_app: "Waiter/App",
   gef_view_closing: "View Closing",
+
+  // Owner / Activation
+  role_owner: "Owner",
+  activate_client: "Activate Client",
+  manager_tab: "Manager Data",
+  manager_name_label: "Manager Name",
+  manager_email_label: "Manager Email",
+  manager_password_label: "Initial Password",
+  manager_phone_label: "Manager Phone",
+  generate_password: "Generate",
+  client_activated_success: "Client Activated!",
+  copy_access_data: "Copy Access Data",
+  access_data_copied: "Data copied!",
+  create_super_admin: "Create Super Admin",
+  super_admin_created: "Super Admin created!",
+  activation_establishment: "Establishment",
+  activation_access_url: "Access",
 };
 
 export default enUS;

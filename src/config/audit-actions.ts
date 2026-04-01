@@ -146,6 +146,10 @@ export const AUDIT_ACTION = {
   // Cash payments
   PAYMENT_CASH_CONFIRMED: 'payment.cash_confirmed',
   ORDER_AUTO_CANCELLED_EVENT_CLOSE: 'order.auto_cancelled_event_close',
+
+  // Activation
+  CLIENT_ACTIVATED: 'client.activated',
+  SUPER_ADMIN_CREATED: 'super_admin.created',
 } as const;
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION];

@@ -7,12 +7,12 @@ import { useEffect, useRef } from "react";
 type Area = "admin" | "gestor" | "caixa" | "bar" | "consumer" | "garcom";
 
 const areaRoles: Record<Area, string[]> = {
-  admin: ["super_admin"],
-  gestor: ["super_admin", "client_admin", "client_manager", "venue_manager", "event_manager"],
-  caixa: ["cashier", "super_admin", "client_admin", "client_manager"],
-  bar: ["bar_staff", "staff", "super_admin", "client_admin", "client_manager"],
-  consumer: ["consumer", "super_admin"],
-  garcom: ["waiter", "super_admin", "client_admin", "client_manager"],
+  admin: ["owner", "super_admin"],
+  gestor: ["owner", "super_admin", "client_admin", "client_manager", "venue_manager", "event_manager"],
+  caixa: ["owner", "cashier", "super_admin", "client_admin", "client_manager"],
+  bar: ["owner", "bar_staff", "staff", "super_admin", "client_admin", "client_manager"],
+  consumer: ["consumer"],
+  garcom: ["owner", "waiter", "super_admin", "client_admin", "client_manager"],
 };
 
 const redirectForUnauthorized: Record<Area, string> = {

@@ -5,7 +5,7 @@ import { LanguageContext } from "@/i18n/language-provider";
 
 type UserRole = {
   id: string;
-  role: "super_admin" | "client_admin" | "client_manager" | "venue_manager" | "event_manager" | "event_organizer" | "staff" | "bar_staff" | "waiter" | "cashier" | "consumer";
+  role: "owner" | "super_admin" | "client_admin" | "client_manager" | "venue_manager" | "event_manager" | "event_organizer" | "staff" | "bar_staff" | "waiter" | "cashier" | "consumer";
   client_id: string | null;
   venue_id: string | null;
   event_id: string | null;
@@ -30,6 +30,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isSuperAdmin: boolean;
+  isOwner: boolean;
   refreshRoles: () => Promise<void>;
 };
 
@@ -112,9 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (role: string) => roles.some((r) => r.role === role);
   const isSuperAdmin = hasRole("super_admin");
+  const isOwner = hasRole("owner");
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, roles, loading, signOut, hasRole, isSuperAdmin, refreshRoles }}>
+    <AuthContext.Provider value={{ session, user, profile, roles, loading, signOut, hasRole, isSuperAdmin, isOwner, refreshRoles }}>
       {children}
     </AuthContext.Provider>
   );
@@ -133,6 +135,7 @@ export function useAuth() {
       signOut: async () => {},
       hasRole: () => false,
       isSuperAdmin: false,
+      isOwner: false,
       refreshRoles: async () => {},
     } as AuthContextType;
   }

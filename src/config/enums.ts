@@ -1,4 +1,5 @@
 export const APP_ROLE = {
+  OWNER: 'owner',
   SUPER_ADMIN: 'super_admin',
   CLIENT_ADMIN: 'client_admin',
   CLIENT_MANAGER: 'client_manager',

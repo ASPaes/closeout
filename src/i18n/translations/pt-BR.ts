@@ -1334,6 +1334,23 @@ const ptBR = {
   gef_origin_cashier: "Caixa",
   gef_origin_app: "Garçom/App",
   gef_view_closing: "Ver Fechamento",
+
+  // Owner / Activation
+  role_owner: "Proprietário",
+  activate_client: "Ativar Cliente",
+  manager_tab: "Dados do Gestor",
+  manager_name_label: "Nome do Gestor",
+  manager_email_label: "Email do Gestor",
+  manager_password_label: "Senha Inicial",
+  manager_phone_label: "Telefone do Gestor",
+  generate_password: "Gerar",
+  client_activated_success: "Cliente Ativado!",
+  copy_access_data: "Copiar Dados de Acesso",
+  access_data_copied: "Dados copiados!",
+  create_super_admin: "Criar Super Admin",
+  super_admin_created: "Super Admin criado!",
+  activation_establishment: "Estabelecimento",
+  activation_access_url: "Acesso",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

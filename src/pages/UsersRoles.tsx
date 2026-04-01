@@ -2,15 +2,18 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ShieldCheck, Link2, Users } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { APP_ROLE } from "@/config";
 import { logAudit } from "@/lib/audit";
+import { maskPhone, unmask } from "@/lib/masks";
 import InviteLinkDialog from "@/components/InviteLinkDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
@@ -26,6 +29,7 @@ type Event = { id: string; name: string; venue_id: string };
 type FlatRow = { rowKey: string; profile: Profile; userRole: UserRole | null; isFirstOfUser: boolean; userRoleCount: number };
 
 const roleKeys: Record<string, string> = {
+  [APP_ROLE.OWNER]: "role_owner",
   [APP_ROLE.SUPER_ADMIN]: "role_super_admin",
   [APP_ROLE.CLIENT_ADMIN]: "role_client_admin",
   [APP_ROLE.CLIENT_MANAGER]: "role_client_manager",
@@ -39,8 +43,15 @@ const roleKeys: Record<string, string> = {
   [APP_ROLE.CONSUMER]: "role_consumer",
 };
 
+function generatePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let pass = "";
+  for (let i = 0; i < 8; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+  return pass;
+}
+
 export default function UsersRoles() {
-  const { isSuperAdmin, user } = useAuth();
+  const { isSuperAdmin, isOwner, user } = useAuth();
   const { t } = useTranslation();
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -55,6 +66,16 @@ export default function UsersRoles() {
   const [hasSuperAdmin, setHasSuperAdmin] = useState(true);
   const [bootstrapping, setBootstrapping] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  // Super Admin creation (owner only)
+  const [superAdminOpen, setSuperAdminOpen] = useState(false);
+  const [saName, setSaName] = useState("");
+  const [saEmail, setSaEmail] = useState("");
+  const [saPassword, setSaPassword] = useState(() => generatePassword());
+  const [saPhone, setSaPhone] = useState("");
+  const [saSaving, setSaSaving] = useState(false);
+  const [saSuccessData, setSaSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [saSuccessOpen, setSaSuccessOpen] = useState(false);
 
   const rolesByUser = useMemo(() => {
     const map = new Map<string, UserRole[]>();
@@ -121,6 +142,36 @@ export default function UsersRoles() {
     fetchData();
   };
 
+  const handleCreateSuperAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaSaving(true);
+    const { data, error } = await supabase.functions.invoke("create-super-admin", {
+      body: { email: saEmail, password: saPassword, name: saName, phone: saPhone || undefined },
+    });
+
+    if (error) {
+      let detail = "Erro ao criar super admin";
+      try {
+        if (error?.context?.body) {
+          const bodyText = await error.context.body.text?.();
+          if (bodyText) {
+            const parsed = JSON.parse(bodyText);
+            detail = parsed.detail || detail;
+          }
+        }
+      } catch { /* ignore */ }
+      toast.error(detail);
+      setSaSaving(false);
+      return;
+    }
+
+    setSaSuccessData({ name: saName, email: saEmail, password: saPassword });
+    setSaSuccessOpen(true);
+    setSuperAdminOpen(false);
+    setSaSaving(false);
+    fetchData();
+  };
+
   const renderScope = (ur: UserRole) => {
     const parts: string[] = [];
     if (ur.client_id) parts.push(`${t("client")}: ${ur.client_id.slice(0, 8)}`);
@@ -137,7 +188,6 @@ export default function UsersRoles() {
     return roles.some((r) => r.role.includes(q));
   });
 
-  // Flatten profiles + roles into rows for DataTable
   const flatRows: FlatRow[] = useMemo(() => {
     const rows: FlatRow[] = [];
     filteredProfiles.forEach((profile) => {
@@ -160,7 +210,7 @@ export default function UsersRoles() {
       <Badge variant="outline" className="capitalize">{roleKeys[r.userRole.role] ? t(roleKeys[r.userRole.role] as any) : r.userRole.role}</Badge>
     ) : <Badge variant="outline" className="text-muted-foreground">{t("no_role")}</Badge> },
     { key: "scope", header: t("scope"), render: (r) => <span className="text-muted-foreground text-xs">{r.userRole ? renderScope(r.userRole) : "—"}</span> },
-    ...(isSuperAdmin ? [{ key: "actions", header: t("actions"), className: "w-20", render: (r: FlatRow) => r.userRole ? (
+    ...((isSuperAdmin || isOwner) ? [{ key: "actions", header: t("actions"), className: "w-20", render: (r: FlatRow) => r.userRole ? (
       <Button variant="ghost" size="icon" onClick={() => handleRemove(r.userRole!)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -174,7 +224,15 @@ export default function UsersRoles() {
           <ShieldCheck className="mr-2 h-4 w-4" />{t("bootstrap_super_admin")}
         </Button>
       )}
-      {isSuperAdmin && (
+      {isOwner && (
+        <Button variant="outline" onClick={() => {
+          setSaName(""); setSaEmail(""); setSaPassword(generatePassword()); setSaPhone("");
+          setSuperAdminOpen(true);
+        }}>
+          <ShieldCheck className="mr-2 h-4 w-4" />{t("create_super_admin")}
+        </Button>
+      )}
+      {(isSuperAdmin || isOwner) && (
         <>
           <Button variant="outline" onClick={() => setInviteDialogOpen(true)}>
             <Link2 className="mr-2 h-4 w-4" />{t("invite_by_link")}
@@ -258,6 +316,59 @@ export default function UsersRoles() {
           </div>
         )}
       </ModalForm>
+
+      {/* Create Super Admin Modal (owner only) */}
+      <ModalForm open={superAdminOpen} onOpenChange={setSuperAdminOpen} title={t("create_super_admin")}
+        onSubmit={handleCreateSuperAdmin} saving={saSaving} submitLabel={t("create_super_admin")}>
+        <div className="space-y-1.5">
+          <Label>{t("name")} *</Label>
+          <Input value={saName} onChange={(e) => setSaName(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("email")} *</Label>
+          <Input type="email" value={saEmail} onChange={(e) => setSaEmail(e.target.value)} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("manager_password_label")}</Label>
+          <div className="flex gap-2">
+            <Input type="text" value={saPassword} onChange={(e) => setSaPassword(e.target.value)} className="font-mono" />
+            <Button type="button" variant="outline" size="sm" onClick={() => setSaPassword(generatePassword())}>
+              {t("generate_password")}
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("phone")}</Label>
+          <Input value={maskPhone(saPhone)} onChange={(e) => setSaPhone(unmask(e.target.value))} placeholder="(00) 00000-0000" />
+        </div>
+      </ModalForm>
+
+      {/* Super Admin Success Dialog */}
+      <Dialog open={saSuccessOpen} onOpenChange={setSaSuccessOpen}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <h3 className="text-lg font-semibold">{t("super_admin_created")}</h3>
+            <div className="w-full space-y-2 rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <p><span className="text-muted-foreground">{t("name")}:</span> {saSuccessData?.name}</p>
+              <p><span className="text-muted-foreground">{t("email")}:</span> {saSuccessData?.email}</p>
+              <p><span className="text-muted-foreground">{t("password")}:</span> <span className="font-mono">{saSuccessData?.password}</span></p>
+              <p><span className="text-muted-foreground">{t("activation_access_url")}:</span> https://closeout.lovable.app/admin</p>
+            </div>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(
+                `Close Out — Dados de Acesso\nNome: ${saSuccessData?.name}\nEmail: ${saSuccessData?.email}\nSenha: ${saSuccessData?.password}\nAcesso: https://closeout.lovable.app/admin`
+              );
+              toast.success(t("access_data_copied"));
+            }} className="w-full">
+              {t("copy_access_data")}
+            </Button>
+            <Button variant="outline" onClick={() => setSaSuccessOpen(false)} className="w-full">
+              {t("close")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <InviteLinkDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} clients={clients} venues={venues} events={events} />
     </div>
