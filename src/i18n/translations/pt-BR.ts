@@ -1349,9 +1349,8 @@ const ptBR = {
   access_data_copied: "Dados copiados!",
   create_super_admin: "Criar Super Admin",
   super_admin_created: "Super Admin criado!",
-  establishment: "Estabelecimento",
-  access_url: "Acesso",
-  close: "Fechar",
+  activation_establishment: "Estabelecimento",
+  activation_access_url: "Acesso",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

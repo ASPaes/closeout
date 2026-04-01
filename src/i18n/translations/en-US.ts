@@ -1351,9 +1351,8 @@ const enUS: Record<TranslationKey, string> = {
   access_data_copied: "Data copied!",
   create_super_admin: "Create Super Admin",
   super_admin_created: "Super Admin created!",
-  establishment: "Establishment",
-  access_url: "Access",
-  close: "Close",
+  activation_establishment: "Establishment",
+  activation_access_url: "Access",
 };
 
 export default enUS;
