@@ -11,6 +11,8 @@
 - ✅ **waiter_calls always-true INSERT**: Replaced `WITH CHECK (true)` with proper check requiring authenticated user + valid event association (via check-in or role assignment)
 - ✅ **Security definer views**: Converted 6 views to `security_invoker = true`: `v_event_closing_report`, `v_event_sales_summary`, `v_event_cash_movements`, `v_event_cancellations`, `consumer_event_stats`, `consumer_event_stats_secure`
 - ✅ **user_roles privilege escalation** (fixed prior): `ur_insert_client_manager` policy now validates `venue_id`/`event_id` belong to the manager's client
+- ✅ **event-images storage cross-tenant write**: Storage INSERT/DELETE policies now validate that the event in the file path (`events/{event_id}/...`) belongs to the user's client — prevents cross-client image manipulation
+- ✅ **waiter_calls consumer impersonation**: INSERT policy now requires `consumer_id = auth.uid()` and active check-in, preventing user impersonation in waiter calls
 
 ### 2026-03-12 — Fix RLS infinite recursion (42P17)
 
