@@ -50,6 +50,7 @@ import BarHistorico from "@/pages/bar/BarHistorico";
 // Waiter pages
 import { WaiterLayout } from "@/components/WaiterLayout";
 import WaiterLogin from "@/pages/garcom/WaiterLogin";
+import WaiterJoinEvent from "@/pages/garcom/WaiterJoinEvent";
 import WaiterDashboard from "@/pages/garcom/WaiterDashboard";
 import WaiterChamados from "@/pages/garcom/WaiterChamados";
 import WaiterNovoPedido from "@/pages/garcom/WaiterNovoPedido";
@@ -139,6 +140,7 @@ const App = () => (
 
             {/* Waiter area */}
             <Route path="/garcom/login" element={<WaiterLogin />} />
+            <Route path="/garcom/join/:joinCode" element={<WaiterJoinEvent />} />
             <Route path="/garcom" element={<WaiterLayout />}>
               <Route index element={<WaiterDashboard />} />
               <Route path="chamados" element={<WaiterChamados />} />

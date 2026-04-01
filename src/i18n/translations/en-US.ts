@@ -1266,6 +1266,40 @@ const enUS: Record<TranslationKey, string> = {
   gw_invite_status_revoked: "Revoked",
   gw_invite_status_expired: "Expired",
   gw_generating: "Generating...",
+
+  // Waiter Login & Join
+  wl_title: "Waiter App",
+  wl_subtitle: "Enter your credentials to access",
+  wl_or: "or",
+  wl_have_qr: "Have an event QR Code?",
+  wl_scan_qr: "Scan QR Code",
+  wl_type_code: "Code",
+  wl_go: "Go",
+  wl_login_first: "Log in first to join the event",
+  wl_login_error: "Login error",
+  wl_camera_error: "Could not access camera",
+
+  // Waiter Join Event
+  wj_joining: "Joining event...",
+  wj_welcome: "Welcome! Shift started.",
+  wj_redirecting: "Redirecting...",
+  wj_invalid_code: "Invalid or already used code",
+  wj_event_closed: "This event has ended",
+  wj_already_used: "This invite has already been used",
+  wj_generic_error: "Error joining event",
+  wj_back: "Back",
+
+  // Waiter Session Guard
+  wsg_scan_or_select: "Scan the event QR Code or select manually",
+  wsg_scan_qr: "Scan Event QR",
+  wsg_select_manual: "Select event manually",
+  wsg_event: "Event",
+  wsg_no_events: "No events available",
+  wsg_select_event: "Select an event",
+  wsg_already_active: "You already have an active shift",
+  wsg_event_not_found: "Event not found",
+  wsg_start_error: "Error starting shift",
+  wsg_shift_started: "Shift started successfully!",
 };
 
 export default enUS;
