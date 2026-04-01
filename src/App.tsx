@@ -114,6 +114,7 @@ const App = () => (
               <Route path="catalogos" element={<GestorCatalogos />} />
               <Route path="locais" element={<GestorLocais />} />
               <Route path="eventos" element={<GestorEventos />} />
+              <Route path="eventos/:eventId/fechamento" element={<GestorEventoFechamento />} />
               <Route path="equipe" element={<GestorEquipe />} />
               <Route path="usuarios" element={<GestorUsuarios />} />
               <Route path="caixas" element={<GestorCaixas />} />
