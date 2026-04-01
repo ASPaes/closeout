@@ -65,6 +65,15 @@ export default function InvitePage() {
     acceptInvite();
   }, [token, user, authLoading]);
 
+  useEffect(() => {
+    if (status === "success" && roleName) {
+      const timer = setTimeout(() => {
+        navigate(getRouteByRole(roleName));
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [status, roleName, navigate]);
+
   const acceptInvite = async () => {
     setStatus("accepting");
     try {
@@ -86,9 +95,9 @@ export default function InvitePage() {
       if (data?.data?.accepted) {
         const role = data.data.role || "";
         setRoleName(role);
+        await refreshRoles();
         setStatus("success");
         toast.success(t("invite_accepted"));
-        await refreshRoles();
       } else {
         setErrorMsg(t("invite_error_generic"));
         setStatus("error");
