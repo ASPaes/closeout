@@ -107,6 +107,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "billing_rules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       campaign_items: {
@@ -212,6 +219,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cash_movements: {
@@ -274,6 +288,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -403,6 +424,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cash_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cash_orders_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -473,6 +501,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cash_registers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cash_registers_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -538,6 +573,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "catalog_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "catalog_items_combo_id_fkey"
             columns: ["combo_id"]
             isOneToOne: false
@@ -589,6 +631,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "catalogs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -622,6 +671,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
         ]
@@ -770,6 +826,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "combos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_billing_overrides: {
@@ -831,6 +894,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_billing_overrides_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_billing_overrides_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -884,6 +954,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_catalogs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -948,6 +1025,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_checkins_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_checkins_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -997,6 +1081,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_images_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -1055,6 +1146,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -1128,6 +1226,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -1206,6 +1311,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchanges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -1415,6 +1527,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -1494,6 +1613,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -1622,6 +1748,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_recipes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "product_recipes_ingredient_product_id_fkey"
             columns: ["ingredient_product_id"]
             isOneToOne: false
@@ -1711,6 +1844,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
         ]
@@ -1865,6 +2005,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "returns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "returns_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -1923,6 +2070,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_balances_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stock_balances_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -1968,6 +2122,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2029,6 +2190,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2150,6 +2318,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_invites_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -2256,6 +2431,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2388,6 +2570,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "venues_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       waiter_calls: {
@@ -2445,6 +2634,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_calls_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2509,6 +2705,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_cancellation_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2577,6 +2780,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
             referencedColumns: ["id"]
           },
           {
@@ -2662,6 +2872,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "waiter_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "waiter_sessions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -2679,6 +2896,30 @@ export type Database = {
       }
     }
     Views: {
+      clients_limited: {
+        Row: {
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          status: string | null
+        }
+        Insert: {
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          status?: string | null
+        }
+        Update: {
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       consumer_event_stats: {
         Row: {
           event_id: string | null
@@ -2766,6 +3007,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cash_registers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cash_registers_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -2809,6 +3057,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_event_sales_summary: {
@@ -2836,10 +3091,19 @@ export type Database = {
         Args: { p_username: string }
         Returns: boolean
       }
-      close_cash_register: {
-        Args: { p_closing_balance: number; p_register_id: string }
-        Returns: Json
-      }
+      close_cash_register:
+        | {
+            Args: { p_closing_balance: number; p_register_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_closing_balance: number
+              p_notes?: string
+              p_register_id: string
+            }
+            Returns: undefined
+          }
       close_event_cancel_unpaid: { Args: { p_event_id: string }; Returns: Json }
       close_waiter_session: {
         Args: { p_cash_handed_over: number; p_session_id: string }
@@ -2933,10 +3197,9 @@ export type Database = {
         Args: { p_event_id: string; p_roles: string[]; p_user_id: string }
         Returns: boolean
       }
-      has_role_in_client: {
-        Args: { p_client_id: string; p_role: string }
-        Returns: boolean
-      }
+      has_role_in_client:
+        | { Args: { p_client_id: string }; Returns: boolean }
+        | { Args: { p_client_id: string; p_role: string }; Returns: boolean }
       is_cashier: { Args: { p_client_id: string }; Returns: boolean }
       is_client_manager: { Args: { p_client_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
