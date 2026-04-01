@@ -30,6 +30,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isSuperAdmin: boolean;
+  isOwner: boolean;
   refreshRoles: () => Promise<void>;
 };
 
