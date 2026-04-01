@@ -32,7 +32,7 @@ export type EventCancellation = {
   order_number: number;
   cancel_reason: string | null;
   cancelled_at: string;
-  total: number;
+  cancelled_amount: number;
   [key: string]: unknown;
 };
 
