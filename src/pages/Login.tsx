@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ type LoginStep = "credentials" | "mfa";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const { t } = useTranslation();
   const [step, setStep] = useState<LoginStep>("credentials");
   const [email, setEmail] = useState("");
@@ -46,10 +48,10 @@ export default function Login() {
       }
       const { data: profile } = await supabase.from("profiles").select("status").eq("id", data.session.user.id).single();
       if (profile?.status === "inactive") { await supabase.auth.signOut(); toast.error(t("account_deactivated")); setLoading(false); return; }
-      navigate("/");
+      navigate(redirectTo || "/");
     }
     setLoading(false);
-  }, [email, password, navigate, t]);
+  }, [email, password, navigate, redirectTo, t]);
 
   const handleMfaVerify = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +64,9 @@ export default function Login() {
       const { data: profile } = await supabase.from("profiles").select("status").eq("id", session.user.id).single();
       if (profile?.status === "inactive") { await supabase.auth.signOut(); toast.error(t("account_deactivated")); setLoading(false); return; }
     }
-    navigate("/");
+    navigate(redirectTo || "/");
     setLoading(false);
-  }, [factorId, challengeId, mfaCode, navigate, t]);
+  }, [factorId, challengeId, mfaCode, navigate, redirectTo, t]);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 relative overflow-hidden" style={{ backgroundColor: '#000' }}>
