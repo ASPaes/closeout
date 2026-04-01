@@ -148,6 +148,23 @@ export default function Clients() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedClientName = form.name.trim();
+    const trimmedManagerName = managerName.trim();
+    const trimmedManagerEmail = managerEmail.trim().toLowerCase();
+    const trimmedManagerPassword = managerPassword.trim();
+
+    if (!editing) {
+      if (!trimmedClientName) {
+        toast.error("Nome do cliente é obrigatório.");
+        return;
+      }
+      if (!trimmedManagerName || !trimmedManagerEmail || !trimmedManagerPassword) {
+        toast.error("Preencha os dados obrigatórios do gestor.");
+        return;
+      }
+    }
+
     setSaving(true);
 
     if (editing) {
@@ -170,19 +187,19 @@ export default function Clients() {
       fetchClients();
     } else {
       // CREATE via edge function
-      const { data, error } = await supabase.functions.invoke("create-client-with-manager", {
+      const { error } = await supabase.functions.invoke("create-client-with-manager", {
         body: {
-          client_name: form.name,
-          client_email: form.email || undefined,
+          client_name: trimmedClientName,
+          client_email: form.email.trim() || undefined,
           client_phone: form.phone || undefined,
           client_document: form.document || undefined,
-          client_address: form.address || undefined,
-          owner_name: form.owner_name || undefined,
+          client_address: form.address.trim() || undefined,
+          owner_name: form.owner_name.trim() || undefined,
           owner_cpf: form.owner_cpf || undefined,
           owner_phone: form.owner_phone || undefined,
-          manager_email: managerEmail,
-          manager_password: managerPassword,
-          manager_name: managerName,
+          manager_email: trimmedManagerEmail,
+          manager_password: trimmedManagerPassword,
+          manager_name: trimmedManagerName,
           manager_phone: managerPhone || undefined,
         },
       });
@@ -203,7 +220,7 @@ export default function Clients() {
         return;
       }
 
-      setSuccessData({ name: form.name, email: managerEmail, password: managerPassword });
+      setSuccessData({ name: trimmedClientName, email: trimmedManagerEmail, password: trimmedManagerPassword });
       setSuccessOpen(true);
       setSaving(false);
       setSheetOpen(false);

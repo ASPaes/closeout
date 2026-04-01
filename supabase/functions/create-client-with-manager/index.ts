@@ -46,11 +46,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const {
-      client_name, client_email, client_phone, client_document, client_address,
-      owner_name, owner_cpf, owner_phone,
-      manager_email, manager_password, manager_name, manager_phone,
-    } = body;
+    const client_name = body?.client_name?.trim?.() ?? "";
+    const client_email = body?.client_email?.trim?.() || null;
+    const client_phone = body?.client_phone?.trim?.() || null;
+    const client_document = body?.client_document?.trim?.() || null;
+    const client_address = body?.client_address?.trim?.() || null;
+    const owner_name = body?.owner_name?.trim?.() || null;
+    const owner_cpf = body?.owner_cpf?.trim?.() || null;
+    const owner_phone = body?.owner_phone?.trim?.() || null;
+    const manager_email = body?.manager_email?.trim?.().toLowerCase?.() ?? "";
+    const manager_password = body?.manager_password?.trim?.() ?? "";
+    const manager_name = body?.manager_name?.trim?.() ?? "";
+    const manager_phone = body?.manager_phone?.trim?.() || null;
 
     if (!client_name || !manager_email || !manager_password || !manager_name) {
       return errorResponse(400, "Bad Request", "client_name, manager_email, manager_password, manager_name are required", requestId);
