@@ -65,6 +65,15 @@ export default function InvitePage() {
     acceptInvite();
   }, [token, user, authLoading]);
 
+  useEffect(() => {
+    if (status === "success" && roleName) {
+      const timer = setTimeout(() => {
+        navigate(getRouteByRole(roleName));
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [status, roleName, navigate]);
+
   const acceptInvite = async () => {
     setStatus("accepting");
     try {
