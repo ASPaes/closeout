@@ -5,7 +5,7 @@ import { LanguageContext } from "@/i18n/language-provider";
 
 type UserRole = {
   id: string;
-  role: "super_admin" | "client_admin" | "client_manager" | "venue_manager" | "event_manager" | "event_organizer" | "staff" | "bar_staff" | "waiter" | "cashier" | "consumer";
+  role: "owner" | "super_admin" | "client_admin" | "client_manager" | "venue_manager" | "event_manager" | "event_organizer" | "staff" | "bar_staff" | "waiter" | "cashier" | "consumer";
   client_id: string | null;
   venue_id: string | null;
   event_id: string | null;
