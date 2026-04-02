@@ -46,7 +46,7 @@ export function RoleGuard({ area, children }: { area: Area; children: React.Reac
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirectForUnauthorized[area]} replace />;
   }
 
   if (!hasAccess) {
