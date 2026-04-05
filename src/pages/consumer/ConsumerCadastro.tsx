@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
 import { maskCPF, maskPhone, unmask } from "@/lib/masks";
+import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
 
 function validateCPF(cpf: string): boolean {
   const digits = unmask(cpf);
@@ -23,19 +24,6 @@ function validateCPF(cpf: string): boolean {
   if (rem === 10) rem = 0;
   return rem === parseInt(digits[10]);
 }
-
-function getPasswordStrength(pw: string): number {
-  let s = 0;
-  if (pw.length >= 6) s++;
-  if (pw.length >= 8) s++;
-  if (/[A-Z]/.test(pw)) s++;
-  if (/[0-9]/.test(pw)) s++;
-  if (/[^A-Za-z0-9]/.test(pw)) s++;
-  return Math.min(s, 4);
-}
-
-const strengthLabels = ["", "Fraca", "Razoável", "Boa", "Forte"];
-const strengthColors = ["", "bg-destructive", "bg-warning", "bg-info", "bg-success"];
 
 export default function ConsumerCadastro() {
   const { t } = useTranslation();
@@ -54,11 +42,13 @@ export default function ConsumerCadastro() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
 
   // Step 3
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const strength = getPasswordStrength(password);
+  const pwValidation = validatePassword(password);
+  const showPwReqs = pwFocused || password.length > 0;
 
   const handleCPFChange = (val: string) => {
     const masked = maskCPF(val);
@@ -73,7 +63,6 @@ export default function ConsumerCadastro() {
       setCpfError(t("consumer_cpf_invalid"));
       return false;
     }
-    // Check CPF uniqueness
     const { data: existing } = await supabase
       .from("profiles")
       .select("id")
@@ -89,10 +78,12 @@ export default function ConsumerCadastro() {
 
   const validateStep2 = () => {
     if (!email.includes("@")) { toast.error(t("consumer_email_invalid")); return false; }
-    if (password.length < 6) { toast.error(t("min_characters")); return false; }
+    if (!pwValidation.isValid) { toast.error("A senha não atende todos os requisitos."); return false; }
     if (password !== confirmPassword) { toast.error(t("consumer_passwords_mismatch")); return false; }
     return true;
   };
+
+  const isStep2Valid = pwValidation.isValid && email.includes("@") && password === confirmPassword && confirmPassword.length > 0;
 
   const handleNext = async () => {
     if (step === 1) {
@@ -128,13 +119,11 @@ export default function ConsumerCadastro() {
     if (error) { toast.error(error.message); setLoading(false); return; }
 
     if (data.user) {
-      // Update profile with CPF and phone
       await supabase.from("profiles").update({
         cpf: rawCpf,
         phone: rawPhone,
       }).eq("id", data.user.id);
 
-      // Assign consumer role
       await supabase.from("user_roles").insert({
         user_id: data.user.id,
         role: "consumer",
@@ -245,39 +234,31 @@ export default function ConsumerCadastro() {
               className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
               required
             />
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder={t("password")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 pr-12"
-                minLength={6}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {password.length > 0 && (
-              <div className="flex items-center gap-2">
-                <div className="flex flex-1 gap-1">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className={`h-1 flex-1 rounded-full transition-colors ${
-                        i <= strength ? strengthColors[strength] : "bg-muted"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs text-muted-foreground">{strengthLabels[strength]}</span>
+            <div>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("password")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPwFocused(true)}
+                  onBlur={() => setPwFocused(false)}
+                  className={`h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 pr-12 ${
+                    password.length > 0 ? (pwValidation.isValid ? "border-success" : "border-destructive") : ""
+                  }`}
+                  minLength={6}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
-            )}
+              <PasswordRequirements password={password} show={showPwReqs} />
+            </div>
             <Input
               type="password"
               placeholder={t("consumer_confirm_password")}
@@ -329,7 +310,7 @@ export default function ConsumerCadastro() {
           {step < 3 ? (
             <Button
               onClick={handleNext}
-              disabled={loading}
+              disabled={loading || (step === 2 && !isStep2Valid)}
               className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98] transition-transform"
               style={{ boxShadow: "0 4px 24px hsl(24 100% 50% / 0.35)" }}
             >
