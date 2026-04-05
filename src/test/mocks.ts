@@ -210,5 +210,17 @@ vi.mock("@/hooks/useConsumerNotifications", () => ({
 }));
 
 vi.mock("@/hooks/useEventClosingReport", () => ({
-  useEventClosingReport: () => ({ report: null, loading: false, fetchReport: vi.fn() }),
+  useEventClosingReport: () => ({ report: null, loading: false, fetchReport: vi.fn(), cancellations: [] }),
 }));
+
+// ─── React Query (QueryClientProvider) ────────────────────────────
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: vi.fn().mockReturnValue({ data: null, isLoading: false, error: null, refetch: vi.fn() }),
+    useQueryClient: vi.fn().mockReturnValue({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
+    QueryClient: actual.QueryClient,
+    QueryClientProvider: actual.QueryClientProvider,
+  };
+});
