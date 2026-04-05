@@ -93,7 +93,7 @@ export default function GestorEventoFechamento() {
           <MetricCard title={t("gef_total_revenue")} value={fmt(s?.total_revenue)} icon={DollarSign} loading={isLoading} />
           <MetricCard title={t("gef_total_transactions")} value={s?.total_transactions ?? 0} icon={BarChart3} loading={isLoading} />
           <MetricCard title={t("gef_avg_ticket")} value={fmt(s?.avg_ticket)} icon={Receipt} loading={isLoading} />
-          <MetricCard title={t("gef_total_cancellations")} value={cancellations.length} icon={XCircle} loading={isLoading} />
+          <MetricCard title={t("gef_total_cancellations")} value={cancellations?.length ?? 0} icon={XCircle} loading={isLoading} />
         </div>
       </div>
 
@@ -145,14 +145,14 @@ export default function GestorEventoFechamento() {
                       ))}
                     </TableRow>
                   ))
-                ) : cashRegisters.length === 0 ? (
+                ) : (cashRegisters?.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       {t("gef_no_registers")}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  cashRegisters.map((cr: any) => (
+                  (cashRegisters ?? []).map((cr: any) => (
                     <TableRow key={cr.register_id}>
                       <TableCell className="font-medium">#{cr.register_number}</TableCell>
                       <TableCell>{fmtDate(cr.opened_at)}</TableCell>
@@ -200,14 +200,14 @@ export default function GestorEventoFechamento() {
                       ))}
                     </TableRow>
                   ))
-                ) : cancellations.length === 0 ? (
+                ) : (cancellations?.length ?? 0) === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       {t("gef_no_cancellations")}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  cancellations.map((c: any) => (
+                  (cancellations ?? []).map((c: any) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">#{String(c.order_number).padStart(3, "0")}</TableCell>
                       <TableCell>
