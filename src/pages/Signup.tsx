@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/i18n/use-translation";
+import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
 
 export default function Signup() {
   const { t } = useTranslation();
@@ -17,9 +18,17 @@ export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
+
+  const pwValidation = validatePassword(password);
+  const showPwReqs = pwFocused || password.length > 0;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!pwValidation.isValid) {
+      toast.error("A senha não atende todos os requisitos.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin, data: { name: fullName } } });
     if (error) { toast.error(getPtBrErrorMessage(error)); } else { setSent(true); toast.success(t("email_confirm_check")); }
@@ -58,8 +67,23 @@ export default function Signup() {
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2"><Label htmlFor="fullName">{t("full_name")}</Label><Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: Maria Silva" required /></div>
               <div className="space-y-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" required /></div>
-              <div className="space-y-2"><Label htmlFor="password">{t("password")}</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("min_characters")} minLength={6} required /></div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="space-y-2">
+                <Label htmlFor="password">{t("password")}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setPwFocused(true)}
+                  onBlur={() => setPwFocused(false)}
+                  placeholder={t("min_characters")}
+                  minLength={6}
+                  required
+                  className={password.length > 0 ? (pwValidation.isValid ? "border-success" : "border-destructive") : ""}
+                />
+                <PasswordRequirements password={password} show={showPwReqs} />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading || !pwValidation.isValid}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("create_account")}
               </Button>
