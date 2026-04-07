@@ -48,7 +48,7 @@ export default function ConsumerCadastro() {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const pwValidation = validatePassword(password);
-  const showPwReqs = pwFocused || password.length > 0;
+  const showPwReqs = step === 2;
 
   const handleCPFChange = (val: string) => {
     const masked = maskCPF(val);

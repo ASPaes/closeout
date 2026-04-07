@@ -21,7 +21,7 @@ export default function Signup() {
   const [pwFocused, setPwFocused] = useState(false);
 
   const pwValidation = validatePassword(password);
-  const showPwReqs = pwFocused || password.length > 0;
+  const showPwReqs = true;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

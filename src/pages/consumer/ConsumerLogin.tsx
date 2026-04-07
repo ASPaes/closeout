@@ -21,7 +21,7 @@ export default function ConsumerLogin() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error("Email ou senha incorretos");
       return;
     }
     // Ensure consumer role exists
