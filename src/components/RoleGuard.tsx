@@ -11,7 +11,7 @@ const areaRoles: Record<Area, string[]> = {
   gestor: ["owner", "super_admin", "client_admin", "client_manager", "venue_manager", "event_manager"],
   caixa: ["owner", "cashier", "super_admin", "client_admin", "client_manager"],
   bar: ["owner", "bar_staff", "staff", "super_admin", "client_admin", "client_manager"],
-  consumer: ["consumer", "owner", "super_admin"],
+  consumer: ["consumer", "owner", "super_admin", "client_admin", "client_manager", "venue_manager", "event_manager", "waiter", "cashier", "bar_staff", "staff"],
   garcom: ["owner", "waiter", "super_admin", "client_admin", "client_manager"],
 };
 
