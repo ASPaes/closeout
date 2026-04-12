@@ -187,7 +187,7 @@ export default function GestorProdutos() {
         image_source: form.image_source || null,
       };
       if (editing) {
-        const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
+        const { error } = await supabase.from("products").update(payload as any).eq("id", editing.id);
         if (error) throw error;
         toast.success(t("product_updated"));
       } else {

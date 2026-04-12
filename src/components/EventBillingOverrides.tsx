@@ -237,7 +237,7 @@ export function EventBillingOverrides({ eventId, clientId }: EventBillingOverrid
     setSavingRule(rule.id);
     const { error } = await supabase
       .from("event_billing_overrides")
-      .update(payload)
+      .update(payload as any)
       .eq("id", existing.id);
 
     if (error) { toast.error(getPtBrErrorMessage(error)); setSavingRule(null); return; }
