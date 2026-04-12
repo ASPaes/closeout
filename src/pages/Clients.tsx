@@ -178,7 +178,7 @@ export default function Clients() {
       };
       const logoPath = await uploadLogo(editing.id);
       payload.logo_path = logoPath;
-      const { error } = await supabase.from("clients").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("clients").update(payload as any).eq("id", editing.id);
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
       toast.success(t("client_updated"));

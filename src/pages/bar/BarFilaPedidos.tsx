@@ -128,7 +128,7 @@ export default function BarFilaPedidos() {
     if (newStatus === "preparing") updateData.preparing_at = new Date().toISOString();
     if (newStatus === "ready") updateData.ready_at = new Date().toISOString();
 
-    const { error } = await supabase.from("orders").update(updateData).eq("id", order.id);
+    const { error } = await supabase.from("orders").update(updateData as any).eq("id", order.id);
     if (error) {
       toast.error(error.message);
     } else {

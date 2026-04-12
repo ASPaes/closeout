@@ -245,7 +245,7 @@ export function ClientBillingRules({ clientId }: ClientBillingRulesProps) {
     };
 
     if (editing) {
-      const { error } = await supabase.from("billing_rules").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("billing_rules").update(payload as any).eq("id", editing.id);
       if (error) {
         toast.error(getPtBrErrorMessage(error));
         setSaving(false);

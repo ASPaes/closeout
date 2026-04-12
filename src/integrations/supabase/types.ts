@@ -14,6 +14,238 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_charges: {
+        Row: {
+          amount: number
+          asaas_charge_id: string
+          asaas_status: string
+          billing_type: string
+          card_token: string | null
+          client_id: string
+          closeout_amount: number | null
+          consumer_id: string
+          created_at: string
+          event_id: string
+          fee_amount: number | null
+          id: string
+          net_amount: number | null
+          order_id: string
+          paid_at: string | null
+          payment_id: string
+          pix_copy_paste: string | null
+          pix_expires_at: string | null
+          pix_qr_code: string | null
+          refund_amount: number | null
+          refunded_at: string | null
+          split_amount: number | null
+          updated_at: string
+          webhook_data: Json | null
+        }
+        Insert: {
+          amount: number
+          asaas_charge_id: string
+          asaas_status?: string
+          billing_type: string
+          card_token?: string | null
+          client_id: string
+          closeout_amount?: number | null
+          consumer_id: string
+          created_at?: string
+          event_id: string
+          fee_amount?: number | null
+          id?: string
+          net_amount?: number | null
+          order_id: string
+          paid_at?: string | null
+          payment_id: string
+          pix_copy_paste?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          refund_amount?: number | null
+          refunded_at?: string | null
+          split_amount?: number | null
+          updated_at?: string
+          webhook_data?: Json | null
+        }
+        Update: {
+          amount?: number
+          asaas_charge_id?: string
+          asaas_status?: string
+          billing_type?: string
+          card_token?: string | null
+          client_id?: string
+          closeout_amount?: number | null
+          consumer_id?: string
+          created_at?: string
+          event_id?: string
+          fee_amount?: number | null
+          id?: string
+          net_amount?: number | null
+          order_id?: string
+          paid_at?: string | null
+          payment_id?: string
+          pix_copy_paste?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          refund_amount?: number | null
+          refunded_at?: string | null
+          split_amount?: number | null
+          updated_at?: string
+          webhook_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_charges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_charges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "asaas_charges_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_charges_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asaas_customer_cards: {
+        Row: {
+          asaas_customer_id: string
+          card_brand: string | null
+          card_holder_name: string | null
+          card_last_four: string
+          card_token: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          user_id: string
+        }
+        Insert: {
+          asaas_customer_id: string
+          card_brand?: string | null
+          card_holder_name?: string | null
+          card_last_four: string
+          card_token: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          user_id: string
+        }
+        Update: {
+          asaas_customer_id?: string
+          card_brand?: string | null
+          card_holder_name?: string | null
+          card_last_four?: string
+          card_token?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      asaas_subaccounts: {
+        Row: {
+          asaas_account_id: string
+          asaas_wallet_id: string | null
+          bank_account: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_code: string | null
+          client_id: string
+          cpf_cnpj: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          pix_key: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asaas_account_id: string
+          asaas_wallet_id?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
+          client_id: string
+          cpf_cnpj: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          pix_key?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asaas_account_id?: string
+          asaas_wallet_id?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
+          client_id?: string
+          cpf_cnpj?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          pix_key?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_subaccounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asaas_subaccounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -685,6 +917,11 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          asaas_subaccount_id: string | null
+          bank_account: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_code: string | null
           contact_name: string | null
           contact_phone: string | null
           created_at: string
@@ -699,12 +936,18 @@ export type Database = {
           owner_name: string | null
           owner_phone: string | null
           phone: string | null
+          pix_key: string | null
           slug: string
           status: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          asaas_subaccount_id?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -719,12 +962,18 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
+          pix_key?: string | null
           slug: string
           status?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          asaas_subaccount_id?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_code?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -739,6 +988,7 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
+          pix_key?: string | null
           slug?: string
           status?: string
           updated_at?: string
@@ -1181,6 +1431,7 @@ export type Database = {
           id: string
           max_order_value: number | null
           name: string
+          payment_sandbox_mode: boolean
           start_at: string | null
           status: string
           stock_control_enabled: boolean
@@ -1197,6 +1448,7 @@ export type Database = {
           id?: string
           max_order_value?: number | null
           name: string
+          payment_sandbox_mode?: boolean
           start_at?: string | null
           status?: string
           stock_control_enabled?: boolean
@@ -1213,6 +1465,7 @@ export type Database = {
           id?: string
           max_order_value?: number | null
           name?: string
+          payment_sandbox_mode?: boolean
           start_at?: string | null
           status?: string
           stock_control_enabled?: boolean
@@ -1647,30 +1900,45 @@ export type Database = {
       }
       platform_settings: {
         Row: {
+          asaas_sandbox_mode: boolean
+          closeout_fee_percent: number
           created_at: string
           default_fee_percent: number
           default_geo_radius_meters: number
           default_max_order_value: number
           default_unretrieved_order_alert_minutes: number
+          fee_payer: string
           id: string
+          min_order_amount: number
+          pix_expiration_minutes: number
           updated_at: string
         }
         Insert: {
+          asaas_sandbox_mode?: boolean
+          closeout_fee_percent?: number
           created_at?: string
           default_fee_percent?: number
           default_geo_radius_meters?: number
           default_max_order_value?: number
           default_unretrieved_order_alert_minutes?: number
+          fee_payer?: string
           id?: string
+          min_order_amount?: number
+          pix_expiration_minutes?: number
           updated_at?: string
         }
         Update: {
+          asaas_sandbox_mode?: boolean
+          closeout_fee_percent?: number
           created_at?: string
           default_fee_percent?: number
           default_geo_radius_meters?: number
           default_max_order_value?: number
           default_unretrieved_order_alert_minutes?: number
+          fee_payer?: string
           id?: string
+          min_order_amount?: number
+          pix_expiration_minutes?: number
           updated_at?: string
         }
         Relationships: []
@@ -1857,6 +2125,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          asaas_customer_id: string | null
           avatar_url: string | null
           cpf: string | null
           created_at: string
@@ -1869,6 +2138,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
           avatar_url?: string | null
           cpf?: string | null
           created_at?: string
@@ -1881,6 +2151,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
           avatar_url?: string | null
           cpf?: string | null
           created_at?: string
@@ -3295,6 +3566,8 @@ export type Database = {
         | "approved"
         | "failed"
         | "cancelled"
+        | "refunded"
+        | "expired"
       qr_status: "valid" | "used" | "cancelled" | "invalid"
       stock_movement_type:
         | "entry"
@@ -3464,6 +3737,8 @@ export const Constants = {
         "approved",
         "failed",
         "cancelled",
+        "refunded",
+        "expired",
       ],
       qr_status: ["valid", "used", "cancelled", "invalid"],
       stock_movement_type: [
