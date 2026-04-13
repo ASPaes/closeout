@@ -31,7 +31,8 @@ type PlatformSettings = {
 
 export default function Settings() {
   const { t } = useTranslation();
-  const { roles } = useAuth();
+  const { isOwner, isSuperAdmin } = useAuth();
+  const isOwnerOrSuper = isOwner || isSuperAdmin;
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [form, setForm] = useState({
     default_geo_radius_meters: "",
