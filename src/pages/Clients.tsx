@@ -116,6 +116,11 @@ export default function Clients() {
     setManagerEmail("");
     setManagerPassword(generatePassword());
     setManagerPhone("");
+    setBankPixKey("");
+    setBankCode("");
+    setBankAgency("");
+    setBankAccount("");
+    setBankAccountType("CONTA_CORRENTE");
     setSheetOpen(true);
   };
 
@@ -130,6 +135,11 @@ export default function Clients() {
       owner_phone: client.owner_phone || "",
       contact_name: client.contact_name || "", contact_phone: client.contact_phone || "",
     });
+    setBankPixKey(client.pix_key || "");
+    setBankCode(client.bank_code || "");
+    setBankAgency(client.bank_agency || "");
+    setBankAccount(client.bank_account || "");
+    setBankAccountType(client.bank_account_type || "CONTA_CORRENTE");
     setLogoFile(null);
     if (client.logo_path) {
       supabase.storage.from("client-logos").createSignedUrl(client.logo_path, 3600).then(({ data: signedData }) => {
