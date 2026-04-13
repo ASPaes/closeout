@@ -445,6 +445,9 @@ export default function Clients() {
               <p><span className="text-muted-foreground">{t("email")}:</span> {successData?.email}</p>
               <p><span className="text-muted-foreground">{t("password")}:</span> <span className="font-mono">{successData?.password}</span></p>
               <p><span className="text-muted-foreground">{t("activation_access_url")}:</span> https://closeout.lovable.app/gestor</p>
+              {successData?.asaasStatus && (
+                <p><span className="text-muted-foreground">{t("asaas_subaccount_status")}:</span> {successData.asaasStatus}</p>
+              )}
             </div>
             <Button onClick={() => {
               navigator.clipboard.writeText(
