@@ -163,9 +163,10 @@ export default function ConsumerPedidos() {
     preparing: 2,
     paid: 3,
     partially_paid: 4,
-    pending: 5,
-    delivered: 6,
-    cancelled: 7,
+    processing_payment: 5,
+    pending: 6,
+    delivered: 7,
+    cancelled: 8,
   };
 
   const filtered = orders
