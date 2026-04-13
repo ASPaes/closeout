@@ -206,19 +206,45 @@ export default function Clients() {
         owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
         owner_phone: form.owner_phone || null,
         contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
+        pix_key: bankPixKey || null, bank_code: bankCode || null,
+        bank_agency: bankAgency || null, bank_account: bankAccount || null,
+        bank_account_type: bankAccountType || "CONTA_CORRENTE",
       };
       const logoPath = await uploadLogo(editing.id);
       payload.logo_path = logoPath;
       const { error } = await supabase.from("clients").update(payload as any).eq("id", editing.id);
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
+
+      // If bank data changed and client has document, try create/update Asaas subaccount
+      if (bankPixKey || bankCode) {
+        try {
+          await supabase.functions.invoke("asaas-create-subaccount", {
+            body: {
+              client_id: editing.id,
+              name: form.name,
+              email: form.email || undefined,
+              cpf_cnpj: form.document || form.owner_cpf || undefined,
+              pix_key: bankPixKey || undefined,
+              bank_code: bankCode || undefined,
+              bank_agency: bankAgency || undefined,
+              bank_account: bankAccount || undefined,
+              bank_account_type: bankAccountType || undefined,
+            },
+          });
+          toast.success(t("asaas_subaccount_created"));
+        } catch {
+          toast.warning(t("asaas_subaccount_warning"));
+        }
+      }
+
       toast.success(t("client_updated"));
       setSaving(false);
       setSheetOpen(false);
       fetchClients();
     } else {
       // CREATE via edge function
-      const { error } = await supabase.functions.invoke("create-client-with-manager", {
+      const { data: createData, error } = await supabase.functions.invoke("create-client-with-manager", {
         body: {
           client_name: trimmedClientName,
           client_email: form.email.trim() || undefined,
@@ -232,6 +258,11 @@ export default function Clients() {
           manager_password: trimmedManagerPassword,
           manager_name: trimmedManagerName,
           manager_phone: managerPhone || undefined,
+          pix_key: bankPixKey || undefined,
+          bank_code: bankCode || undefined,
+          bank_agency: bankAgency || undefined,
+          bank_account: bankAccount || undefined,
+          bank_account_type: bankAccountType || undefined,
         },
       });
 
@@ -251,7 +282,34 @@ export default function Clients() {
         return;
       }
 
-      setSuccessData({ name: trimmedClientName, email: trimmedManagerEmail, password: trimmedManagerPassword });
+      // Step 2: Try creating Asaas subaccount
+      let asaasStatus = "";
+      const clientId = createData?.client_id;
+      if (clientId && (form.document || form.owner_cpf)) {
+        try {
+          await supabase.functions.invoke("asaas-create-subaccount", {
+            body: {
+              client_id: clientId,
+              name: trimmedClientName,
+              email: form.email.trim() || trimmedManagerEmail,
+              cpf_cnpj: form.document || form.owner_cpf || undefined,
+              pix_key: bankPixKey || undefined,
+              bank_code: bankCode || undefined,
+              bank_agency: bankAgency || undefined,
+              bank_account: bankAccount || undefined,
+              bank_account_type: bankAccountType || undefined,
+            },
+          });
+          asaasStatus = "✅ Criada";
+        } catch {
+          asaasStatus = "⚠️ Não criada";
+          toast.warning(t("asaas_subaccount_warning"));
+        }
+      } else {
+        asaasStatus = "⚠️ CPF/CNPJ não informado";
+      }
+
+      setSuccessData({ name: trimmedClientName, email: trimmedManagerEmail, password: trimmedManagerPassword, asaasStatus });
       setSuccessOpen(true);
       setSaving(false);
       setSheetOpen(false);
