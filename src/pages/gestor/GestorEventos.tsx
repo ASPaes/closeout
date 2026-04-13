@@ -557,6 +557,23 @@ export default function GestorEventos() {
           )}
         </Tabs>
       </ModalForm>
+
+      <AlertDialog open={sandboxConfirmOpen} onOpenChange={setSandboxConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar Modo Teste?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao desativar o modo teste, os pagamentos deste evento serão <strong>REAIS</strong>. Os consumidores serão cobrados de verdade. Confirma?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setSandboxMode(false)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, ativar produção
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </GestorClientGuard>
   );
