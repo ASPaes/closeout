@@ -80,6 +80,8 @@ export default function GestorEventos() {
   const [maxOrderValue, setMaxOrderValue] = useState("");
   const [alertMinutes, setAlertMinutes] = useState("15");
   const [stockEnabled, setStockEnabled] = useState(true);
+  const [sandboxMode, setSandboxMode] = useState(true);
+  const [sandboxConfirmOpen, setSandboxConfirmOpen] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
   // Catalogs tab
@@ -95,7 +97,7 @@ export default function GestorEventos() {
     const [eventsRes, venuesRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, name, description, start_at, end_at, status, venue_id")
+        .select("id, name, description, start_at, end_at, status, venue_id, payment_sandbox_mode")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false }),
       supabase
