@@ -594,3 +594,60 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
         </div>
   );
 }
+
+function BankFields({ bankPixKey, setBankPixKey, bankCode, setBankCode, bankAgency, setBankAgency, bankAccount, setBankAccount, bankAccountType, setBankAccountType, bankOptions, t }: {
+  bankPixKey: string; setBankPixKey: (v: string) => void;
+  bankCode: string; setBankCode: (v: string) => void;
+  bankAgency: string; setBankAgency: (v: string) => void;
+  bankAccount: string; setBankAccount: (v: string) => void;
+  bankAccountType: string; setBankAccountType: (v: string) => void;
+  bankOptions: { value: string; label: string }[];
+  t: (key: any) => string;
+}) {
+  const maskAgency = (v: string) => v.replace(/\D/g, "").slice(0, 4);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">{t("bank_section_title")}</h3>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_pix_key")}</Label>
+        <Input value={bankPixKey} onChange={(e) => setBankPixKey(e.target.value)} placeholder={t("bank_pix_placeholder")} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_code")}</Label>
+        <Select value={bankCode} onValueChange={setBankCode}>
+          <SelectTrigger><SelectValue placeholder="Selecione o banco" /></SelectTrigger>
+          <SelectContent>
+            {bankOptions.map((b) => (
+              <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>{t("bank_agency")}</Label>
+          <Input value={bankAgency} onChange={(e) => setBankAgency(maskAgency(e.target.value))} placeholder="0000" maxLength={4} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("bank_account")}</Label>
+          <Input value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="00000-0" />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_account_type")}</Label>
+        <Select value={bankAccountType} onValueChange={setBankAccountType}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="CONTA_CORRENTE">{t("bank_account_corrente")}</SelectItem>
+            <SelectItem value="CONTA_POUPANCA">{t("bank_account_poupanca")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
