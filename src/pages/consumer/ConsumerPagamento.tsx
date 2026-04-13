@@ -443,6 +443,10 @@ export default function ConsumerPagamento() {
       // Build body for edge function
       const body: any = {
         payment_id: payRow.id,
+        order_id: orderId,
+        amount: Number(payRow.amount),
+        event_id: activeEvent?.id,
+        client_id: activeEvent?.client_id,
         billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
       };
 
