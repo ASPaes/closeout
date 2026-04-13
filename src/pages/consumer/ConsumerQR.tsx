@@ -162,10 +162,48 @@ export default function ConsumerQR() {
 
   const orderStatus = liveStatus || displayOrder?.status || null;
   const currentStep = orderStatus ? (stepIndex[orderStatus] ?? 0) : 0;
+  const isProcessing = orderStatus === "processing_payment";
+  const isCancelled = orderStatus === "cancelled";
   const isPartiallyPaid = orderStatus === "partially_paid";
   const isReady = orderStatus === "ready";
   const isPartial = orderStatus === "partially_delivered";
   const isDelivered = orderStatus === "delivered";
+
+  // Detect payment method for processing state
+  const orderPaymentMethod = displayOrder?.payment_method || displayPayments?.[0]?.method || null;
+  const isPixProcessing = isProcessing && (orderPaymentMethod === "pix" || orderPaymentMethod === "PIX");
+
+  // Fetch PIX charge data when processing_payment
+  useEffect(() => {
+    if (!isProcessing || !displayOrder?.id) { setPixCharge(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("asaas_charges")
+        .select("pix_qr_code, pix_expires_at")
+        .eq("order_id", displayOrder.id)
+        .not("pix_qr_code", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (data?.[0]?.pix_qr_code) {
+        setPixCharge({ qr_code: data[0].pix_qr_code, expires_at: data[0].pix_expires_at || "" });
+      }
+    })();
+  }, [isProcessing, displayOrder?.id]);
+
+  // PIX countdown timer
+  useEffect(() => {
+    if (!pixCharge?.expires_at) { setPixCountdown(""); return; }
+    const update = () => {
+      const diff = new Date(pixCharge.expires_at).getTime() - Date.now();
+      if (diff <= 0) { setPixCountdown("Expirado"); return; }
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setPixCountdown(`${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [pixCharge?.expires_at]);
 
   // Realtime subscription
   useEffect(() => {
