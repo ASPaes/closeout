@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ArrowLeft,
   CreditCard,
   Smartphone,
-  Plus,
   CheckCircle2,
   XCircle,
   Shield,
   AlertTriangle,
   Banknote,
   Clock,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,16 +27,24 @@ import { getLocation } from "@/lib/native-bridge";
 import { logAudit } from "@/lib/audit";
 import { cn } from "@/lib/utils";
 
-type SavedCard = {
+type AsaasCard = {
   id: string;
   card_brand: string | null;
   card_last_four: string;
-  method_type: string;
-  is_default: boolean | null;
+  card_holder_name: string | null;
+  card_token: string;
+  is_default: boolean;
 };
 
 type PaymentMethod = "pix" | "credit_card" | "debit_card" | "cash";
-type FlowState = "select" | "processing" | "success" | "success_cash" | "error";
+type FlowState =
+  | "select"
+  | "processing"
+  | "pix_waiting"
+  | "success"
+  | "success_cash"
+  | "card_declined"
+  | "error";
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   pix: "PIX",
@@ -41,37 +53,75 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   cash: "Dinheiro",
 };
 
+// ── Card number mask ──
+function maskCardNumber(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 16);
+  return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+}
+
 export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
 
-  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  // ── Saved cards (Asaas) ──
+  const [savedCards, setSavedCards] = useState<AsaasCard[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("pix");
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
+
+  // ── New card form ──
+  const [useNewCard, setUseNewCard] = useState(false);
+  const [cardHolderName, setCardHolderName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpMonth, setCardExpMonth] = useState("");
+  const [cardExpYear, setCardExpYear] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [saveCard, setSaveCard] = useState(true);
+
+  // ── Split payment ──
   const [splitMode, setSplitMode] = useState(false);
   const [splitMethod1, setSplitMethod1] = useState<PaymentMethod>("pix");
   const [splitMethod2, setSplitMethod2] = useState<PaymentMethod>("cash");
   const [splitAmount1, setSplitAmount1] = useState("");
+
+  // ── Flow state ──
   const [flowState, setFlowState] = useState<FlowState>("select");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // ── Limit warning ──
   const [limitWarning, setLimitWarning] = useState<{
     limit: number;
     alreadySpent: number;
     willSpend: number;
   } | null>(null);
+
+  // ── Cash pending ──
   const [cashPendingInfo, setCashPendingInfo] = useState<{
     cashAmount: number;
     digitalAmount: number;
     orderId: string;
   } | null>(null);
 
+  // ── PIX waiting ──
+  const [pixQrCodeBase64, setPixQrCodeBase64] = useState("");
+  const [pixCopyPaste, setPixCopyPaste] = useState("");
+  const [pixExpiresAt, setPixExpiresAt] = useState<Date | null>(null);
+  const [pixTimeLeft, setPixTimeLeft] = useState(900); // 15 min in seconds
+  const [pixCopied, setPixCopied] = useState(false);
+  const [pixOrderId, setPixOrderId] = useState<string | null>(null);
+
+  // ── Card declined ──
+  const [declinedMessage, setDeclinedMessage] = useState("");
+  const [declinedOrderId, setDeclinedOrderId] = useState<string | null>(null);
+
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
   const splitAmount2 = splitMode
     ? Math.max(0, cart.total - (parseFloat(splitAmount1) || 0))
     : 0;
 
-  // Check spending limit
+  // ── Check spending limit ──
   useEffect(() => {
     if (!user || !activeEvent) return;
     (async () => {
@@ -103,12 +153,12 @@ export default function ConsumerPagamento() {
     })();
   }, [user, activeEvent, cart.total]);
 
-  // Fetch saved cards
+  // ── Fetch saved cards (Asaas) ──
   useEffect(() => {
     if (!user) return;
     supabase
-      .from("user_payment_methods")
-      .select("id, card_brand, card_last_four, method_type, is_default")
+      .from("asaas_customer_cards")
+      .select("id, card_brand, card_last_four, card_holder_name, card_token, is_default")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .then(({ data }) => {
@@ -118,26 +168,26 @@ export default function ConsumerPagamento() {
       });
   }, [user]);
 
-  // Silent GPS
+  // ── Silent GPS ──
   useEffect(() => {
     getLocation().catch(() => {});
   }, []);
 
-  // Redirect if cart empty
+  // ── Redirect if cart empty ──
   useEffect(() => {
     if (cart.items.length === 0 && flowState === "select") {
       navigate("/app/cardapio", { replace: true });
     }
   }, [cart.items.length, flowState, navigate]);
 
-  // When split mode turns on, initialize amount1
+  // ── Split mode init ──
   useEffect(() => {
     if (splitMode && !splitAmount1) {
       setSplitAmount1((cart.total / 2).toFixed(2));
     }
   }, [splitMode, cart.total, splitAmount1]);
 
-  // Ensure split methods are different
+  // ── Ensure split methods differ ──
   useEffect(() => {
     if (splitMode && splitMethod1 === splitMethod2) {
       const allMethods: PaymentMethod[] = ["pix", "credit_card", "debit_card", "cash"];
@@ -145,6 +195,29 @@ export default function ConsumerPagamento() {
       if (next) setSplitMethod2(next);
     }
   }, [splitMode, splitMethod1, splitMethod2]);
+
+  // ── PIX countdown timer ──
+  useEffect(() => {
+    if (flowState !== "pix_waiting" || !pixExpiresAt) return;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.floor((pixExpiresAt.getTime() - now) / 1000));
+      setPixTimeLeft(diff);
+      if (diff <= 0) {
+        clearInterval(timer);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [flowState, pixExpiresAt]);
+
+  // ── Cleanup realtime on unmount ──
+  useEffect(() => {
+    return () => {
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+      }
+    };
+  }, []);
 
   const resolvePaymentMethod = (method: PaymentMethod): string => {
     if (method === "pix") return "pix";
@@ -166,6 +239,12 @@ export default function ConsumerPagamento() {
 
   const digitalAmount = cart.total - cashAmount;
 
+  const isCardMethod = (method: PaymentMethod) =>
+    method === "credit_card" || method === "debit_card";
+
+  const showCardForm =
+    !splitMode && isCardMethod(selectedMethod) && !selectedSavedCardId;
+
   const isSplitValid = (): boolean => {
     if (!splitMode) return true;
     const a1 = parseFloat(splitAmount1) || 0;
@@ -175,6 +254,64 @@ export default function ConsumerPagamento() {
     return true;
   };
 
+  const isNewCardValid = (): boolean => {
+    if (!showCardForm && !useNewCard) return true;
+    if (!(isCardMethod(selectedMethod) || (splitMode && (isCardMethod(splitMethod1) || isCardMethod(splitMethod2))))) return true;
+    if (selectedSavedCardId) return true;
+    const digits = cardNumber.replace(/\D/g, "");
+    return (
+      cardHolderName.trim().length >= 2 &&
+      digits.length >= 13 &&
+      digits.length <= 19 &&
+      cardExpMonth.length === 2 &&
+      parseInt(cardExpMonth) >= 1 &&
+      parseInt(cardExpMonth) <= 12 &&
+      cardExpYear.length === 2 &&
+      cardCvv.length >= 3 &&
+      cardCvv.length <= 4
+    );
+  };
+
+  // ── Subscribe to order status changes ──
+  const subscribeToOrder = useCallback(
+    (orderId: string) => {
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+      }
+      const channel = supabase
+        .channel(`order-status-${orderId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "orders",
+            filter: `id=eq.${orderId}`,
+          },
+          (payload: any) => {
+            const newStatus = payload.new?.status;
+            if (newStatus === "paid") {
+              // Payment confirmed!
+              try {
+                navigator.vibrate?.(300);
+              } catch {}
+              setFlowState("success");
+              setTimeout(() => {
+                navigate(`/app/qr?order=${orderId}`, { replace: true });
+              }, 1500);
+            } else if (newStatus === "cancelled") {
+              setFlowState("error");
+              setErrorMessage("PIX expirado — o pedido foi cancelado");
+            }
+          }
+        )
+        .subscribe();
+      realtimeChannelRef.current = channel;
+    },
+    [navigate]
+  );
+
+  // ── Handle confirm ──
   const handleConfirm = async () => {
     if (!activeEvent || !user || cart.items.length === 0) return;
     if (splitMode && !isSplitValid()) return;
@@ -201,6 +338,7 @@ export default function ConsumerPagamento() {
         ];
       }
 
+      // 1) Create order via RPC (now returns pending/partially_paid)
       const { data, error } = await supabase.rpc("create_consumer_split_order", {
         params: {
           event_id: activeEvent.id,
@@ -217,11 +355,12 @@ export default function ConsumerPagamento() {
       const qrToken = result?.qr_token;
       const total = result?.total;
       const hasCashPending = result?.has_cash_pending === true;
+      const hasDigitalPending = result?.has_digital_pending === true;
 
       setActiveOrder({
         id: orderId,
         order_number: orderNumber,
-        status: hasCashPending ? "partially_paid" : "paid",
+        status: result?.status || "pending",
         total: total,
         qr_token: qrToken,
         items: cart.items.map((i) => ({
@@ -246,25 +385,32 @@ export default function ConsumerPagamento() {
             has_cash_pending: hasCashPending,
           },
         });
-      } catch {
-        // ignore
-      }
+      } catch {}
 
       clearCart();
 
+      // 2) If has cash → show cash pending screen (unchanged flow)
       if (hasCashPending) {
-        setCashPendingInfo({
-          cashAmount,
-          digitalAmount,
-          orderId,
-        });
+        setCashPendingInfo({ cashAmount, digitalAmount, orderId });
+        // If there's also a digital part, call Asaas for the digital payment
+        if (digitalAmount > 0) {
+          await processDigitalPayments(orderId, payments, total);
+        }
         setFlowState("success_cash");
-      } else {
-        setFlowState("success");
-        setTimeout(() => {
-          navigate(`/app/qr?order=${orderId}`, { replace: true });
-        }, 1500);
+        return;
       }
+
+      // 3) 100% digital → call Asaas
+      if (hasDigitalPending) {
+        await processDigitalPayments(orderId, payments, total);
+        return;
+      }
+
+      // Fallback (shouldn't happen)
+      setFlowState("success");
+      setTimeout(() => {
+        navigate(`/app/qr?order=${orderId}`, { replace: true });
+      }, 1500);
     } catch (err: any) {
       console.error("Payment error:", err);
       setErrorMessage(err.message || "Erro ao processar pagamento");
@@ -272,10 +418,147 @@ export default function ConsumerPagamento() {
     }
   };
 
+  // ── Process digital payments via Asaas ──
+  const processDigitalPayments = async (
+    orderId: string,
+    payments: { method: string; amount: number }[],
+    total: number
+  ) => {
+    // Get payment_id from DB
+    const { data: paymentRows } = await supabase
+      .from("payments")
+      .select("id, payment_method, amount")
+      .eq("order_id", orderId)
+      .neq("payment_method", "cash");
+
+    if (!paymentRows || paymentRows.length === 0) {
+      throw new Error("Pagamento digital não encontrado");
+    }
+
+    for (const payRow of paymentRows) {
+      const method = payRow.payment_method;
+      const isPix = method === "pix";
+      const isCard = method === "credit_card" || method === "debit_card";
+
+      // Build body for edge function
+      const body: any = {
+        payment_id: payRow.id,
+        billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
+      };
+
+      // Card data
+      if (isCard) {
+        if (selectedSavedCardId) {
+          const savedCard = savedCards.find((c) => c.id === selectedSavedCardId);
+          if (savedCard) {
+            body.card_token = savedCard.card_token;
+          }
+        } else {
+          body.card = {
+            holder_name: cardHolderName,
+            number: cardNumber.replace(/\D/g, ""),
+            expiry_month: cardExpMonth,
+            expiry_year: cardExpYear,
+            cvv: cardCvv,
+          };
+          body.save_card = saveCard;
+        }
+      }
+
+      const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+        "asaas-create-charge",
+        { body }
+      );
+
+      if (chargeError) {
+        throw new Error(chargeError.message || "Erro ao criar cobrança");
+      }
+
+      const chargeData = chargeResult as any;
+
+      if (chargeData?.error) {
+        // Card declined or API error
+        if (isCard) {
+          setDeclinedMessage(chargeData.detail || chargeData.error || "Pagamento recusado pelo emissor");
+          setDeclinedOrderId(orderId);
+          setFlowState("card_declined");
+          return;
+        }
+        throw new Error(chargeData.detail || chargeData.error);
+      }
+
+      // PIX flow
+      if (isPix) {
+        setPixQrCodeBase64(chargeData.pix_qr_code || "");
+        setPixCopyPaste(chargeData.pix_copy_paste || "");
+        const expiresAt = chargeData.pix_expires_at
+          ? new Date(chargeData.pix_expires_at)
+          : new Date(Date.now() + 15 * 60 * 1000);
+        setPixExpiresAt(expiresAt);
+        setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
+        setPixOrderId(orderId);
+        setFlowState("pix_waiting");
+        subscribeToOrder(orderId);
+        return;
+      }
+
+      // Card approved
+      if (isCard && chargeData.card_approved === true) {
+        setFlowState("success");
+        setTimeout(() => {
+          navigate(`/app/qr?order=${orderId}`, { replace: true });
+        }, 1500);
+        return;
+      }
+
+      // Card not approved
+      if (isCard && chargeData.card_approved === false) {
+        setDeclinedMessage(chargeData.detail || "Pagamento recusado pelo emissor");
+        setDeclinedOrderId(orderId);
+        setFlowState("card_declined");
+        return;
+      }
+
+      // Card pending (might be processed async) — subscribe to updates
+      if (isCard) {
+        subscribeToOrder(orderId);
+        // stay in processing
+        return;
+      }
+    }
+  };
+
   const handleCancel = () => navigate(-1);
   const handleRetry = () => {
     setFlowState("select");
     setErrorMessage("");
+    setDeclinedMessage("");
+    setDeclinedOrderId(null);
+    setPixOrderId(null);
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      await supabase
+        .from("orders")
+        .update({ status: "cancelled" as any, cancelled_at: new Date().toISOString(), cancel_reason: "Cancelado pelo consumidor" } as any)
+        .eq("id", orderId);
+    } catch {}
+    navigate("/app/carrinho", { replace: true });
+  };
+
+  const handleCopyPix = async () => {
+    try {
+      await navigator.clipboard.writeText(pixCopyPaste);
+      setPixCopied(true);
+      setTimeout(() => setPixCopied(false), 3000);
+    } catch {}
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   // ── Processing ──
@@ -297,7 +580,100 @@ export default function ConsumerPagamento() {
     );
   }
 
-  // ── Success (digital only) ──
+  // ── PIX waiting ──
+  if (flowState === "pix_waiting") {
+    const expired = pixTimeLeft <= 0;
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background px-6">
+        {/* Timer */}
+        <div className={cn(
+          "text-4xl font-mono font-bold tabular-nums",
+          expired ? "text-destructive" : pixTimeLeft < 120 ? "text-amber-400" : "text-primary"
+        )}>
+          {expired ? "00:00" : formatTime(pixTimeLeft)}
+        </div>
+
+        {expired ? (
+          <>
+            <XCircle className="h-16 w-16 text-destructive" />
+            <h2 className="text-lg font-bold text-foreground">PIX expirado</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              O tempo para pagamento expirou. Você pode tentar novamente.
+            </p>
+            <Button
+              onClick={handleRetry}
+              className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground w-full max-w-[320px]"
+            >
+              Tentar novamente
+            </Button>
+            {pixOrderId && (
+              <Button
+                variant="ghost"
+                onClick={() => handleCancelOrder(pixOrderId)}
+                className="text-sm text-destructive"
+              >
+                Cancelar pedido
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            {/* QR Code */}
+            {pixQrCodeBase64 && (
+              <div className="bg-white p-4 rounded-2xl">
+                <img
+                  src={`data:image/png;base64,${pixQrCodeBase64}`}
+                  alt="QR Code PIX"
+                  className="w-48 h-48"
+                />
+              </div>
+            )}
+
+            <p className="text-sm font-semibold text-foreground text-center">
+              Abra o app do seu banco e pague via PIX
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              O pagamento será confirmado automaticamente
+            </p>
+
+            {/* Copy button */}
+            {pixCopyPaste && (
+              <Button
+                onClick={handleCopyPix}
+                variant="outline"
+                className="h-12 rounded-xl w-full max-w-[320px] gap-2"
+              >
+                {pixCopied ? (
+                  <>
+                    <Check className="h-4 w-4 text-success" />
+                    Código copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copiar código PIX
+                  </>
+                )}
+              </Button>
+            )}
+
+            {pixOrderId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCancelOrder(pixOrderId)}
+                className="text-xs text-destructive"
+              >
+                Cancelar pedido
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Success (digital confirmed) ──
   if (flowState === "success") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background">
@@ -330,7 +706,7 @@ export default function ConsumerPagamento() {
           {cashPendingInfo.digitalAmount > 0 && (
             <p className="text-sm text-success mt-2 flex items-center justify-center gap-1.5">
               <CheckCircle2 className="h-4 w-4" />
-              Parte digital processada (R$ {cashPendingInfo.digitalAmount.toFixed(2)})
+              Parte digital em processamento (R$ {cashPendingInfo.digitalAmount.toFixed(2)})
             </p>
           )}
         </div>
@@ -342,6 +718,39 @@ export default function ConsumerPagamento() {
         >
           Ver meu QR Code
         </Button>
+      </div>
+    );
+  }
+
+  // ── Card declined ──
+  if (flowState === "card_declined") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background px-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 border border-destructive/30">
+          <XCircle className="h-10 w-10 text-destructive" />
+        </div>
+        <div className="text-center max-w-[320px]">
+          <h2 className="text-lg font-bold text-foreground">Pagamento recusado</h2>
+          <p className="text-sm text-muted-foreground mt-1">{declinedMessage}</p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-[320px]">
+          <Button
+            onClick={handleRetry}
+            className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+          >
+            Tentar com outro método
+          </Button>
+          {declinedOrderId && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleCancelOrder(declinedOrderId)}
+              className="h-12 rounded-xl"
+            >
+              Cancelar pedido
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -429,7 +838,6 @@ export default function ConsumerPagamento() {
     </button>
   );
 
-  // Available methods for split selectors
   const allMethods: {
     method: PaymentMethod;
     label: string;
@@ -441,6 +849,11 @@ export default function ConsumerPagamento() {
     { method: "debit_card", label: "Débito", desc: "Cartão de débito", icon: CreditCard },
     { method: "cash", label: "Dinheiro", desc: "Pagar com um garçom", icon: Banknote },
   ];
+
+  const canConfirm =
+    cart.items.length > 0 &&
+    (!splitMode || isSplitValid()) &&
+    (!showCardForm || isNewCardValid());
 
   // ── Select payment method ──
   return (
@@ -492,66 +905,148 @@ export default function ConsumerPagamento() {
             <MethodOption
               key={m.method}
               {...m}
-              selected={selectedMethod === m.method && !selectedCardId}
+              selected={selectedMethod === m.method && !selectedSavedCardId}
               onSelect={() => {
                 setSelectedMethod(m.method);
-                setSelectedCardId(null);
+                setSelectedSavedCardId(null);
+                setUseNewCard(false);
               }}
             />
           ))}
 
-          {/* Saved cards */}
-          {savedCards.map((card) => (
-            <button
-              key={card.id}
-              onClick={() => {
-                setSelectedMethod(
-                  card.method_type === "debit" ? "debit_card" : "credit_card"
-                );
-                setSelectedCardId(card.id);
-              }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl border p-4 text-left active:scale-[0.99] transition-all",
-                selectedCardId === card.id
-                  ? "border-primary/50 bg-primary/5"
-                  : "border-white/[0.08] bg-white/[0.02]"
-              )}
-            >
-              <div
-                className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
-                  selectedCardId === card.id ? "bg-primary/20" : "bg-white/[0.06]"
-                )}
+          {/* Saved cards (Asaas) */}
+          {isCardMethod(selectedMethod) && savedCards.length > 0 && (
+            <div className="space-y-2 pl-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Cartões salvos
+              </h4>
+              <RadioGroup
+                value={selectedSavedCardId || "new"}
+                onValueChange={(val) => {
+                  if (val === "new") {
+                    setSelectedSavedCardId(null);
+                    setUseNewCard(true);
+                  } else {
+                    setSelectedSavedCardId(val);
+                    setUseNewCard(false);
+                  }
+                }}
               >
-                <CreditCard
+                {savedCards.map((card) => (
+                  <div
+                    key={card.id}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border p-3",
+                      selectedSavedCardId === card.id
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-white/[0.08] bg-white/[0.02]"
+                    )}
+                  >
+                    <RadioGroupItem value={card.id} id={`card-${card.id}`} />
+                    <Label htmlFor={`card-${card.id}`} className="flex-1 cursor-pointer">
+                      <p className="text-sm font-semibold text-foreground">
+                        {card.card_brand || "Cartão"} ••••{card.card_last_four}
+                      </p>
+                      {card.card_holder_name && (
+                        <p className="text-xs text-muted-foreground">{card.card_holder_name}</p>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+                <div
                   className={cn(
-                    "h-5 w-5",
-                    selectedCardId === card.id
-                      ? "text-primary"
-                      : "text-muted-foreground"
+                    "flex items-center gap-3 rounded-xl border p-3",
+                    useNewCard && !selectedSavedCardId
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-white/[0.08] bg-white/[0.02]"
                   )}
+                >
+                  <RadioGroupItem value="new" id="card-new" />
+                  <Label htmlFor="card-new" className="cursor-pointer text-sm font-semibold text-foreground">
+                    Usar novo cartão
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* New card form */}
+          {isCardMethod(selectedMethod) && (savedCards.length === 0 || useNewCard) && (
+            <div className="space-y-3 rounded-xl bg-white/[0.04] border border-white/[0.06] p-4">
+              <h4 className="text-sm font-bold text-foreground">Dados do cartão</h4>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nome no cartão</label>
+                <Input
+                  value={cardHolderName}
+                  onChange={(e) => setCardHolderName(e.target.value)}
+                  placeholder="Como aparece no cartão"
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]"
+                  style={{ fontSize: "16px" }}
                 />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {card.card_brand || "Cartão"} ••••{card.card_last_four}
-                </p>
-                <p className="text-xs text-muted-foreground capitalize">
-                  {card.method_type}
-                </p>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Número do cartão</label>
+                <Input
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(maskCardNumber(e.target.value))}
+                  placeholder="0000 0000 0000 0000"
+                  inputMode="numeric"
+                  maxLength={19}
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] font-mono"
+                  style={{ fontSize: "16px" }}
+                />
               </div>
-              <div
-                className={cn(
-                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
-                  selectedCardId === card.id ? "border-primary" : "border-white/20"
-                )}
-              >
-                {selectedCardId === card.id && (
-                  <div className="h-2.5 w-2.5 rounded-full bg-primary" />
-                )}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Mês</label>
+                  <Input
+                    value={cardExpMonth}
+                    onChange={(e) => setCardExpMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="MM"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Ano</label>
+                  <Input
+                    value={cardExpYear}
+                    onChange={(e) => setCardExpYear(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="AA"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">CVV</label>
+                  <Input
+                    value={cardCvv}
+                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="000"
+                    inputMode="numeric"
+                    maxLength={4}
+                    type="password"
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
               </div>
-            </button>
-          ))}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="save-card"
+                  checked={saveCard}
+                  onCheckedChange={(checked) => setSaveCard(!!checked)}
+                />
+                <Label htmlFor="save-card" className="text-xs text-muted-foreground cursor-pointer">
+                  Salvar cartão para próximas compras
+                </Label>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -706,7 +1201,7 @@ export default function ConsumerPagamento() {
                   <strong>R$ {cashAmount.toFixed(2)}</strong>) será confirmada
                   por um garçom. A parte digital (
                   <strong>R$ {digitalAmount.toFixed(2)}</strong>) será processada
-                  agora.
+                  pelo Asaas.
                 </>
               )}
             </p>
@@ -743,7 +1238,7 @@ export default function ConsumerPagamento() {
       {/* Confirm button */}
       <Button
         onClick={handleConfirm}
-        disabled={cart.items.length === 0 || (splitMode && !isSplitValid())}
+        disabled={!canConfirm}
         className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full"
         style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
       >
