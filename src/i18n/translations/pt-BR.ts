@@ -1351,6 +1351,21 @@ const ptBR = {
   super_admin_created: "Super Admin criado!",
   activation_establishment: "Estabelecimento",
   activation_access_url: "Acesso",
+
+  // Bank / Asaas
+  bank_section_title: "Dados Bancários para Recebimento",
+  bank_pix_key: "Chave PIX",
+  bank_pix_placeholder: "CPF, email, telefone ou chave aleatória",
+  bank_code: "Banco",
+  bank_agency: "Agência",
+  bank_account: "Conta",
+  bank_account_type: "Tipo de Conta",
+  bank_account_corrente: "Conta Corrente",
+  bank_account_poupanca: "Conta Poupança",
+  bank_tab: "Dados Bancários",
+  asaas_subaccount_created: "Subconta Asaas criada com sucesso!",
+  asaas_subaccount_warning: "Cliente ativado, mas a subconta Asaas não foi criada. Configure depois.",
+  asaas_subaccount_status: "Subconta Asaas",
 } as const;
 
 export type TranslationKey = keyof typeof ptBR;

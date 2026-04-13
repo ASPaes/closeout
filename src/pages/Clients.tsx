@@ -28,6 +28,8 @@ type Client = {
   owner_name: string | null; owner_cpf: string | null; owner_phone: string | null;
   contact_name: string | null; contact_phone: string | null;
   logo_path: string | null; default_fee_percent: number | null;
+  pix_key: string | null; bank_code: string | null; bank_agency: string | null;
+  bank_account: string | null; bank_account_type: string | null;
 };
 
 type FormState = {
@@ -73,8 +75,27 @@ export default function Clients() {
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState(() => generatePassword());
   const [managerPhone, setManagerPhone] = useState("");
-  const [successData, setSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ name: string; email: string; password: string; asaasStatus?: string } | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  // Bank state (for creation & edit)
+  const [bankPixKey, setBankPixKey] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [bankAgency, setBankAgency] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccountType, setBankAccountType] = useState("CONTA_CORRENTE");
+
+  const BANK_OPTIONS = [
+    { value: "001", label: "001 - Banco do Brasil" },
+    { value: "033", label: "033 - Santander" },
+    { value: "104", label: "104 - Caixa Econômica" },
+    { value: "237", label: "237 - Bradesco" },
+    { value: "341", label: "341 - Itaú" },
+    { value: "260", label: "260 - Nubank" },
+    { value: "077", label: "077 - Inter" },
+    { value: "336", label: "336 - C6 Bank" },
+    { value: "756", label: "756 - Sicoob" },
+  ];
 
   const fetchClients = async () => {
     setLoading(true);
@@ -95,6 +116,11 @@ export default function Clients() {
     setManagerEmail("");
     setManagerPassword(generatePassword());
     setManagerPhone("");
+    setBankPixKey("");
+    setBankCode("");
+    setBankAgency("");
+    setBankAccount("");
+    setBankAccountType("CONTA_CORRENTE");
     setSheetOpen(true);
   };
 
@@ -109,6 +135,11 @@ export default function Clients() {
       owner_phone: client.owner_phone || "",
       contact_name: client.contact_name || "", contact_phone: client.contact_phone || "",
     });
+    setBankPixKey(client.pix_key || "");
+    setBankCode(client.bank_code || "");
+    setBankAgency(client.bank_agency || "");
+    setBankAccount(client.bank_account || "");
+    setBankAccountType(client.bank_account_type || "CONTA_CORRENTE");
     setLogoFile(null);
     if (client.logo_path) {
       supabase.storage.from("client-logos").createSignedUrl(client.logo_path, 3600).then(({ data: signedData }) => {
@@ -175,19 +206,45 @@ export default function Clients() {
         owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
         owner_phone: form.owner_phone || null,
         contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
+        pix_key: bankPixKey || null, bank_code: bankCode || null,
+        bank_agency: bankAgency || null, bank_account: bankAccount || null,
+        bank_account_type: bankAccountType || "CONTA_CORRENTE",
       };
       const logoPath = await uploadLogo(editing.id);
       payload.logo_path = logoPath;
       const { error } = await supabase.from("clients").update(payload as any).eq("id", editing.id);
       if (error) { toast.error(getPtBrErrorMessage(error)); setSaving(false); return; }
       await logAudit({ action: "client.updated", entityType: "client", entityId: editing.id, metadata: { name: form.name, previous_status: editing.status, new_status: form.status }, oldData: { name: editing.name, status: editing.status }, newData: payload });
+
+      // If bank data changed and client has document, try create/update Asaas subaccount
+      if (bankPixKey || bankCode) {
+        try {
+          await supabase.functions.invoke("asaas-create-subaccount", {
+            body: {
+              client_id: editing.id,
+              name: form.name,
+              email: form.email || undefined,
+              cpf_cnpj: form.document || form.owner_cpf || undefined,
+              pix_key: bankPixKey || undefined,
+              bank_code: bankCode || undefined,
+              bank_agency: bankAgency || undefined,
+              bank_account: bankAccount || undefined,
+              bank_account_type: bankAccountType || undefined,
+            },
+          });
+          toast.success(t("asaas_subaccount_created"));
+        } catch {
+          toast.warning(t("asaas_subaccount_warning"));
+        }
+      }
+
       toast.success(t("client_updated"));
       setSaving(false);
       setSheetOpen(false);
       fetchClients();
     } else {
       // CREATE via edge function
-      const { error } = await supabase.functions.invoke("create-client-with-manager", {
+      const { data: createData, error } = await supabase.functions.invoke("create-client-with-manager", {
         body: {
           client_name: trimmedClientName,
           client_email: form.email.trim() || undefined,
@@ -201,6 +258,11 @@ export default function Clients() {
           manager_password: trimmedManagerPassword,
           manager_name: trimmedManagerName,
           manager_phone: managerPhone || undefined,
+          pix_key: bankPixKey || undefined,
+          bank_code: bankCode || undefined,
+          bank_agency: bankAgency || undefined,
+          bank_account: bankAccount || undefined,
+          bank_account_type: bankAccountType || undefined,
         },
       });
 
@@ -220,7 +282,34 @@ export default function Clients() {
         return;
       }
 
-      setSuccessData({ name: trimmedClientName, email: trimmedManagerEmail, password: trimmedManagerPassword });
+      // Step 2: Try creating Asaas subaccount
+      let asaasStatus = "";
+      const clientId = createData?.client_id;
+      if (clientId && (form.document || form.owner_cpf)) {
+        try {
+          await supabase.functions.invoke("asaas-create-subaccount", {
+            body: {
+              client_id: clientId,
+              name: trimmedClientName,
+              email: form.email.trim() || trimmedManagerEmail,
+              cpf_cnpj: form.document || form.owner_cpf || undefined,
+              pix_key: bankPixKey || undefined,
+              bank_code: bankCode || undefined,
+              bank_agency: bankAgency || undefined,
+              bank_account: bankAccount || undefined,
+              bank_account_type: bankAccountType || undefined,
+            },
+          });
+          asaasStatus = "✅ Criada";
+        } catch {
+          asaasStatus = "⚠️ Não criada";
+          toast.warning(t("asaas_subaccount_warning"));
+        }
+      } else {
+        asaasStatus = "⚠️ CPF/CNPJ não informado";
+      }
+
+      setSuccessData({ name: trimmedClientName, email: trimmedManagerEmail, password: trimmedManagerPassword, asaasStatus });
       setSuccessOpen(true);
       setSaving(false);
       setSheetOpen(false);
@@ -290,10 +379,14 @@ export default function Clients() {
           <Tabs defaultValue="dados" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="dados">{t("cl_section_data")}</TabsTrigger>
+              <TabsTrigger value="banco">{t("bank_tab")}</TabsTrigger>
               <TabsTrigger value="cobranca">{t("br_tab_billing")}</TabsTrigger>
             </TabsList>
             <TabsContent value="dados">
               <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+            </TabsContent>
+            <TabsContent value="banco">
+              <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
             </TabsContent>
             <TabsContent value="cobranca">
               <ClientBillingRules clientId={editing.id} />
@@ -331,6 +424,10 @@ export default function Clients() {
                   <Label>{t("manager_phone_label")}</Label>
                   <Input value={maskPhone(managerPhone)} onChange={(e) => setManagerPhone(unmask(e.target.value))} placeholder="(00) 00000-0000" />
                 </div>
+
+                <Separator className="my-4" />
+
+                <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
               </div>
             </TabsContent>
           </Tabs>
@@ -348,6 +445,9 @@ export default function Clients() {
               <p><span className="text-muted-foreground">{t("email")}:</span> {successData?.email}</p>
               <p><span className="text-muted-foreground">{t("password")}:</span> <span className="font-mono">{successData?.password}</span></p>
               <p><span className="text-muted-foreground">{t("activation_access_url")}:</span> https://closeout.lovable.app/gestor</p>
+              {successData?.asaasStatus && (
+                <p><span className="text-muted-foreground">{t("asaas_subaccount_status")}:</span> {successData.asaasStatus}</p>
+              )}
             </div>
             <Button onClick={() => {
               navigator.clipboard.writeText(
@@ -492,5 +592,62 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
             </div>
           </div>
         </div>
+  );
+}
+
+function BankFields({ bankPixKey, setBankPixKey, bankCode, setBankCode, bankAgency, setBankAgency, bankAccount, setBankAccount, bankAccountType, setBankAccountType, bankOptions, t }: {
+  bankPixKey: string; setBankPixKey: (v: string) => void;
+  bankCode: string; setBankCode: (v: string) => void;
+  bankAgency: string; setBankAgency: (v: string) => void;
+  bankAccount: string; setBankAccount: (v: string) => void;
+  bankAccountType: string; setBankAccountType: (v: string) => void;
+  bankOptions: { value: string; label: string }[];
+  t: (key: any) => string;
+}) {
+  const maskAgency = (v: string) => v.replace(/\D/g, "").slice(0, 4);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">{t("bank_section_title")}</h3>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_pix_key")}</Label>
+        <Input value={bankPixKey} onChange={(e) => setBankPixKey(e.target.value)} placeholder={t("bank_pix_placeholder")} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_code")}</Label>
+        <Select value={bankCode} onValueChange={setBankCode}>
+          <SelectTrigger><SelectValue placeholder="Selecione o banco" /></SelectTrigger>
+          <SelectContent>
+            {bankOptions.map((b) => (
+              <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>{t("bank_agency")}</Label>
+          <Input value={bankAgency} onChange={(e) => setBankAgency(maskAgency(e.target.value))} placeholder="0000" maxLength={4} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>{t("bank_account")}</Label>
+          <Input value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="00000-0" />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t("bank_account_type")}</Label>
+        <Select value={bankAccountType} onValueChange={setBankAccountType}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="CONTA_CORRENTE">{t("bank_account_corrente")}</SelectItem>
+            <SelectItem value="CONTA_POUPANCA">{t("bank_account_poupanca")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 }
