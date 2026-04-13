@@ -341,6 +341,92 @@ export default function ConsumerQR() {
     );
   }
 
+  // ── Cancelled state ──
+  if (isCancelled) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 border border-destructive/30">
+          <XCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground">Pagamento cancelado</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            O pagamento expirou ou foi cancelado. Faça um novo pedido.
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate("/app")}
+          className="rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {t("consumer_qr_explore")}
+        </Button>
+      </div>
+    );
+  }
+
+  // ── Processing payment state ──
+  if (isProcessing) {
+    return (
+      <div className="flex flex-col items-center gap-5 pb-4">
+        {/* Order number */}
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            {t("consumer_qr_order")}
+          </p>
+          <p className="text-2xl font-extrabold text-primary">
+            #{String(displayOrder.order_number).padStart(3, "0")}
+          </p>
+        </div>
+
+        {isPixProcessing && pixCharge ? (
+          <>
+            {/* PIX QR Code */}
+            <div className="w-full rounded-2xl border border-primary/40 bg-card p-5 text-center">
+              <p className="text-sm font-semibold text-foreground mb-3">Escaneie o QR Code para pagar via PIX</p>
+              <div className="rounded-2xl bg-white p-4 mx-auto w-fit">
+                <QRCodeSVG value={pixCharge.qr_code} size={200} level="H" bgColor="#ffffff" fgColor="#0A0A0A" />
+              </div>
+              {pixCountdown && (
+                <div className="mt-3">
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pixCountdown === "Expirado" ? "text-destructive" : "text-primary"
+                  )}>
+                    {pixCountdown === "Expirado" ? "⏰ PIX expirado" : `⏱ Expira em ${pixCountdown}`}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Aguardando confirmação do pagamento...
+            </p>
+          </>
+        ) : (
+          <>
+            {/* Card / generic loading */}
+            <div className="w-full rounded-2xl border border-primary/30 bg-card p-8 text-center">
+              <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+              <h2 className="text-lg font-bold text-foreground">
+                {orderPaymentMethod === "credit_card" || orderPaymentMethod === "debit_card"
+                  ? "Processando cartão..."
+                  : "Processando pagamento..."}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Aguarde a confirmação
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Timeline */}
+        <OrderTimeline currentStep={currentStep} orderStatus={orderStatus} />
+
+        {/* Order summary */}
+        <OrderSummary items={displayItems} total={displayOrder.total} />
+      </div>
+    );
+  }
+
   // ── Active order with QR ──
   return (
     <div className="flex flex-col items-center gap-5 pb-4">
