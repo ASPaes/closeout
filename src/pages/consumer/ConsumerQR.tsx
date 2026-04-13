@@ -231,9 +231,13 @@ export default function ConsumerQR() {
             setLiveItems(freshItems);
             setLivePayments(freshPayments);
 
-            if (newStatus === "paid" && prevStatusRef.current === "partially_paid") {
+            if (newStatus === "paid" && (prevStatusRef.current === "partially_paid" || prevStatusRef.current === "processing_payment")) {
               vibrate(300);
               toast("Pagamento confirmado! Pedido enviado ao bar", { duration: 5000 });
+            }
+            if (newStatus === "cancelled" && prevStatusRef.current === "processing_payment") {
+              vibrate(200);
+              toast("Pagamento cancelado ou expirado", { duration: 5000 });
             }
             if (newStatus === "ready" && prevStatusRef.current !== "ready") {
               vibrate(300);
