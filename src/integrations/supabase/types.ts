@@ -3411,6 +3411,7 @@ export type Database = {
       }
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
+      ensure_consumer_role: { Args: never; Returns: undefined }
       get_client_managers: {
         Args: { p_client_id: string }
         Returns: {
