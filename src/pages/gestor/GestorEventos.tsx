@@ -485,6 +485,25 @@ export default function GestorEventos() {
               <Label className="cursor-pointer">{t("stock_control")}</Label>
               <Switch checked={stockEnabled} onCheckedChange={setStockEnabled} />
             </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+              <div>
+                <Label className="cursor-pointer">Modo Teste de Pagamento</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">Pagamentos deste evento usam ambiente de teste (dinheiro fake)</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {sandboxMode
+                  ? <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-500">SANDBOX</Badge>
+                  : <Badge variant="outline" className="text-[10px] border-destructive/50 text-destructive">PRODUÇÃO</Badge>
+                }
+                <Switch checked={sandboxMode} onCheckedChange={(checked) => {
+                  if (!checked) {
+                    setSandboxConfirmOpen(true);
+                  } else {
+                    setSandboxMode(true);
+                  }
+                }} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="images" className="mt-4">
