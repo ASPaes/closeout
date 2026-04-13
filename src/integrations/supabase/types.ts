@@ -3358,6 +3358,10 @@ export type Database = {
       accept_waiter_invite: { Args: { p_join_code: string }; Returns: Json }
       bootstrap_super_admin: { Args: never; Returns: boolean }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
+      check_order_rate_limit: {
+        Args: { p_consumer_id: string }
+        Returns: boolean
+      }
       check_username_available: {
         Args: { p_username: string }
         Returns: boolean
@@ -3471,6 +3475,10 @@ export type Database = {
       has_role_in_client:
         | { Args: { p_client_id: string }; Returns: boolean }
         | { Args: { p_client_id: string; p_role: string }; Returns: boolean }
+      has_role_name: {
+        Args: { _role_name: string; _user_id: string }
+        Returns: boolean
+      }
       is_cashier: { Args: { p_client_id: string }; Returns: boolean }
       is_client_manager: { Args: { p_client_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
