@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { EventImageManager, uploadPendingEventImages } from "@/components/EventImageManager";
 import { GestorClientGuard } from "@/components/GestorClientGuard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
@@ -33,6 +34,7 @@ type Event = {
   status: string;
   venue_id: string;
   venue_name?: string;
+  payment_sandbox_mode: boolean;
 };
 
 type Venue = { id: string; name: string };
@@ -78,6 +80,8 @@ export default function GestorEventos() {
   const [maxOrderValue, setMaxOrderValue] = useState("");
   const [alertMinutes, setAlertMinutes] = useState("15");
   const [stockEnabled, setStockEnabled] = useState(true);
+  const [sandboxMode, setSandboxMode] = useState(true);
+  const [sandboxConfirmOpen, setSandboxConfirmOpen] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
 
   // Catalogs tab
@@ -93,7 +97,7 @@ export default function GestorEventos() {
     const [eventsRes, venuesRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, name, description, start_at, end_at, status, venue_id")
+        .select("id, name, description, start_at, end_at, status, venue_id, payment_sandbox_mode")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false }),
       supabase
@@ -187,6 +191,7 @@ export default function GestorEventos() {
     setName(""); setDescription(""); setVenueId(""); setStartAt(""); setEndAt(""); setStatus("draft");
     setSettingsId(null); setFormTab("general"); setEventCatalogs([]); setAllCatalogs([]);
     setPendingImages([]);
+    setSandboxMode(true);
     const defaults = await loadDefaults();
     setGeoRadius(String(defaults.geo_radius_meters));
     setMaxOrderValue(defaults.max_order_value != null ? String(defaults.max_order_value) : "");
@@ -201,6 +206,7 @@ export default function GestorEventos() {
     setStartAt(ev.start_at ? ev.start_at.slice(0, 16) : "");
     setEndAt(ev.end_at ? ev.end_at.slice(0, 16) : "");
     setStatus(ev.status); setFormTab("general");
+    setSandboxMode(ev.payment_sandbox_mode);
 
     const { data: settings } = await supabase
       .from("event_settings")
@@ -238,6 +244,7 @@ export default function GestorEventos() {
     const eventPayload = {
       name: name.trim(), description: description.trim() || null, venue_id: venueId, client_id: clientId!,
       start_at: startAt ? new Date(startAt).toISOString() : null, end_at: endAt ? new Date(endAt).toISOString() : null, status,
+      payment_sandbox_mode: sandboxMode,
     };
 
     let eventId = editingId;
@@ -370,7 +377,12 @@ export default function GestorEventos() {
         </Badge>
       ),
     },
-    { key: "status", header: "Status", className: "w-32", render: (r) => <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} /> },
+    { key: "status", header: "Status", className: "w-44", render: (r) => (
+      <div className="flex items-center gap-1.5">
+        <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} />
+        {r.payment_sandbox_mode && <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-500">SANDBOX</Badge>}
+      </div>
+    )},
     {
       key: "actions", header: "", className: "w-40 text-right",
       render: (r) => (
@@ -473,6 +485,25 @@ export default function GestorEventos() {
               <Label className="cursor-pointer">{t("stock_control")}</Label>
               <Switch checked={stockEnabled} onCheckedChange={setStockEnabled} />
             </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+              <div>
+                <Label className="cursor-pointer">Modo Teste de Pagamento</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">Pagamentos deste evento usam ambiente de teste (dinheiro fake)</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {sandboxMode
+                  ? <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-500">SANDBOX</Badge>
+                  : <Badge variant="outline" className="text-[10px] border-destructive/50 text-destructive">PRODUÇÃO</Badge>
+                }
+                <Switch checked={sandboxMode} onCheckedChange={(checked) => {
+                  if (!checked) {
+                    setSandboxConfirmOpen(true);
+                  } else {
+                    setSandboxMode(true);
+                  }
+                }} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="images" className="mt-4">
@@ -526,6 +557,23 @@ export default function GestorEventos() {
           )}
         </Tabs>
       </ModalForm>
+
+      <AlertDialog open={sandboxConfirmOpen} onOpenChange={setSandboxConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar Modo Teste?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao desativar o modo teste, os pagamentos deste evento serão <strong>REAIS</strong>. Os consumidores serão cobrados de verdade. Confirma?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setSandboxMode(false)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, ativar produção
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </GestorClientGuard>
   );
