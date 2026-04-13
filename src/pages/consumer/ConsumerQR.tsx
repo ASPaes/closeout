@@ -170,7 +170,7 @@ export default function ConsumerQR() {
   const isDelivered = orderStatus === "delivered";
 
   // Detect payment method for processing state
-  const orderPaymentMethod = displayOrder?.payment_method || displayPayments?.[0]?.method || null;
+  const orderPaymentMethod = (displayOrder as any)?.payment_method || displayPayments?.[0]?.method || null;
   const isPixProcessing = isProcessing && (orderPaymentMethod === "pix" || orderPaymentMethod === "PIX");
 
   // Fetch PIX charge data when processing_payment
