@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper,
   ShoppingBag, QrCode, Check, Clock, CreditCard, Smartphone, Banknote,
+  Loader2, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumer } from "@/contexts/ConsumerContext";
@@ -17,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const timelineSteps = [
+  { key: "processing_payment", label: "Processando Pagamento", icon: Loader2 },
   { key: "partially_paid", label: "Aguardando Dinheiro", icon: Clock },
   { key: "paid", label: "Confirmado", icon: CheckCircle2 },
   { key: "preparing", label: "Em Preparo", icon: ChefHat },
@@ -26,12 +28,13 @@ const timelineSteps = [
 ];
 
 const stepIndex: Record<string, number> = {
-  partially_paid: 0,
-  paid: 1,
-  preparing: 2,
-  ready: 3,
-  partially_delivered: 4,
-  delivered: 5,
+  processing_payment: 0,
+  partially_paid: 1,
+  paid: 2,
+  preparing: 3,
+  ready: 4,
+  partially_delivered: 5,
+  delivered: 6,
 };
 
 type PaymentDetail = {
