@@ -3553,6 +3553,7 @@ export type Database = {
       order_origin: "consumer_app" | "waiter_app" | "cashier"
       order_status:
         | "pending"
+        | "processing_payment"
         | "partially_paid"
         | "paid"
         | "preparing"
@@ -3723,6 +3724,7 @@ export const Constants = {
       order_origin: ["consumer_app", "waiter_app", "cashier"],
       order_status: [
         "pending",
+        "processing_payment",
         "partially_paid",
         "paid",
         "preparing",
