@@ -55,7 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Force pt-BR only
       setLanguage("pt-BR");
     }
-    if (rolesRes.data) setRoles(rolesRes.data as UserRole[]);
+    let userRoles = (rolesRes.data ?? []) as UserRole[];
+    // Auto-assign consumer role if missing (covers OAuth and any login method)
+    const hasConsumer = userRoles.some((r) => r.role === "consumer");
+    if (!hasConsumer) {
+      const { data: inserted } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: "consumer" })
+        .select("id, role, client_id, venue_id, event_id")
+        .single();
+      if (inserted) {
+        userRoles = [...userRoles, inserted as UserRole];
+      }
+    }
+    setRoles(userRoles);
   };
 
   useEffect(() => {
