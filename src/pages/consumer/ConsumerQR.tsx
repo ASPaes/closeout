@@ -588,7 +588,8 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                       isCurrent && !isWarningCurrent && !isCashCurrent && "text-primary",
                       isWarningCurrent && "text-warning",
                       isCashCurrent && "text-amber-400",
-                      isFuture && "text-muted-foreground/40"
+                      isFuture && "text-muted-foreground/40",
+                      isCurrent && isProcessingStep && "animate-spin"
                     )}
                   />
                 </div>
