@@ -18,26 +18,13 @@ export default function ConsumerLogin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       toast.error("Email ou senha incorretos");
       return;
     }
-    // Ensure consumer role exists
-    if (data.user) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", data.user.id)
-        .eq("role", "consumer");
-      if (!roles || roles.length === 0) {
-        await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: "consumer",
-        });
-      }
-    }
+    // Consumer role is auto-assigned by useAuth via ensure_consumer_role()
     navigate("/app");
   };
 
