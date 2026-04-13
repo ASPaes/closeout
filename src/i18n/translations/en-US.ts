@@ -1353,6 +1353,21 @@ const enUS: Record<TranslationKey, string> = {
   super_admin_created: "Super Admin created!",
   activation_establishment: "Establishment",
   activation_access_url: "Access",
+
+  // Bank / Asaas
+  bank_section_title: "Banking Data for Receiving",
+  bank_pix_key: "PIX Key",
+  bank_pix_placeholder: "CPF, email, phone or random key",
+  bank_code: "Bank",
+  bank_agency: "Agency",
+  bank_account: "Account",
+  bank_account_type: "Account Type",
+  bank_account_corrente: "Checking Account",
+  bank_account_poupanca: "Savings Account",
+  bank_tab: "Banking Data",
+  asaas_subaccount_created: "Asaas subaccount created successfully!",
+  asaas_subaccount_warning: "Client activated, but Asaas subaccount was not created. Configure later.",
+  asaas_subaccount_status: "Asaas Subaccount",
 };
 
 export default enUS;
