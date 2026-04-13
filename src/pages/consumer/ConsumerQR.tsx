@@ -88,6 +88,8 @@ export default function ConsumerQR() {
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const [liveItems, setLiveItems] = useState<OrderItem[] | null>(null);
   const [livePayments, setLivePayments] = useState<PaymentDetail[] | null>(null);
+  const [pixCharge, setPixCharge] = useState<{ qr_code: string; expires_at: string } | null>(null);
+  const [pixCountdown, setPixCountdown] = useState<string>("");
   const prevStatusRef = useRef<string | null>(null);
 
   const fetchOrderItems = useCallback(async (orderId: string): Promise<OrderItem[]> => {
