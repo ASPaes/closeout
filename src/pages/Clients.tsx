@@ -75,8 +75,27 @@ export default function Clients() {
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState(() => generatePassword());
   const [managerPhone, setManagerPhone] = useState("");
-  const [successData, setSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ name: string; email: string; password: string; asaasStatus?: string } | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  // Bank state (for creation & edit)
+  const [bankPixKey, setBankPixKey] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [bankAgency, setBankAgency] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccountType, setBankAccountType] = useState("CONTA_CORRENTE");
+
+  const BANK_OPTIONS = [
+    { value: "001", label: "001 - Banco do Brasil" },
+    { value: "033", label: "033 - Santander" },
+    { value: "104", label: "104 - Caixa Econômica" },
+    { value: "237", label: "237 - Bradesco" },
+    { value: "341", label: "341 - Itaú" },
+    { value: "260", label: "260 - Nubank" },
+    { value: "077", label: "077 - Inter" },
+    { value: "336", label: "336 - C6 Bank" },
+    { value: "756", label: "756 - Sicoob" },
+  ];
 
   const fetchClients = async () => {
     setLoading(true);
