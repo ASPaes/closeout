@@ -555,6 +555,7 @@ export default function ConsumerQR() {
 function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orderStatus: string | null }) {
   const isWarningStep = orderStatus === "partially_delivered";
   const isCashWaiting = orderStatus === "partially_paid";
+  const isProcessingStep = orderStatus === "processing_payment";
 
   return (
     <div className="w-full px-2">
