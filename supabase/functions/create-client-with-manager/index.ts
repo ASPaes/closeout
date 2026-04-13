@@ -58,6 +58,11 @@ Deno.serve(async (req) => {
     const manager_password = body?.manager_password?.trim?.() ?? "";
     const manager_name = body?.manager_name?.trim?.() ?? "";
     const manager_phone = body?.manager_phone?.trim?.() || null;
+    const pix_key = body?.pix_key?.trim?.() || null;
+    const bank_code = body?.bank_code?.trim?.() || null;
+    const bank_agency = body?.bank_agency?.trim?.() || null;
+    const bank_account = body?.bank_account?.trim?.() || null;
+    const bank_account_type = body?.bank_account_type?.trim?.() || "CONTA_CORRENTE";
 
     if (!client_name || !manager_email || !manager_password || !manager_name) {
       return errorResponse(400, "Bad Request", "client_name, manager_email, manager_password, manager_name are required", requestId);
@@ -84,6 +89,11 @@ Deno.serve(async (req) => {
         owner_name: owner_name || null,
         owner_cpf: owner_cpf || null,
         owner_phone: owner_phone || null,
+        pix_key: pix_key || null,
+        bank_code: bank_code || null,
+        bank_agency: bank_agency || null,
+        bank_account: bank_account || null,
+        bank_account_type: bank_account_type,
       })
       .select("id, slug")
       .single();
