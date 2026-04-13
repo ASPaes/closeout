@@ -34,6 +34,7 @@ type Event = {
   status: string;
   venue_id: string;
   venue_name?: string;
+  payment_sandbox_mode: boolean;
 };
 
 type Venue = { id: string; name: string };
