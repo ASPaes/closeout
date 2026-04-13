@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/i18n/use-translation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -17,6 +19,20 @@ const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url
   { titleKey: "gestor_stock", descKey: "gestor_stock_desc", icon: Warehouse, url: "/gestor/estoque" },
   { titleKey: "events", descKey: "manage_events", icon: CalendarDays, url: "/gestor/eventos" },
 ];
+
+type FinancialCharge = {
+  id: string;
+  amount: number;
+  billing_type: string;
+  asaas_status: string;
+  created_at: string;
+  order_id: string;
+  order_number?: number;
+  split_amount: number | null;
+  closeout_amount: number | null;
+};
+
+type ActiveEvent = { id: string; name: string };
 
 export default function GestorDashboard() {
   const { profile } = useAuth();
@@ -34,6 +50,16 @@ export default function GestorDashboard() {
   const [barAvgPrepMin, setBarAvgPrepMin] = useState<number | null>(null);
   const [barDeliveredToday, setBarDeliveredToday] = useState(0);
   const [unretrievedOrders, setUnretrievedOrders] = useState<{ order_number: number; minutes: number; items: string }[]>([]);
+
+  // Financial metrics
+  const [activeEvents, setActiveEvents] = useState<ActiveEvent[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>("all");
+  const [finRevenue, setFinRevenue] = useState(0);
+  const [finNet, setFinNet] = useState(0);
+  const [finCloseout, setFinCloseout] = useState(0);
+  const [finPending, setFinPending] = useState(0);
+  const [finTransactions, setFinTransactions] = useState<FinancialCharge[]>([]);
+  const [finLoading, setFinLoading] = useState(false);
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -138,7 +164,7 @@ export default function GestorDashboard() {
         const alerts = data
           .filter((o) => {
             const readyMs = new Date(o.ready_at!).getTime();
-            return (nowMs - readyMs) / 60000 > 10; // > 10 min
+            return (nowMs - readyMs) / 60000 > 10;
           })
           .map((o) => ({
             order_number: o.order_number,
@@ -147,9 +173,80 @@ export default function GestorDashboard() {
           }));
         setUnretrievedOrders(alerts);
       });
+
+    // Fetch active events for financial filter
+    supabase
+      .from("events")
+      .select("id, name")
+      .eq("client_id", effectiveClientId)
+      .in("status", ["active", "completed"])
+      .order("start_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => setActiveEvents(data ?? []));
   }, [effectiveClientId]);
 
+  // Financial data fetch
+  const fetchFinancials = useCallback(async () => {
+    if (!effectiveClientId) return;
+    setFinLoading(true);
+
+    let query = supabase
+      .from("asaas_charges")
+      .select("id, amount, billing_type, asaas_status, created_at, order_id, split_amount, closeout_amount")
+      .eq("client_id", effectiveClientId)
+      .order("created_at", { ascending: false });
+
+    if (selectedEventId !== "all") {
+      query = query.eq("event_id", selectedEventId);
+    }
+
+    const { data } = await query.limit(500);
+    const charges = data ?? [];
+
+    // Metrics
+    const confirmed = charges.filter((c) => ["CONFIRMED", "RECEIVED"].includes(c.asaas_status));
+    const revenue = confirmed.reduce((acc, c) => acc + Number(c.amount), 0);
+    const net = confirmed.reduce((acc, c) => acc + Number(c.split_amount ?? 0), 0);
+    const closeout = confirmed.reduce((acc, c) => acc + Number(c.closeout_amount ?? 0), 0);
+    const pending = charges.filter((c) => c.asaas_status === "PENDING").length;
+
+    setFinRevenue(revenue);
+    setFinNet(net);
+    setFinCloseout(closeout);
+    setFinPending(pending);
+
+    // Fetch order numbers for last 10
+    const last10 = charges.slice(0, 10);
+    if (last10.length > 0) {
+      const orderIds = [...new Set(last10.map((c) => c.order_id))];
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number")
+        .in("id", orderIds);
+      const orderMap = new Map((orders ?? []).map((o) => [o.id, o.order_number]));
+      setFinTransactions(last10.map((c) => ({ ...c, order_number: orderMap.get(c.order_id) })));
+    } else {
+      setFinTransactions([]);
+    }
+
+    setFinLoading(false);
+  }, [effectiveClientId, selectedEventId]);
+
+  useEffect(() => { fetchFinancials(); }, [fetchFinancials]);
+
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+
+  const billingLabel = (type: string) => {
+    const map: Record<string, string> = { PIX: "PIX", CREDIT_CARD: "Crédito", DEBIT_CARD: "Débito", BOLETO: "Boleto" };
+    return map[type] ?? type;
+  };
+
+  const statusBadge = (s: string) => {
+    if (s === "CONFIRMED" || s === "RECEIVED") return <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">Pago</Badge>;
+    if (s === "PENDING") return <Badge variant="secondary" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-[10px]">Pendente</Badge>;
+    if (s === "OVERDUE" || s === "REFUNDED") return <Badge variant="destructive" className="text-[10px]">{s === "REFUNDED" ? "Estornado" : "Vencido"}</Badge>;
+    return <Badge variant="outline" className="text-[10px]">{s}</Badge>;
+  };
 
   return (
     <div className="space-y-6">
@@ -210,6 +307,122 @@ export default function GestorDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Financial metrics */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Financeiro
+          </h2>
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-[220px] h-9">
+              <SelectValue placeholder="Todos os eventos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os eventos</SelectItem>
+              {activeEvents.map((ev) => (
+                <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {finLoading ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold">{fmt(finRevenue)}</div>
+              )}
+              <p className="text-xs text-muted-foreground">Pagamentos confirmados</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recebido (líquido)</CardTitle>
+              <Banknote className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {finLoading ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold">{fmt(finNet)}</div>
+              )}
+              <p className="text-xs text-muted-foreground">Valor repassado ao estabelecimento</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Taxa Close Out</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {finLoading ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold">{fmt(finCloseout)}</div>
+              )}
+              <p className="text-xs text-muted-foreground">Retido pela plataforma</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+              <Hourglass className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {finLoading ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold flex items-center gap-2">
+                  {finPending}
+                  {finPending > 0 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Aguardando</Badge>}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Pagamentos não confirmados</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent transactions table */}
+        {finTransactions.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Últimas Transações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-2 font-medium text-muted-foreground">Pedido</th>
+                      <th className="text-left py-2 font-medium text-muted-foreground">Método</th>
+                      <th className="text-right py-2 font-medium text-muted-foreground">Valor</th>
+                      <th className="text-center py-2 font-medium text-muted-foreground">Status</th>
+                      <th className="text-right py-2 font-medium text-muted-foreground">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {finTransactions.map((tx) => (
+                      <tr key={tx.id} className="border-b border-border/30 last:border-0">
+                        <td className="py-2 font-mono text-xs">
+                          #{tx.order_number ? String(tx.order_number).padStart(3, "0") : "—"}
+                        </td>
+                        <td className="py-2">
+                          <Badge variant="outline" className="text-[10px]">{billingLabel(tx.billing_type)}</Badge>
+                        </td>
+                        <td className="py-2 text-right font-medium">{fmt(Number(tx.amount))}</td>
+                        <td className="py-2 text-center">{statusBadge(tx.asaas_status)}</td>
+                        <td className="py-2 text-right text-muted-foreground text-xs">
+                          {new Date(tx.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Bar metrics */}
