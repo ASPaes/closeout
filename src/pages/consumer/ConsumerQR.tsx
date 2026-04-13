@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper,
   ShoppingBag, QrCode, Check, Clock, CreditCard, Smartphone, Banknote,
+  Loader2, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumer } from "@/contexts/ConsumerContext";
@@ -17,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const timelineSteps = [
+  { key: "processing_payment", label: "Processando Pagamento", icon: Loader2 },
   { key: "partially_paid", label: "Aguardando Dinheiro", icon: Clock },
   { key: "paid", label: "Confirmado", icon: CheckCircle2 },
   { key: "preparing", label: "Em Preparo", icon: ChefHat },
@@ -26,12 +28,13 @@ const timelineSteps = [
 ];
 
 const stepIndex: Record<string, number> = {
-  partially_paid: 0,
-  paid: 1,
-  preparing: 2,
-  ready: 3,
-  partially_delivered: 4,
-  delivered: 5,
+  processing_payment: 0,
+  partially_paid: 1,
+  paid: 2,
+  preparing: 3,
+  ready: 4,
+  partially_delivered: 5,
+  delivered: 6,
 };
 
 type PaymentDetail = {
@@ -85,6 +88,8 @@ export default function ConsumerQR() {
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
   const [liveItems, setLiveItems] = useState<OrderItem[] | null>(null);
   const [livePayments, setLivePayments] = useState<PaymentDetail[] | null>(null);
+  const [pixCharge, setPixCharge] = useState<{ qr_code: string; expires_at: string } | null>(null);
+  const [pixCountdown, setPixCountdown] = useState<string>("");
   const prevStatusRef = useRef<string | null>(null);
 
   const fetchOrderItems = useCallback(async (orderId: string): Promise<OrderItem[]> => {
@@ -157,10 +162,48 @@ export default function ConsumerQR() {
 
   const orderStatus = liveStatus || displayOrder?.status || null;
   const currentStep = orderStatus ? (stepIndex[orderStatus] ?? 0) : 0;
+  const isProcessing = orderStatus === "processing_payment";
+  const isCancelled = orderStatus === "cancelled";
   const isPartiallyPaid = orderStatus === "partially_paid";
   const isReady = orderStatus === "ready";
   const isPartial = orderStatus === "partially_delivered";
   const isDelivered = orderStatus === "delivered";
+
+  // Detect payment method for processing state
+  const orderPaymentMethod = (displayOrder as any)?.payment_method || displayPayments?.[0]?.method || null;
+  const isPixProcessing = isProcessing && (orderPaymentMethod === "pix" || orderPaymentMethod === "PIX");
+
+  // Fetch PIX charge data when processing_payment
+  useEffect(() => {
+    if (!isProcessing || !displayOrder?.id) { setPixCharge(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("asaas_charges")
+        .select("pix_qr_code, pix_expires_at")
+        .eq("order_id", displayOrder.id)
+        .not("pix_qr_code", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (data?.[0]?.pix_qr_code) {
+        setPixCharge({ qr_code: data[0].pix_qr_code, expires_at: data[0].pix_expires_at || "" });
+      }
+    })();
+  }, [isProcessing, displayOrder?.id]);
+
+  // PIX countdown timer
+  useEffect(() => {
+    if (!pixCharge?.expires_at) { setPixCountdown(""); return; }
+    const update = () => {
+      const diff = new Date(pixCharge.expires_at).getTime() - Date.now();
+      if (diff <= 0) { setPixCountdown("Expirado"); return; }
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setPixCountdown(`${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    };
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [pixCharge?.expires_at]);
 
   // Realtime subscription
   useEffect(() => {
@@ -188,9 +231,13 @@ export default function ConsumerQR() {
             setLiveItems(freshItems);
             setLivePayments(freshPayments);
 
-            if (newStatus === "paid" && prevStatusRef.current === "partially_paid") {
+            if (newStatus === "paid" && (prevStatusRef.current === "partially_paid" || prevStatusRef.current === "processing_payment")) {
               vibrate(300);
               toast("Pagamento confirmado! Pedido enviado ao bar", { duration: 5000 });
+            }
+            if (newStatus === "cancelled" && prevStatusRef.current === "processing_payment") {
+              vibrate(200);
+              toast("Pagamento cancelado ou expirado", { duration: 5000 });
             }
             if (newStatus === "ready" && prevStatusRef.current !== "ready") {
               vibrate(300);
@@ -290,6 +337,92 @@ export default function ConsumerQR() {
           <ShoppingBag className="h-5 w-5 mr-2" />
           {t("consumer_qr_new_order")}
         </Button>
+      </div>
+    );
+  }
+
+  // ── Cancelled state ──
+  if (isCancelled) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 border border-destructive/30">
+          <XCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground">Pagamento cancelado</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            O pagamento expirou ou foi cancelado. Faça um novo pedido.
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate("/app")}
+          className="rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {t("consumer_qr_explore")}
+        </Button>
+      </div>
+    );
+  }
+
+  // ── Processing payment state ──
+  if (isProcessing) {
+    return (
+      <div className="flex flex-col items-center gap-5 pb-4">
+        {/* Order number */}
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            {t("consumer_qr_order")}
+          </p>
+          <p className="text-2xl font-extrabold text-primary">
+            #{String(displayOrder.order_number).padStart(3, "0")}
+          </p>
+        </div>
+
+        {isPixProcessing && pixCharge ? (
+          <>
+            {/* PIX QR Code */}
+            <div className="w-full rounded-2xl border border-primary/40 bg-card p-5 text-center">
+              <p className="text-sm font-semibold text-foreground mb-3">Escaneie o QR Code para pagar via PIX</p>
+              <div className="rounded-2xl bg-white p-4 mx-auto w-fit">
+                <QRCodeSVG value={pixCharge.qr_code} size={200} level="H" bgColor="#ffffff" fgColor="#0A0A0A" />
+              </div>
+              {pixCountdown && (
+                <div className="mt-3">
+                  <span className={cn(
+                    "text-sm font-bold",
+                    pixCountdown === "Expirado" ? "text-destructive" : "text-primary"
+                  )}>
+                    {pixCountdown === "Expirado" ? "⏰ PIX expirado" : `⏱ Expira em ${pixCountdown}`}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Aguardando confirmação do pagamento...
+            </p>
+          </>
+        ) : (
+          <>
+            {/* Card / generic loading */}
+            <div className="w-full rounded-2xl border border-primary/30 bg-card p-8 text-center">
+              <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+              <h2 className="text-lg font-bold text-foreground">
+                {orderPaymentMethod === "credit_card" || orderPaymentMethod === "debit_card"
+                  ? "Processando cartão..."
+                  : "Processando pagamento..."}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Aguarde a confirmação
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Timeline */}
+        <OrderTimeline currentStep={currentStep} orderStatus={orderStatus} />
+
+        {/* Order summary */}
+        <OrderSummary items={displayItems} total={displayOrder.total} />
       </div>
     );
   }
@@ -422,6 +555,7 @@ export default function ConsumerQR() {
 function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orderStatus: string | null }) {
   const isWarningStep = orderStatus === "partially_delivered";
   const isCashWaiting = orderStatus === "partially_paid";
+  const isProcessingStep = orderStatus === "processing_payment";
 
   return (
     <div className="w-full px-2">
@@ -454,7 +588,8 @@ function OrderTimeline({ currentStep, orderStatus }: { currentStep: number; orde
                       isCurrent && !isWarningCurrent && !isCashCurrent && "text-primary",
                       isWarningCurrent && "text-warning",
                       isCashCurrent && "text-amber-400",
-                      isFuture && "text-muted-foreground/40"
+                      isFuture && "text-muted-foreground/40",
+                      isCurrent && isProcessingStep && "animate-spin"
                     )}
                   />
                 </div>

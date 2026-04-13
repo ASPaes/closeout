@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Clock, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox,
   Receipt, DollarSign, ChevronDown, QrCode, CreditCard, Smartphone,
-  Banknote, ArrowDown, Split,
+  Banknote, ArrowDown, Split, Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ type OrderRow = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "active" | "inactive" | "draft" | "completed" | "cancelled"; icon: React.ElementType }> = {
+  processing_payment: { label: "Processando", variant: "draft", icon: Loader2 },
   partially_paid: { label: "Aguardando Dinheiro", variant: "draft", icon: Clock },
   pending:   { label: "Pendente",   variant: "draft",     icon: Clock },
   paid:      { label: "Confirmado", variant: "active",    icon: CheckCircle2 },
@@ -60,7 +61,7 @@ const filters = [
 ];
 const filterMap: Record<string, string[]> = {
   all: [],
-  active: ["partially_paid", "pending", "paid", "preparing", "ready", "partially_delivered"],
+  active: ["processing_payment", "partially_paid", "pending", "paid", "preparing", "ready", "partially_delivered"],
   done: ["delivered"],
   cancelled: ["cancelled"],
 };
@@ -162,9 +163,10 @@ export default function ConsumerPedidos() {
     preparing: 2,
     paid: 3,
     partially_paid: 4,
-    pending: 5,
-    delivered: 6,
-    cancelled: 7,
+    processing_payment: 5,
+    pending: 6,
+    delivered: 7,
+    cancelled: 8,
   };
 
   const filtered = orders
