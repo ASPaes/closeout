@@ -59,14 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Auto-assign consumer role if missing (covers OAuth and any login method)
     const hasConsumer = userRoles.some((r) => r.role === "consumer");
     if (!hasConsumer) {
-      const { data: inserted } = await supabase
+      // Use SECURITY DEFINER function to bypass RLS safely
+      await supabase.rpc("ensure_consumer_role");
+      // Re-fetch roles after assignment
+      const { data: refreshed } = await supabase
         .from("user_roles")
-        .insert({ user_id: userId, role: "consumer" })
         .select("id, role, client_id, venue_id, event_id")
-        .single();
-      if (inserted) {
-        userRoles = [...userRoles, inserted as UserRole];
-      }
+        .eq("user_id", userId);
+      if (refreshed) userRoles = refreshed as UserRole[];
     }
     setRoles(userRoles);
   };
