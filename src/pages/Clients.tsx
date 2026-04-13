@@ -28,6 +28,8 @@ type Client = {
   owner_name: string | null; owner_cpf: string | null; owner_phone: string | null;
   contact_name: string | null; contact_phone: string | null;
   logo_path: string | null; default_fee_percent: number | null;
+  pix_key: string | null; bank_code: string | null; bank_agency: string | null;
+  bank_account: string | null; bank_account_type: string | null;
 };
 
 type FormState = {
