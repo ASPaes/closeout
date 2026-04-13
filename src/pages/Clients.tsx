@@ -379,10 +379,14 @@ export default function Clients() {
           <Tabs defaultValue="dados" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="dados">{t("cl_section_data")}</TabsTrigger>
+              <TabsTrigger value="banco">{t("bank_tab")}</TabsTrigger>
               <TabsTrigger value="cobranca">{t("br_tab_billing")}</TabsTrigger>
             </TabsList>
             <TabsContent value="dados">
               <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
+            </TabsContent>
+            <TabsContent value="banco">
+              <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
             </TabsContent>
             <TabsContent value="cobranca">
               <ClientBillingRules clientId={editing.id} />
@@ -420,6 +424,10 @@ export default function Clients() {
                   <Label>{t("manager_phone_label")}</Label>
                   <Input value={maskPhone(managerPhone)} onChange={(e) => setManagerPhone(unmask(e.target.value))} placeholder="(00) 00000-0000" />
                 </div>
+
+                <Separator className="my-4" />
+
+                <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
               </div>
             </TabsContent>
           </Tabs>
