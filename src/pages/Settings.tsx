@@ -49,9 +49,6 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [savingAsaas, setSavingAsaas] = useState(false);
 
-  const isOwnerOrSuper = roles?.some(
-    (r: any) => r.role === "owner" || r.role === "super_admin"
-  );
 
   useEffect(() => {
     const fetch = async () => {
