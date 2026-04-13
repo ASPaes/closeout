@@ -191,6 +191,7 @@ export default function GestorEventos() {
     setName(""); setDescription(""); setVenueId(""); setStartAt(""); setEndAt(""); setStatus("draft");
     setSettingsId(null); setFormTab("general"); setEventCatalogs([]); setAllCatalogs([]);
     setPendingImages([]);
+    setSandboxMode(true);
     const defaults = await loadDefaults();
     setGeoRadius(String(defaults.geo_radius_meters));
     setMaxOrderValue(defaults.max_order_value != null ? String(defaults.max_order_value) : "");
@@ -205,6 +206,7 @@ export default function GestorEventos() {
     setStartAt(ev.start_at ? ev.start_at.slice(0, 16) : "");
     setEndAt(ev.end_at ? ev.end_at.slice(0, 16) : "");
     setStatus(ev.status); setFormTab("general");
+    setSandboxMode(ev.payment_sandbox_mode);
 
     const { data: settings } = await supabase
       .from("event_settings")
