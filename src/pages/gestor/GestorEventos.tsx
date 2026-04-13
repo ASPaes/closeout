@@ -377,7 +377,12 @@ export default function GestorEventos() {
         </Badge>
       ),
     },
-    { key: "status", header: "Status", className: "w-32", render: (r) => <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} /> },
+    { key: "status", header: "Status", className: "w-44", render: (r) => (
+      <div className="flex items-center gap-1.5">
+        <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} />
+        {r.payment_sandbox_mode && <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-500">SANDBOX</Badge>}
+      </div>
+    )},
     {
       key: "actions", header: "", className: "w-40 text-right",
       render: (r) => (
