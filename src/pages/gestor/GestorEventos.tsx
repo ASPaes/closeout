@@ -244,6 +244,7 @@ export default function GestorEventos() {
     const eventPayload = {
       name: name.trim(), description: description.trim() || null, venue_id: venueId, client_id: clientId!,
       start_at: startAt ? new Date(startAt).toISOString() : null, end_at: endAt ? new Date(endAt).toISOString() : null, status,
+      payment_sandbox_mode: sandboxMode,
     };
 
     let eventId = editingId;
