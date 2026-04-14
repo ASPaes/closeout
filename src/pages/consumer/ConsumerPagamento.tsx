@@ -320,6 +320,60 @@ export default function ConsumerPagamento() {
     );
   };
 
+  // ── CPF handler ──
+  const handlePaymentCpfChange = (val: string) => {
+    setPaymentCpf(onlyDigits(val).slice(0, 11));
+    setPaymentCpfError("");
+  };
+  const handlePaymentCpfBlur = () => {
+    if (paymentCpf.length > 0 && !isValidCPF(paymentCpf)) {
+      setPaymentCpfError("CPF inválido");
+    }
+  };
+
+  // ── Other address CEP fetch ──
+  const fetchOtherCep = useCallback(async (digits: string) => {
+    setOtherCepLoading(true);
+    setOtherCepError("");
+    setOtherCepAddress(null);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data: CepData = await res.json();
+      if (data.erro) {
+        setOtherCepError("CEP não encontrado");
+      } else {
+        setOtherCepAddress(data);
+      }
+    } catch {
+      setOtherCepError("CEP não encontrado");
+    } finally {
+      setOtherCepLoading(false);
+    }
+  }, []);
+
+  const handleOtherCepChange = (val: string) => {
+    const digits = onlyDigits(val).slice(0, 8);
+    setOtherCep(digits);
+    setOtherCepError("");
+    setOtherCepAddress(null);
+    if (digits.length === 8) fetchOtherCep(digits);
+  };
+
+  // ── Needs digital payment (not pure cash) ──
+  const needsDigital = splitMode
+    ? splitMethod1 !== "cash" || splitMethod2 !== "cash"
+    : selectedMethod !== "cash";
+
+  const needsCard = splitMode
+    ? isCardMethod(splitMethod1) || isCardMethod(splitMethod2)
+    : isCardMethod(selectedMethod);
+
+  const isCpfValid = paymentCpf.length === 11 && isValidCPF(paymentCpf) && !paymentCpfError;
+
+  const isAddressValid = !needsCard || !useOtherAddress || (
+    otherCep.length === 8 && !!otherCepAddress && !otherCepError && otherAddressNumber.trim().length > 0
+  );
+
   // ── Subscribe to order status changes ──
   const subscribeToOrder = useCallback(
     (orderId: string) => {
