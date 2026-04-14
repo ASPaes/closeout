@@ -242,8 +242,12 @@ export default function ConsumerPagamento() {
   const isCardMethod = (method: PaymentMethod) =>
     method === "credit_card" || method === "debit_card";
 
+  const splitHasCard = splitMode && (isCardMethod(splitMethod1) || isCardMethod(splitMethod2));
+
   const showCardForm =
     !splitMode && isCardMethod(selectedMethod) && !selectedSavedCardId;
+
+  const showSplitCardForm = splitHasCard && !selectedSavedCardId;
 
   const isSplitValid = (): boolean => {
     if (!splitMode) return true;
