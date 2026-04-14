@@ -550,6 +550,9 @@ export default function ConsumerPagamento() {
         event_id: activeEvent?.id,
         client_id: activeEvent?.client_id,
         billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
+        payment_cpf: paymentCpf,
+        payment_postal_code: useOtherAddress ? otherCep : (profile as any)?.postal_code || "",
+        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : (profile as any)?.address_number || "",
       };
 
       // Card data
@@ -958,7 +961,9 @@ export default function ConsumerPagamento() {
   const canConfirm =
     cart.items.length > 0 &&
     (!splitMode || isSplitValid()) &&
-    (!(showCardForm || showSplitCardForm) || isNewCardValid());
+    (!(showCardForm || showSplitCardForm) || isNewCardValid()) &&
+    (selectedMethod === "cash" && !splitMode ? true : isCpfValid) &&
+    isAddressValid;
 
   // ── Select payment method ──
   return (
