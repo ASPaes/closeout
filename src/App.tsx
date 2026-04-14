@@ -63,6 +63,8 @@ import WaiterHistorico from "@/pages/garcom/WaiterHistorico";
 // Consumer pages
 import ConsumerLogin from "@/pages/consumer/ConsumerLogin";
 import ConsumerCadastro from "@/pages/consumer/ConsumerCadastro";
+import ConsumerCompletarCadastro from "@/pages/consumer/ConsumerCompletarCadastro";
+import { RegistrationGuard } from "@/components/RegistrationGuard";
 import ConsumerEventos from "@/pages/consumer/ConsumerEventos";
 import ConsumerCardapio from "@/pages/consumer/ConsumerCardapio";
 import ConsumerCarrinho from "@/pages/consumer/ConsumerCarrinho";
