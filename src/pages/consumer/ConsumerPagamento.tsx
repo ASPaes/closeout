@@ -479,24 +479,25 @@ export default function ConsumerPagamento() {
       }
 
       const chargeData = chargeResult as any;
+      const charge = chargeData?.data || chargeData;
 
-      if (chargeData?.error) {
+      if (charge?.error) {
         // Card declined or API error
         if (isCard) {
-          setDeclinedMessage(chargeData.detail || chargeData.error || "Pagamento recusado pelo emissor");
+          setDeclinedMessage(charge.detail || charge.error || "Pagamento recusado pelo emissor");
           setDeclinedOrderId(orderId);
           setFlowState("card_declined");
           return;
         }
-        throw new Error(chargeData.detail || chargeData.error);
+        throw new Error(charge.detail || charge.error);
       }
 
       // PIX flow
       if (isPix) {
-        setPixQrCodeBase64(chargeData.pix_qr_code || "");
-        setPixCopyPaste(chargeData.pix_copy_paste || "");
-        const expiresAt = chargeData.pix_expires_at
-          ? new Date(chargeData.pix_expires_at)
+        setPixQrCodeBase64(charge.pix_qr_code || "");
+        setPixCopyPaste(charge.pix_copy_paste || "");
+        const expiresAt = charge.pix_expires_at
+          ? new Date(charge.pix_expires_at)
           : new Date(Date.now() + 15 * 60 * 1000);
         setPixExpiresAt(expiresAt);
         setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
@@ -507,7 +508,7 @@ export default function ConsumerPagamento() {
       }
 
       // Card approved
-      if (isCard && chargeData.card_approved === true) {
+      if (isCard && charge.card_approved === true) {
         setFlowState("success");
         setTimeout(() => {
           navigate(`/app/qr?order=${orderId}`, { replace: true });
@@ -516,8 +517,8 @@ export default function ConsumerPagamento() {
       }
 
       // Card not approved
-      if (isCard && chargeData.card_approved === false) {
-        setDeclinedMessage(chargeData.detail || "Pagamento recusado pelo emissor");
+      if (isCard && charge.card_approved === false) {
+        setDeclinedMessage(charge.detail || "Pagamento recusado pelo emissor");
         setDeclinedOrderId(orderId);
         setFlowState("card_declined");
         return;
