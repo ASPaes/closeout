@@ -204,6 +204,14 @@ export default function ConsumerPagamento() {
       });
   }, [user]);
 
+  // ── Pre-fill CPF and card holder name from profile ──
+  useEffect(() => {
+    if (!profile) return;
+    const profileCpf = (profile as any).last_payment_cpf || profile.cpf || "";
+    setPaymentCpf(onlyDigits(profileCpf));
+    if (profile.name) setCardHolderName(profile.name);
+  }, [profile]);
+
   // ── Silent GPS ──
   useEffect(() => {
     getLocation().catch(() => {});
