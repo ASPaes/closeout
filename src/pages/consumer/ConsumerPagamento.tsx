@@ -860,7 +860,7 @@ export default function ConsumerPagamento() {
   const canConfirm =
     cart.items.length > 0 &&
     (!splitMode || isSplitValid()) &&
-    (!showCardForm || isNewCardValid());
+    (!(showCardForm || showSplitCardForm) || isNewCardValid());
 
   // ── Select payment method ──
   return (
