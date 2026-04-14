@@ -59,10 +59,34 @@ function maskCardNumber(value: string): string {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
 }
 
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isValidCPF(cpf: string): boolean {
+  const d = onlyDigits(cpf);
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+  for (let t = 9; t < 11; t++) {
+    let sum = 0;
+    for (let c = 0; c < t; c++) sum += parseInt(d[c]) * ((t + 1) - c);
+    sum = ((10 * sum) % 11) % 10;
+    if (parseInt(d[t]) !== sum) return false;
+  }
+  return true;
+}
+
+interface CepData {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
+}
+
 export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
 
   // ── Saved cards (Asaas) ──
@@ -78,6 +102,18 @@ export default function ConsumerPagamento() {
   const [cardExpYear, setCardExpYear] = useState("");
   const [cardCvv, setCardCvv] = useState("");
   const [saveCard, setSaveCard] = useState(true);
+
+  // ── Payment CPF ──
+  const [paymentCpf, setPaymentCpf] = useState("");
+  const [paymentCpfError, setPaymentCpfError] = useState("");
+
+  // ── Address toggle ──
+  const [useOtherAddress, setUseOtherAddress] = useState(false);
+  const [otherCep, setOtherCep] = useState("");
+  const [otherCepError, setOtherCepError] = useState("");
+  const [otherCepLoading, setOtherCepLoading] = useState(false);
+  const [otherCepAddress, setOtherCepAddress] = useState<CepData | null>(null);
+  const [otherAddressNumber, setOtherAddressNumber] = useState("");
 
   // ── Split payment ──
   const [splitMode, setSplitMode] = useState(false);
@@ -167,6 +203,14 @@ export default function ConsumerPagamento() {
         }
       });
   }, [user]);
+
+  // ── Pre-fill CPF and card holder name from profile ──
+  useEffect(() => {
+    if (!profile) return;
+    const profileCpf = profile.last_payment_cpf || profile.cpf || "";
+    setPaymentCpf(onlyDigits(profileCpf));
+    if (profile.name) setCardHolderName(profile.name);
+  }, [profile]);
 
   // ── Silent GPS ──
   useEffect(() => {
@@ -275,6 +319,60 @@ export default function ConsumerPagamento() {
       cardCvv.length <= 4
     );
   };
+
+  // ── CPF handler ──
+  const handlePaymentCpfChange = (val: string) => {
+    setPaymentCpf(onlyDigits(val).slice(0, 11));
+    setPaymentCpfError("");
+  };
+  const handlePaymentCpfBlur = () => {
+    if (paymentCpf.length > 0 && !isValidCPF(paymentCpf)) {
+      setPaymentCpfError("CPF inválido");
+    }
+  };
+
+  // ── Other address CEP fetch ──
+  const fetchOtherCep = useCallback(async (digits: string) => {
+    setOtherCepLoading(true);
+    setOtherCepError("");
+    setOtherCepAddress(null);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data: CepData = await res.json();
+      if (data.erro) {
+        setOtherCepError("CEP não encontrado");
+      } else {
+        setOtherCepAddress(data);
+      }
+    } catch {
+      setOtherCepError("CEP não encontrado");
+    } finally {
+      setOtherCepLoading(false);
+    }
+  }, []);
+
+  const handleOtherCepChange = (val: string) => {
+    const digits = onlyDigits(val).slice(0, 8);
+    setOtherCep(digits);
+    setOtherCepError("");
+    setOtherCepAddress(null);
+    if (digits.length === 8) fetchOtherCep(digits);
+  };
+
+  // ── Needs digital payment (not pure cash) ──
+  const needsDigital = splitMode
+    ? splitMethod1 !== "cash" || splitMethod2 !== "cash"
+    : selectedMethod !== "cash";
+
+  const needsCard = splitMode
+    ? isCardMethod(splitMethod1) || isCardMethod(splitMethod2)
+    : isCardMethod(selectedMethod);
+
+  const isCpfValid = paymentCpf.length === 11 && isValidCPF(paymentCpf) && !paymentCpfError;
+
+  const isAddressValid = !needsCard || !useOtherAddress || (
+    otherCep.length === 8 && !!otherCepAddress && !otherCepError && otherAddressNumber.trim().length > 0
+  );
 
   // ── Subscribe to order status changes ──
   const subscribeToOrder = useCallback(
@@ -452,6 +550,9 @@ export default function ConsumerPagamento() {
         event_id: activeEvent?.id,
         client_id: activeEvent?.client_id,
         billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
+        payment_cpf: paymentCpf,
+        payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
+        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
       };
 
       // Card data
@@ -860,7 +961,9 @@ export default function ConsumerPagamento() {
   const canConfirm =
     cart.items.length > 0 &&
     (!splitMode || isSplitValid()) &&
-    (!(showCardForm || showSplitCardForm) || isNewCardValid());
+    (!(showCardForm || showSplitCardForm) || isNewCardValid()) &&
+    (selectedMethod === "cash" && !splitMode ? true : isCpfValid) &&
+    isAddressValid;
 
   // ── Select payment method ──
   return (
@@ -900,6 +1003,98 @@ export default function ConsumerPagamento() {
           </div>
         </div>
       </div>
+
+      {/* CPF do pagador — shown for digital methods */}
+      {needsDigital && (
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground">CPF do pagador</label>
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="CPF (apenas números)"
+            value={paymentCpf}
+            onChange={(e) => handlePaymentCpfChange(e.target.value)}
+            onBlur={handlePaymentCpfBlur}
+            maxLength={11}
+            className={cn(
+              "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+              paymentCpfError && "border-destructive"
+            )}
+            style={{ fontSize: "16px" }}
+          />
+          {paymentCpfError && <p className="text-xs text-destructive">{paymentCpfError}</p>}
+        </div>
+      )}
+
+      {/* Address toggle — shown for card methods */}
+      {needsCard && (
+        <div className="space-y-3">
+          <label className="text-xs text-muted-foreground">Endereço de cobrança</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setUseOtherAddress(false)}
+              className={cn(
+                "flex-1 rounded-xl border p-3 text-xs font-semibold transition-all",
+                !useOtherAddress
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
+              )}
+            >
+              Meu endereço
+            </button>
+            <button
+              onClick={() => setUseOtherAddress(true)}
+              className={cn(
+                "flex-1 rounded-xl border p-3 text-xs font-semibold transition-all",
+                useOtherAddress
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
+              )}
+            >
+              Outro endereço
+            </button>
+          </div>
+          {!useOtherAddress && profile?.postal_code && (
+            <p className="text-xs text-muted-foreground">
+              CEP {profile.postal_code}, nº {profile.address_number || "—"}
+            </p>
+          )}
+          {useOtherAddress && (
+            <div className="space-y-3">
+              <div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="CEP (apenas números)"
+                  value={otherCep}
+                  onChange={(e) => handleOtherCepChange(e.target.value)}
+                  maxLength={8}
+                  className={cn(
+                    "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+                    otherCepError && "border-destructive"
+                  )}
+                  style={{ fontSize: "16px" }}
+                />
+                {otherCepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
+                {otherCepError && <p className="mt-1 text-xs text-destructive">{otherCepError}</p>}
+                {otherCepAddress && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {otherCepAddress.logradouro}, {otherCepAddress.bairro} - {otherCepAddress.localidade}/{otherCepAddress.uf}
+                  </p>
+                )}
+              </div>
+              <Input
+                type="text"
+                placeholder="Número"
+                value={otherAddressNumber}
+                onChange={(e) => setOtherAddressNumber(e.target.value)}
+                className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] w-32"
+                style={{ fontSize: "16px" }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Payment methods (single mode) */}
       {!splitMode && (

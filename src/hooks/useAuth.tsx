@@ -20,6 +20,9 @@ type Profile = {
   status: string;
   language: string | null;
   registration_complete: boolean | null;
+  postal_code: string | null;
+  address_number: string | null;
+  last_payment_cpf: string | null;
 };
 
 type AuthContextType = {
