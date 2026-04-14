@@ -238,47 +238,30 @@ export default function ConsumerCadastro() {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
-        emailRedirectTo: window.location.origin + "/app",
+        data: {
+          name,
+          cpf,
+          phone,
+          postal_code: cep,
+          address_number: addressNumber.trim(),
+          city: cepAddress?.localidade || "",
+          state: cepAddress?.uf || "",
+          neighborhood: cepAddress?.bairro || "",
+          street: cepAddress?.logradouro || "",
+          signup_source: "consumer",
+        },
+        emailRedirectTo: window.location.origin + "/app/login",
       },
     });
 
-    if (error) { toast.error(error.message); setLoading(false); return; }
-
-    if (data.user) {
-      // Aguardar profile ser criado pelo trigger
-      let retries = 0;
-      while (retries < 5) {
-        const { data: existingProfile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        if (existingProfile) break;
-        await new Promise(r => setTimeout(r, 500));
-        retries++;
-      }
-
-      await supabase.from("profiles").update({
-        cpf,
-        phone,
-        postal_code: cep,
-        address_number: addressNumber.trim(),
-        city: cepAddress?.localidade || "",
-        state: cepAddress?.uf || "",
-        neighborhood: cepAddress?.bairro || "",
-        street: cepAddress?.logradouro || "",
-        registration_complete: true,
-      }).eq("id", data.user.id);
-
-      await supabase.from("user_roles").insert({
-        user_id: data.user.id,
-        role: "consumer",
-      });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
     }
 
     setLoading(false);
@@ -289,7 +272,7 @@ export default function ConsumerCadastro() {
   const handleOAuth = async (provider: "google" | "apple") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin + "/app" },
+      options: { redirectTo: window.location.origin + "/app/login" },
     });
     if (error) toast.error(error.message);
   };
