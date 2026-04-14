@@ -49,6 +49,7 @@ export default function ConsumerCadastro() {
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState("");
   const [cpfChecked, setCpfChecked] = useState(false);
+  const [cpfTaken, setCpfTaken] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [cep, setCep] = useState("");
