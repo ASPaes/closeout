@@ -425,49 +425,62 @@ export default function ConsumerPagamento() {
 
   // ── Charge card function ──
   const chargeCard = useCallback(async (payRow: any, orderId: string) => {
-    const method = payRow.payment_method;
-    const body: any = {
-      payment_id: payRow.id,
-      order_id: orderId,
-      amount: Number(payRow.amount),
-      event_id: activeEvent?.id,
-      client_id: activeEvent?.client_id,
-      billing_type: method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
-      payment_cpf: paymentCpf,
-      payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
-      payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
-    };
+    try {
+      const method = payRow.payment_method;
+      const body: any = {
+        payment_id: payRow.id,
+        order_id: orderId,
+        amount: Number(payRow.amount),
+        event_id: activeEvent?.id,
+        client_id: activeEvent?.client_id,
+        billing_type: method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
+        payment_cpf: paymentCpf,
+        payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
+        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
+      };
 
-    if (selectedSavedCardId) {
-      const savedCard = savedCards.find((c) => c.id === selectedSavedCardId);
-      if (savedCard) body.card_token = savedCard.card_token;
-    } else {
-      body.card_holder_name = cardHolderName;
-      body.card_number = cardNumber.replace(/\D/g, "");
-      body.card_expiry_month = cardExpMonth;
-      body.card_expiry_year = cardExpYear;
-      body.card_cvv = cardCvv;
-      body.save_card = saveCard;
-    }
+      if (selectedSavedCardId) {
+        const savedCard = savedCards.find((c) => c.id === selectedSavedCardId);
+        if (savedCard) body.card_token = savedCard.card_token;
+      } else {
+        body.card_holder_name = cardHolderName;
+        body.card_number = cardNumber.replace(/\D/g, "");
+        body.card_expiry_month = cardExpMonth;
+        body.card_expiry_year = cardExpYear;
+        body.card_cvv = cardCvv;
+        body.save_card = saveCard;
+      }
 
-    const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-      "asaas-create-charge",
-      { body }
-    );
+      const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+        "asaas-create-charge",
+        { body }
+      );
 
-    if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+      if (chargeError) {
+        console.error("Card charge error (edge function):", chargeError);
+        setDeclinedMessage(chargeError.message || "Erro ao criar cobrança");
+        setDeclinedOrderId(orderId);
+        setFlowState("card_declined_split");
+        return;
+      }
 
-    const charge = (chargeResult as any)?.data || chargeResult;
-    if (charge?.error) {
-      setDeclinedMessage(charge.detail || charge.error || "Pagamento recusado");
+      const charge = (chargeResult as any)?.data || chargeResult;
+      if (charge?.error) {
+        setDeclinedMessage(charge.detail || charge.error || "Pagamento recusado");
+        setDeclinedOrderId(orderId);
+        setFlowState("card_declined_split");
+        return;
+      }
+
+      if (charge.card_approved) {
+        setFlowState("success");
+        setTimeout(() => navigate("/app/qr?order=" + orderId, { replace: true }), 1500);
+      }
+    } catch (err: any) {
+      console.error("Card charge error:", err);
+      setDeclinedMessage(err.message || "Erro ao cobrar cartão");
       setDeclinedOrderId(orderId);
       setFlowState("card_declined_split");
-      return;
-    }
-
-    if (charge.card_approved) {
-      setFlowState("success");
-      setTimeout(() => navigate("/app/qr?order=" + orderId, { replace: true }), 1500);
     }
   }, [activeEvent, paymentCpf, useOtherAddress, otherCep, otherAddressNumber, profile, selectedSavedCardId, savedCards, cardHolderName, cardNumber, cardExpMonth, cardExpYear, cardCvv, saveCard, navigate]);
 
