@@ -49,6 +49,7 @@ export default function ConsumerCadastro() {
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState("");
   const [cpfChecked, setCpfChecked] = useState(false);
+  const [cpfTaken, setCpfTaken] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [cep, setCep] = useState("");
@@ -76,6 +77,7 @@ export default function ConsumerCadastro() {
     setCpf(digits);
     setCpfError("");
     setCpfChecked(false);
+    setCpfTaken(false);
   };
 
   const handleCpfBlur = useCallback(async () => {
@@ -91,8 +93,10 @@ export default function ConsumerCadastro() {
       .limit(1)
       .maybeSingle();
     if (existing) {
-      setCpfError("Este CPF já está vinculado a outra conta. Entre em contato com o suporte.");
+      setCpfTaken(true);
+      setCpfError("Já existe uma conta com este CPF. Faça login ou use a opção 'Esqueci minha senha'.");
     } else {
+      setCpfTaken(false);
       setCpfChecked(true);
     }
   }, [cpf]);
@@ -146,6 +150,7 @@ export default function ConsumerCadastro() {
     cpf.length === 11 &&
     isValidCPF(cpf) &&
     cpfChecked &&
+    !cpfTaken &&
     !cpfError &&
     isValidPhone(phone) &&
     !phoneError &&
@@ -169,7 +174,8 @@ export default function ConsumerCadastro() {
       .limit(1)
       .maybeSingle();
     if (existing) {
-      setCpfError("Este CPF já está vinculado a outra conta. Entre em contato com o suporte.");
+      setCpfTaken(true);
+      setCpfError("Já existe uma conta com este CPF. Faça login ou use a opção 'Esqueci minha senha'.");
       return false;
     }
     if (!isValidPhone(phone)) {
@@ -215,6 +221,22 @@ export default function ConsumerCadastro() {
   const handleSignup = async () => {
     if (!termsAccepted) { toast.error(t("consumer_accept_terms")); return; }
     setLoading(true);
+
+    // Verificação final de CPF duplicado antes de criar conta
+    const { data: cpfCheck } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("cpf", cpf)
+      .limit(1)
+      .maybeSingle();
+    if (cpfCheck) {
+      setCpfTaken(true);
+      setCpfError("Já existe uma conta com este CPF. Faça login ou use a opção 'Esqueci minha senha'.");
+      toast.error("Já existe uma conta com este CPF. Faça login ou use a opção 'Esqueci minha senha'.");
+      setLoading(false);
+      setStep(1);
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,
