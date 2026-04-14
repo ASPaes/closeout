@@ -11,6 +11,7 @@ import {
   Clock,
   Copy,
   Check,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -41,9 +42,14 @@ type FlowState =
   | "select"
   | "processing"
   | "pix_waiting"
+  | "pix_waiting_then_card"
+  | "cash_waiting_then_card"
+  | "charging_card"
   | "success"
   | "success_cash"
   | "card_declined"
+  | "card_declined_split"
+  | "card_retry_pending"
   | "error";
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -143,7 +149,7 @@ export default function ConsumerPagamento() {
   const [pixQrCodeBase64, setPixQrCodeBase64] = useState("");
   const [pixCopyPaste, setPixCopyPaste] = useState("");
   const [pixExpiresAt, setPixExpiresAt] = useState<Date | null>(null);
-  const [pixTimeLeft, setPixTimeLeft] = useState(900); // 15 min in seconds
+  const [pixTimeLeft, setPixTimeLeft] = useState(900);
   const [pixCopied, setPixCopied] = useState(false);
   const [pixOrderId, setPixOrderId] = useState<string | null>(null);
 
@@ -151,7 +157,11 @@ export default function ConsumerPagamento() {
   const [declinedMessage, setDeclinedMessage] = useState("");
   const [declinedOrderId, setDeclinedOrderId] = useState<string | null>(null);
 
+  // ── Split card pending ──
+  const [pendingCardPayment, setPendingCardPayment] = useState<{ payRow: any; orderId: string } | null>(null);
+
   const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const paymentsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const splitAmount2 = splitMode
     ? Math.max(0, cart.total - (parseFloat(splitAmount1) || 0))
@@ -242,7 +252,7 @@ export default function ConsumerPagamento() {
 
   // ── PIX countdown timer ──
   useEffect(() => {
-    if (flowState !== "pix_waiting" || !pixExpiresAt) return;
+    if ((flowState !== "pix_waiting" && flowState !== "pix_waiting_then_card") || !pixExpiresAt) return;
     const timer = setInterval(() => {
       const now = Date.now();
       const diff = Math.max(0, Math.floor((pixExpiresAt.getTime() - now) / 1000));
@@ -260,8 +270,47 @@ export default function ConsumerPagamento() {
       if (realtimeChannelRef.current) {
         supabase.removeChannel(realtimeChannelRef.current);
       }
+      if (paymentsChannelRef.current) {
+        supabase.removeChannel(paymentsChannelRef.current);
+      }
     };
   }, []);
+
+  // ── Check pending card payment on mount ──
+  useEffect(() => {
+    if (!user) return;
+    const checkPending = async () => {
+      const { data: pendingOrders } = await supabase
+        .from("orders")
+        .select("id, status")
+        .eq("consumer_id", user.id)
+        .in("status", ["pending", "partially_paid"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (pendingOrders && pendingOrders.length > 0) {
+        const orderId = pendingOrders[0].id;
+        const { data: pendingCard } = await supabase
+          .from("payments")
+          .select("id, payment_method, amount, status")
+          .eq("order_id", orderId)
+          .in("payment_method", ["credit_card", "debit_card"])
+          .in("status", ["created", "processing"]);
+
+        const { data: approvedOther } = await supabase
+          .from("payments")
+          .select("id")
+          .eq("order_id", orderId)
+          .eq("status", "approved");
+
+        if (pendingCard && pendingCard.length > 0 && approvedOther && approvedOther.length > 0) {
+          setPendingCardPayment({ payRow: pendingCard[0], orderId });
+          setFlowState("card_retry_pending");
+        }
+      }
+    };
+    checkPending();
+  }, [user]);
 
   const resolvePaymentMethod = (method: PaymentMethod): string => {
     if (method === "pix") return "pix";
@@ -374,6 +423,54 @@ export default function ConsumerPagamento() {
     otherCep.length === 8 && !!otherCepAddress && !otherCepError && otherAddressNumber.trim().length > 0
   );
 
+  // ── Charge card function ──
+  const chargeCard = useCallback(async (payRow: any, orderId: string) => {
+    const method = payRow.payment_method;
+    const body: any = {
+      payment_id: payRow.id,
+      order_id: orderId,
+      amount: Number(payRow.amount),
+      event_id: activeEvent?.id,
+      client_id: activeEvent?.client_id,
+      billing_type: method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
+      payment_cpf: paymentCpf,
+      payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
+      payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
+    };
+
+    if (selectedSavedCardId) {
+      const savedCard = savedCards.find((c) => c.id === selectedSavedCardId);
+      if (savedCard) body.card_token = savedCard.card_token;
+    } else {
+      body.card_holder_name = cardHolderName;
+      body.card_number = cardNumber.replace(/\D/g, "");
+      body.card_expiry_month = cardExpMonth;
+      body.card_expiry_year = cardExpYear;
+      body.card_cvv = cardCvv;
+      body.save_card = saveCard;
+    }
+
+    const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+      "asaas-create-charge",
+      { body }
+    );
+
+    if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+
+    const charge = (chargeResult as any)?.data || chargeResult;
+    if (charge?.error) {
+      setDeclinedMessage(charge.detail || charge.error || "Pagamento recusado");
+      setDeclinedOrderId(orderId);
+      setFlowState("card_declined_split");
+      return;
+    }
+
+    if (charge.card_approved) {
+      setFlowState("success");
+      setTimeout(() => navigate("/app/qr?order=" + orderId, { replace: true }), 1500);
+    }
+  }, [activeEvent, paymentCpf, useOtherAddress, otherCep, otherAddressNumber, profile, selectedSavedCardId, savedCards, cardHolderName, cardNumber, cardExpMonth, cardExpYear, cardCvv, saveCard, navigate]);
+
   // ── Subscribe to order status changes ──
   const subscribeToOrder = useCallback(
     (orderId: string) => {
@@ -393,7 +490,6 @@ export default function ConsumerPagamento() {
           (payload: any) => {
             const newStatus = payload.new?.status;
             if (newStatus === "paid") {
-              // Payment confirmed!
               try {
                 navigator.vibrate?.(300);
               } catch {}
@@ -412,6 +508,162 @@ export default function ConsumerPagamento() {
     },
     [navigate]
   );
+
+  // ── Subscribe to payments for split card auto-charge ──
+  const subscribeToPayments = useCallback(
+    (orderId: string) => {
+      if (paymentsChannelRef.current) {
+        supabase.removeChannel(paymentsChannelRef.current);
+      }
+      const channel = supabase
+        .channel(`split-payments-${orderId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "payments",
+            filter: `order_id=eq.${orderId}`,
+          },
+          (payload: any) => {
+            const updated = payload.new;
+            if (
+              updated.status === "approved" &&
+              updated.payment_method !== "credit_card" &&
+              updated.payment_method !== "debit_card"
+            ) {
+              setPendingCardPayment((prev) => {
+                if (prev) {
+                  setFlowState("charging_card");
+                  chargeCard(prev.payRow, prev.orderId);
+                }
+                return prev;
+              });
+            }
+          }
+        )
+        .subscribe();
+      paymentsChannelRef.current = channel;
+    },
+    [chargeCard]
+  );
+
+  // ── Process digital payments via Asaas ──
+  const processDigitalPayments = async (
+    orderId: string,
+    payments: { method: string; amount: number }[],
+    total: number
+  ) => {
+    const { data: paymentRows } = await supabase
+      .from("payments")
+      .select("id, payment_method, amount, status")
+      .eq("order_id", orderId)
+      .neq("payment_method", "cash");
+
+    if (!paymentRows || paymentRows.length === 0) {
+      throw new Error("Pagamento digital não encontrado");
+    }
+
+    const pixPayments = paymentRows.filter((p: any) => p.payment_method === "pix");
+    const cardPayments = paymentRows.filter(
+      (p: any) => p.payment_method === "credit_card" || p.payment_method === "debit_card"
+    );
+
+    const isSplitWithCard = cardPayments.length > 0 && (pixPayments.length > 0 || hasCash);
+
+    // CENÁRIO 1: Split com cartão — PIX ou cash primeiro, cartão depois
+    if (isSplitWithCard) {
+      setPendingCardPayment({
+        payRow: cardPayments[0],
+        orderId,
+      });
+
+      if (pixPayments.length > 0) {
+        const payRow = pixPayments[0];
+        const body: any = {
+          payment_id: payRow.id,
+          order_id: orderId,
+          amount: Number(payRow.amount),
+          event_id: activeEvent?.id,
+          client_id: activeEvent?.client_id,
+          billing_type: "PIX",
+          payment_cpf: paymentCpf,
+        };
+
+        const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+          "asaas-create-charge",
+          { body }
+        );
+
+        if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+
+        const charge = (chargeResult as any)?.data || chargeResult;
+        if (charge?.error) throw new Error(charge.detail || charge.error);
+
+        setPixQrCodeBase64(charge.pix_qr_code || "");
+        setPixCopyPaste(charge.pix_copy_paste || "");
+        const expiresAt = charge.pix_expires_at
+          ? new Date(charge.pix_expires_at)
+          : new Date(Date.now() + 15 * 60 * 1000);
+        setPixExpiresAt(expiresAt);
+        setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
+        setPixOrderId(orderId);
+        setFlowState("pix_waiting_then_card");
+        subscribeToOrder(orderId);
+        subscribeToPayments(orderId);
+        return;
+      }
+
+      if (hasCash) {
+        setFlowState("cash_waiting_then_card");
+        subscribeToOrder(orderId);
+        subscribeToPayments(orderId);
+        return;
+      }
+    }
+
+    // CENÁRIO 2: Só cartão (sem split)
+    if (cardPayments.length > 0 && pixPayments.length === 0) {
+      await chargeCard(cardPayments[0], orderId);
+      return;
+    }
+
+    // CENÁRIO 3: Só PIX (sem cartão)
+    if (pixPayments.length > 0 && cardPayments.length === 0) {
+      const payRow = pixPayments[0];
+      const body: any = {
+        payment_id: payRow.id,
+        order_id: orderId,
+        amount: Number(payRow.amount),
+        event_id: activeEvent?.id,
+        client_id: activeEvent?.client_id,
+        billing_type: "PIX",
+        payment_cpf: paymentCpf,
+      };
+
+      const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+        "asaas-create-charge",
+        { body }
+      );
+
+      if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+
+      const charge = (chargeResult as any)?.data || chargeResult;
+      if (charge?.error) throw new Error(charge.detail || charge.error);
+
+      setPixQrCodeBase64(charge.pix_qr_code || "");
+      setPixCopyPaste(charge.pix_copy_paste || "");
+      const expiresAt = charge.pix_expires_at
+        ? new Date(charge.pix_expires_at)
+        : new Date(Date.now() + 15 * 60 * 1000);
+      setPixExpiresAt(expiresAt);
+      setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
+      setPixOrderId(orderId);
+      setFlowState("pix_waiting");
+      subscribeToOrder(orderId);
+      return;
+    }
+  };
 
   // ── Handle confirm ──
   const handleConfirm = async () => {
@@ -440,7 +692,6 @@ export default function ConsumerPagamento() {
         ];
       }
 
-      // 1) Create order via RPC (now returns pending/partially_paid)
       const { data, error } = await supabase.rpc("create_consumer_split_order", {
         params: {
           event_id: activeEvent.id,
@@ -473,7 +724,6 @@ export default function ConsumerPagamento() {
         })),
       });
 
-      // Audit log (best-effort)
       try {
         await logAudit({
           action: "CONSUMER_ORDER_CREATED",
@@ -491,24 +741,22 @@ export default function ConsumerPagamento() {
 
       clearCart();
 
-      // 2) If has cash → show cash pending screen (unchanged flow)
       if (hasCashPending) {
         setCashPendingInfo({ cashAmount, digitalAmount, orderId });
-        // If there's also a digital part, call Asaas for the digital payment
         if (digitalAmount > 0) {
           await processDigitalPayments(orderId, payments, total);
         }
-        setFlowState("success_cash");
+        if (digitalAmount <= 0) {
+          setFlowState("success_cash");
+        }
         return;
       }
 
-      // 3) 100% digital → call Asaas
       if (hasDigitalPending) {
         await processDigitalPayments(orderId, payments, total);
         return;
       }
 
-      // Fallback (shouldn't happen)
       setFlowState("success");
       setTimeout(() => {
         navigate(`/app/qr?order=${orderId}`, { replace: true });
@@ -520,122 +768,6 @@ export default function ConsumerPagamento() {
     }
   };
 
-  // ── Process digital payments via Asaas ──
-  const processDigitalPayments = async (
-    orderId: string,
-    payments: { method: string; amount: number }[],
-    total: number
-  ) => {
-    // Get payment_id from DB
-    const { data: paymentRows } = await supabase
-      .from("payments")
-      .select("id, payment_method, amount")
-      .eq("order_id", orderId)
-      .neq("payment_method", "cash");
-
-    if (!paymentRows || paymentRows.length === 0) {
-      throw new Error("Pagamento digital não encontrado");
-    }
-
-    for (const payRow of paymentRows) {
-      const method = payRow.payment_method;
-      const isPix = method === "pix";
-      const isCard = method === "credit_card" || method === "debit_card";
-
-      // Build body for edge function
-      const body: any = {
-        payment_id: payRow.id,
-        order_id: orderId,
-        amount: Number(payRow.amount),
-        event_id: activeEvent?.id,
-        client_id: activeEvent?.client_id,
-        billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
-        payment_cpf: paymentCpf,
-        payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
-        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
-      };
-
-      // Card data
-      if (isCard) {
-        if (selectedSavedCardId) {
-          const savedCard = savedCards.find((c) => c.id === selectedSavedCardId);
-          if (savedCard) {
-            body.card_token = savedCard.card_token;
-          }
-        } else {
-          body.card_holder_name = cardHolderName;
-          body.card_number = cardNumber.replace(/\D/g, "");
-          body.card_expiry_month = cardExpMonth;
-          body.card_expiry_year = cardExpYear;
-          body.card_cvv = cardCvv;
-          body.save_card = saveCard;
-        }
-      }
-
-      const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-        "asaas-create-charge",
-        { body }
-      );
-
-      if (chargeError) {
-        throw new Error(chargeError.message || "Erro ao criar cobrança");
-      }
-
-      const chargeData = chargeResult as any;
-      const charge = chargeData?.data || chargeData;
-
-      if (charge?.error) {
-        // Card declined or API error
-        if (isCard) {
-          setDeclinedMessage(charge.detail || charge.error || "Pagamento recusado pelo emissor");
-          setDeclinedOrderId(orderId);
-          setFlowState("card_declined");
-          return;
-        }
-        throw new Error(charge.detail || charge.error);
-      }
-
-      // PIX flow
-      if (isPix) {
-        setPixQrCodeBase64(charge.pix_qr_code || "");
-        setPixCopyPaste(charge.pix_copy_paste || "");
-        const expiresAt = charge.pix_expires_at
-          ? new Date(charge.pix_expires_at)
-          : new Date(Date.now() + 15 * 60 * 1000);
-        setPixExpiresAt(expiresAt);
-        setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
-        setPixOrderId(orderId);
-        setFlowState("pix_waiting");
-        subscribeToOrder(orderId);
-        return;
-      }
-
-      // Card approved
-      if (isCard && charge.card_approved === true) {
-        setFlowState("success");
-        setTimeout(() => {
-          navigate(`/app/qr?order=${orderId}`, { replace: true });
-        }, 1500);
-        return;
-      }
-
-      // Card not approved
-      if (isCard && charge.card_approved === false) {
-        setDeclinedMessage(charge.detail || "Pagamento recusado pelo emissor");
-        setDeclinedOrderId(orderId);
-        setFlowState("card_declined");
-        return;
-      }
-
-      // Card pending (might be processed async) — subscribe to updates
-      if (isCard) {
-        subscribeToOrder(orderId);
-        // stay in processing
-        return;
-      }
-    }
-  };
-
   const handleCancel = () => navigate(-1);
   const handleRetry = () => {
     setFlowState("select");
@@ -643,6 +775,7 @@ export default function ConsumerPagamento() {
     setDeclinedMessage("");
     setDeclinedOrderId(null);
     setPixOrderId(null);
+    setPendingCardPayment(null);
   };
 
   const handleCancelOrder = async (orderId: string) => {
@@ -652,6 +785,7 @@ export default function ConsumerPagamento() {
         .update({ status: "cancelled" as any, cancelled_at: new Date().toISOString(), cancel_reason: "Cancelado pelo consumidor" } as any)
         .eq("id", orderId);
     } catch {}
+    setPendingCardPayment(null);
     navigate("/app/carrinho", { replace: true });
   };
 
@@ -667,6 +801,29 @@ export default function ConsumerPagamento() {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const handleRetryCardSplit = () => {
+    setSelectedSavedCardId(null);
+    setUseNewCard(false);
+    setCardNumber("");
+    setCardExpMonth("");
+    setCardExpYear("");
+    setCardCvv("");
+    setDeclinedMessage("");
+    setFlowState("card_retry_pending");
+  };
+
+  const handleFinalizePendingCard = async () => {
+    if (!pendingCardPayment) return;
+    setFlowState("charging_card");
+    try {
+      await chargeCard(pendingCardPayment.payRow, pendingCardPayment.orderId);
+    } catch (err: any) {
+      setDeclinedMessage(err.message || "Erro ao cobrar cartão");
+      setDeclinedOrderId(pendingCardPayment.orderId);
+      setFlowState("card_declined_split");
+    }
   };
 
   // ── Processing ──
@@ -688,12 +845,11 @@ export default function ConsumerPagamento() {
     );
   }
 
-  // ── PIX waiting ──
+  // ── PIX waiting (simple) ──
   if (flowState === "pix_waiting") {
     const expired = pixTimeLeft <= 0;
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background px-6">
-        {/* Timer */}
         <div className={cn(
           "text-4xl font-mono font-bold tabular-nums",
           expired ? "text-destructive" : pixTimeLeft < 120 ? "text-amber-400" : "text-primary"
@@ -726,7 +882,6 @@ export default function ConsumerPagamento() {
           </>
         ) : (
           <>
-            {/* QR Code */}
             {pixQrCodeBase64 && (
               <div className="bg-white p-4 rounded-2xl">
                 <img
@@ -744,7 +899,6 @@ export default function ConsumerPagamento() {
               O pagamento será confirmado automaticamente
             </p>
 
-            {/* Copy button */}
             {pixCopyPaste && (
               <Button
                 onClick={handleCopyPix}
@@ -777,6 +931,145 @@ export default function ConsumerPagamento() {
             )}
           </>
         )}
+      </div>
+    );
+  }
+
+  // ── PIX waiting then card ──
+  if (flowState === "pix_waiting_then_card") {
+    const expired = pixTimeLeft <= 0;
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background px-6">
+        {/* Warning banner */}
+        <div className="w-full max-w-[320px] rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+          <p className="text-xs font-semibold text-amber-500 text-center">
+            ⚠️ Não feche o app. Após o PIX, o cartão será cobrado automaticamente.
+          </p>
+        </div>
+
+        <div className={cn(
+          "text-4xl font-mono font-bold tabular-nums",
+          expired ? "text-destructive" : pixTimeLeft < 120 ? "text-amber-400" : "text-primary"
+        )}>
+          {expired ? "00:00" : formatTime(pixTimeLeft)}
+        </div>
+
+        {expired ? (
+          <>
+            <XCircle className="h-16 w-16 text-destructive" />
+            <h2 className="text-lg font-bold text-foreground">PIX expirado</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              O tempo para pagamento expirou. O pedido será cancelado.
+            </p>
+            {pixOrderId && (
+              <Button
+                onClick={() => handleCancelOrder(pixOrderId)}
+                className="h-14 rounded-2xl text-base font-bold bg-destructive hover:bg-destructive/90 text-destructive-foreground w-full max-w-[320px]"
+              >
+                Fechar
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            {pixQrCodeBase64 && (
+              <div className="bg-white p-4 rounded-2xl">
+                <img
+                  src={`data:image/png;base64,${pixQrCodeBase64}`}
+                  alt="QR Code PIX"
+                  className="w-48 h-48"
+                />
+              </div>
+            )}
+
+            <p className="text-sm font-semibold text-foreground text-center">
+              Abra o app do seu banco e pague via PIX
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              Após a confirmação do PIX, o cartão será cobrado automaticamente
+            </p>
+
+            {pixCopyPaste && (
+              <Button
+                onClick={handleCopyPix}
+                variant="outline"
+                className="h-12 rounded-xl w-full max-w-[320px] gap-2"
+              >
+                {pixCopied ? (
+                  <>
+                    <Check className="h-4 w-4 text-success" />
+                    Código copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copiar código PIX
+                  </>
+                )}
+              </Button>
+            )}
+
+            {pixOrderId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCancelOrder(pixOrderId)}
+                className="text-xs text-destructive"
+              >
+                Cancelar pedido
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Cash waiting then card ──
+  if (flowState === "cash_waiting_then_card") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background px-6">
+        <div className="w-full max-w-[320px] rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+          <p className="text-xs font-semibold text-amber-500 text-center">
+            ⚠️ Não feche o app. Após o dinheiro, o cartão será cobrado automaticamente.
+          </p>
+        </div>
+
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
+
+        <div className="text-center max-w-[320px]">
+          <h2 className="text-lg font-bold text-foreground">
+            Aguardando confirmação do dinheiro
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Apresente o QR Code ao garçom para confirmar o pagamento em dinheiro
+          </p>
+        </div>
+
+        {pendingCardPayment && (
+          <Button
+            onClick={() => navigate(`/app/qr?order=${pendingCardPayment.orderId}`, { replace: false })}
+            variant="outline"
+            className="h-12 rounded-xl w-full max-w-[320px] gap-2"
+          >
+            Ver meu QR Code
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  // ── Charging card ──
+  if (flowState === "charging_card") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background">
+        <Loader2 className="h-16 w-16 text-primary animate-spin" />
+        <div className="text-center">
+          <h2 className="text-lg font-bold text-foreground">Cobrando cartão...</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Aguarde, estamos finalizando seu pagamento
+          </p>
+        </div>
       </div>
     );
   }
@@ -830,7 +1123,7 @@ export default function ConsumerPagamento() {
     );
   }
 
-  // ── Card declined ──
+  // ── Card declined (simple, no split) ──
   if (flowState === "card_declined") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background px-6">
@@ -858,6 +1151,213 @@ export default function ConsumerPagamento() {
               Cancelar pedido
             </Button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Card declined in split (PIX/cash already paid) ──
+  if (flowState === "card_declined_split") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background px-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 border border-destructive/30">
+          <XCircle className="h-10 w-10 text-destructive" />
+        </div>
+        <div className="text-center max-w-[320px]">
+          <h2 className="text-lg font-bold text-foreground">Cartão recusado</h2>
+          <p className="text-sm text-muted-foreground mt-1">{declinedMessage}</p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-[320px]">
+          <Button
+            onClick={handleRetryCardSplit}
+            className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground w-full"
+          >
+            Tentar com outro cartão
+          </Button>
+          <Button
+            onClick={handleRetryCardSplit}
+            variant="outline"
+            className="h-12 rounded-xl"
+          >
+            Tentar outro método
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground/60 text-center max-w-[280px]">
+          O valor já pago via PIX/dinheiro será estornado caso não consiga finalizar o pagamento
+        </p>
+      </div>
+    );
+  }
+
+  // ── Card retry pending (resumed session) ──
+  if (flowState === "card_retry_pending") {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+        <div className="flex flex-col gap-5 px-6 py-8 max-w-[480px] mx-auto">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
+              <AlertTriangle className="h-8 w-8 text-amber-400" />
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-foreground">Pagamento pendente</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Você tem um pedido com pagamento parcial. Finalize o pagamento com cartão.
+              </p>
+            </div>
+          </div>
+
+          {/* CPF */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">CPF do pagador</label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="CPF (apenas números)"
+              value={paymentCpf}
+              onChange={(e) => handlePaymentCpfChange(e.target.value)}
+              onBlur={handlePaymentCpfBlur}
+              maxLength={11}
+              className={cn(
+                "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+                paymentCpfError && "border-destructive"
+              )}
+              style={{ fontSize: "16px" }}
+            />
+            {paymentCpfError && <p className="text-xs text-destructive">{paymentCpfError}</p>}
+          </div>
+
+          {/* Saved cards */}
+          {savedCards.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Cartões salvos
+              </h4>
+              <RadioGroup
+                value={selectedSavedCardId || "new"}
+                onValueChange={(val) => {
+                  if (val === "new") {
+                    setSelectedSavedCardId(null);
+                    setUseNewCard(true);
+                  } else {
+                    setSelectedSavedCardId(val);
+                    setUseNewCard(false);
+                  }
+                }}
+              >
+                {savedCards.map((card) => (
+                  <div
+                    key={card.id}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border p-3",
+                      selectedSavedCardId === card.id
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-white/[0.08] bg-white/[0.02]"
+                    )}
+                  >
+                    <RadioGroupItem value={card.id} id={`retry-card-${card.id}`} />
+                    <Label htmlFor={`retry-card-${card.id}`} className="flex-1 cursor-pointer">
+                      <p className="text-sm font-semibold text-foreground">
+                        {card.card_brand || "Cartão"} ••••{card.card_last_four}
+                      </p>
+                      {card.card_holder_name && (
+                        <p className="text-xs text-muted-foreground">{card.card_holder_name}</p>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-3",
+                    useNewCard && !selectedSavedCardId
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-white/[0.08] bg-white/[0.02]"
+                  )}
+                >
+                  <RadioGroupItem value="new" id="retry-card-new" />
+                  <Label htmlFor="retry-card-new" className="cursor-pointer text-sm font-semibold text-foreground">
+                    Usar novo cartão
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* New card form */}
+          {(savedCards.length === 0 || useNewCard) && (
+            <div className="space-y-3 rounded-xl bg-white/[0.04] border border-white/[0.06] p-4">
+              <h4 className="text-sm font-bold text-foreground">Dados do cartão</h4>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nome no cartão</label>
+                <Input
+                  value={cardHolderName}
+                  onChange={(e) => setCardHolderName(e.target.value)}
+                  placeholder="Como aparece no cartão"
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]"
+                  style={{ fontSize: "16px" }}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Número do cartão</label>
+                <Input
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(maskCardNumber(e.target.value))}
+                  placeholder="0000 0000 0000 0000"
+                  inputMode="numeric"
+                  maxLength={19}
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] font-mono"
+                  style={{ fontSize: "16px" }}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Mês</label>
+                  <Input
+                    value={cardExpMonth}
+                    onChange={(e) => setCardExpMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="MM"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Ano</label>
+                  <Input
+                    value={cardExpYear}
+                    onChange={(e) => setCardExpYear(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="AA"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">CVV</label>
+                  <Input
+                    value={cardCvv}
+                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="000"
+                    inputMode="numeric"
+                    maxLength={4}
+                    type="password"
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button
+            onClick={handleFinalizePendingCard}
+            disabled={!isCpfValid || (!selectedSavedCardId && !isNewCardValid())}
+            className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full"
+            style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
+          >
+            Finalizar pagamento
+          </Button>
         </div>
       </div>
     );
@@ -995,8 +1495,8 @@ export default function ConsumerPagamento() {
               </span>
             </div>
           ))}
-          <div className="border-t border-white/[0.06] pt-2 mt-1 flex justify-between">
-            <span className="text-base font-bold text-foreground">{t("consumer_total")}</span>
+          <div className="mt-2 flex justify-between border-t border-white/[0.06] pt-2">
+            <span className="text-sm font-semibold text-foreground">Total</span>
             <span className="text-base font-bold text-primary">
               R$ {cart.total.toFixed(2)}
             </span>
@@ -1116,8 +1616,8 @@ export default function ConsumerPagamento() {
             />
           ))}
 
-          {/* Saved cards (Asaas) */}
-          {isCardMethod(selectedMethod) && savedCards.length > 0 && (
+          {/* Saved cards (Asaas) — show for card method OR split with card */}
+          {(isCardMethod(selectedMethod) || splitHasCard) && savedCards.length > 0 && (
             <div className="space-y-2 pl-2">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Cartões salvos
@@ -1370,8 +1870,65 @@ export default function ConsumerPagamento() {
                 : "Os valores devem somar o total do pedido"}
             </p>
           )}
+
+          {/* Saved cards for split */}
+          {splitHasCard && savedCards.length > 0 && (
+            <div className="space-y-2 pl-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Cartões salvos
+              </h4>
+              <RadioGroup
+                value={selectedSavedCardId || "new"}
+                onValueChange={(val) => {
+                  if (val === "new") {
+                    setSelectedSavedCardId(null);
+                    setUseNewCard(true);
+                  } else {
+                    setSelectedSavedCardId(val);
+                    setUseNewCard(false);
+                  }
+                }}
+              >
+                {savedCards.map((card) => (
+                  <div
+                    key={card.id}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border p-3",
+                      selectedSavedCardId === card.id
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-white/[0.08] bg-white/[0.02]"
+                    )}
+                  >
+                    <RadioGroupItem value={card.id} id={`split-card-${card.id}`} />
+                    <Label htmlFor={`split-card-${card.id}`} className="flex-1 cursor-pointer">
+                      <p className="text-sm font-semibold text-foreground">
+                        {card.card_brand || "Cartão"} ••••{card.card_last_four}
+                      </p>
+                      {card.card_holder_name && (
+                        <p className="text-xs text-muted-foreground">{card.card_holder_name}</p>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-3",
+                    useNewCard && !selectedSavedCardId
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-white/[0.08] bg-white/[0.02]"
+                  )}
+                >
+                  <RadioGroupItem value="new" id="split-card-new" />
+                  <Label htmlFor="split-card-new" className="cursor-pointer text-sm font-semibold text-foreground">
+                    Usar novo cartão
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
           {/* Card form for split mode */}
-          {showSplitCardForm && (
+          {showSplitCardForm && (savedCards.length === 0 || useNewCard) && (
             <div className="space-y-3 rounded-xl bg-white/[0.04] border border-white/[0.06] p-4">
               <h4 className="text-sm font-bold text-foreground">Dados do cartão</h4>
               <div>
