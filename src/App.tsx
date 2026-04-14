@@ -159,9 +159,10 @@ const App = () => (
             {/* Consumer app — auth (no layout) */}
             <Route path="/app/login" element={<ConsumerLogin />} />
             <Route path="/app/cadastro" element={<ConsumerCadastro />} />
+            <Route path="/app/completar-cadastro" element={<ConsumerCompletarCadastro />} />
 
             {/* Consumer app — authenticated */}
-            <Route path="/app" element={<ConsumerLayout />}>
+            <Route path="/app" element={<RegistrationGuard><ConsumerLayout /></RegistrationGuard>}>
               <Route index element={<ConsumerEventos />} />
               <Route path="evento/:eventId" element={<ConsumerEventoCardapio />} />
               <Route path="cardapio" element={<ConsumerCardapio />} />
