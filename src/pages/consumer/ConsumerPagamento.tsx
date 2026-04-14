@@ -1004,6 +1004,98 @@ export default function ConsumerPagamento() {
         </div>
       </div>
 
+      {/* CPF do pagador — shown for digital methods */}
+      {needsDigital && (
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground">CPF do pagador</label>
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="CPF (apenas números)"
+            value={paymentCpf}
+            onChange={(e) => handlePaymentCpfChange(e.target.value)}
+            onBlur={handlePaymentCpfBlur}
+            maxLength={11}
+            className={cn(
+              "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+              paymentCpfError && "border-destructive"
+            )}
+            style={{ fontSize: "16px" }}
+          />
+          {paymentCpfError && <p className="text-xs text-destructive">{paymentCpfError}</p>}
+        </div>
+      )}
+
+      {/* Address toggle — shown for card methods */}
+      {needsCard && (
+        <div className="space-y-3">
+          <label className="text-xs text-muted-foreground">Endereço de cobrança</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setUseOtherAddress(false)}
+              className={cn(
+                "flex-1 rounded-xl border p-3 text-xs font-semibold transition-all",
+                !useOtherAddress
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
+              )}
+            >
+              Meu endereço
+            </button>
+            <button
+              onClick={() => setUseOtherAddress(true)}
+              className={cn(
+                "flex-1 rounded-xl border p-3 text-xs font-semibold transition-all",
+                useOtherAddress
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-white/[0.08] bg-white/[0.02] text-muted-foreground"
+              )}
+            >
+              Outro endereço
+            </button>
+          </div>
+          {!useOtherAddress && (profile as any)?.postal_code && (
+            <p className="text-xs text-muted-foreground">
+              CEP {(profile as any).postal_code}, nº {(profile as any).address_number || "—"}
+            </p>
+          )}
+          {useOtherAddress && (
+            <div className="space-y-3">
+              <div>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="CEP (apenas números)"
+                  value={otherCep}
+                  onChange={(e) => handleOtherCepChange(e.target.value)}
+                  maxLength={8}
+                  className={cn(
+                    "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+                    otherCepError && "border-destructive"
+                  )}
+                  style={{ fontSize: "16px" }}
+                />
+                {otherCepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
+                {otherCepError && <p className="mt-1 text-xs text-destructive">{otherCepError}</p>}
+                {otherCepAddress && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {otherCepAddress.logradouro}, {otherCepAddress.bairro} - {otherCepAddress.localidade}/{otherCepAddress.uf}
+                  </p>
+                )}
+              </div>
+              <Input
+                type="text"
+                placeholder="Número"
+                value={otherAddressNumber}
+                onChange={(e) => setOtherAddressNumber(e.target.value)}
+                className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] w-32"
+                style={{ fontSize: "16px" }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Payment methods (single mode) */}
       {!splitMode && (
         <div className="space-y-3">
