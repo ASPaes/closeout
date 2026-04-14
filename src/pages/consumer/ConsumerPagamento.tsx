@@ -242,8 +242,12 @@ export default function ConsumerPagamento() {
   const isCardMethod = (method: PaymentMethod) =>
     method === "credit_card" || method === "debit_card";
 
+  const splitHasCard = splitMode && (isCardMethod(splitMethod1) || isCardMethod(splitMethod2));
+
   const showCardForm =
     !splitMode && isCardMethod(selectedMethod) && !selectedSavedCardId;
+
+  const showSplitCardForm = splitHasCard && !selectedSavedCardId;
 
   const isSplitValid = (): boolean => {
     if (!splitMode) return true;
@@ -856,7 +860,7 @@ export default function ConsumerPagamento() {
   const canConfirm =
     cart.items.length > 0 &&
     (!splitMode || isSplitValid()) &&
-    (!showCardForm || isNewCardValid());
+    (!(showCardForm || showSplitCardForm) || isNewCardValid());
 
   // ── Select payment method ──
   return (
@@ -1170,6 +1174,83 @@ export default function ConsumerPagamento() {
                 ? "O valor do pagamento 2 deve ser maior que zero"
                 : "Os valores devem somar o total do pedido"}
             </p>
+          )}
+          {/* Card form for split mode */}
+          {showSplitCardForm && (
+            <div className="space-y-3 rounded-xl bg-white/[0.04] border border-white/[0.06] p-4">
+              <h4 className="text-sm font-bold text-foreground">Dados do cartão</h4>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nome no cartão</label>
+                <Input
+                  value={cardHolderName}
+                  onChange={(e) => setCardHolderName(e.target.value)}
+                  placeholder="Como aparece no cartão"
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]"
+                  style={{ fontSize: "16px" }}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Número do cartão</label>
+                <Input
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(maskCardNumber(e.target.value))}
+                  placeholder="0000 0000 0000 0000"
+                  inputMode="numeric"
+                  maxLength={19}
+                  className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] font-mono"
+                  style={{ fontSize: "16px" }}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Mês</label>
+                  <Input
+                    value={cardExpMonth}
+                    onChange={(e) => setCardExpMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="MM"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Ano</label>
+                  <Input
+                    value={cardExpYear}
+                    onChange={(e) => setCardExpYear(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="AA"
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">CVV</label>
+                  <Input
+                    value={cardCvv}
+                    onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="000"
+                    inputMode="numeric"
+                    maxLength={4}
+                    type="password"
+                    className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08] text-center"
+                    style={{ fontSize: "16px" }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="save-card-split"
+                  checked={saveCard}
+                  onCheckedChange={(checked) => setSaveCard(!!checked)}
+                />
+                <Label htmlFor="save-card-split" className="text-xs text-muted-foreground cursor-pointer">
+                  Salvar cartão para próximas compras
+                </Label>
+              </div>
+            </div>
           )}
         </div>
       )}
