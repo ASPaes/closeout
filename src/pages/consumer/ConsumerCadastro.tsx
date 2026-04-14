@@ -1,5 +1,5 @@
 import { useTranslation } from "@/i18n/use-translation";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,22 +7,35 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
-import { maskCPF, maskPhone, unmask } from "@/lib/masks";
 import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
 
-function validateCPF(cpf: string): boolean {
-  const digits = unmask(cpf);
-  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  if (rem !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  return rem === parseInt(digits[10]);
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isValidCPF(cpf: string): boolean {
+  cpf = onlyDigits(cpf);
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  for (let t = 9; t < 11; t++) {
+    let d = 0;
+    for (let c = 0; c < t; c++) d += parseInt(cpf[c]) * ((t + 1) - c);
+    d = ((10 * d) % 11) % 10;
+    if (parseInt(cpf[t]) !== d) return false;
+  }
+  return true;
+}
+
+function isValidPhone(phone: string): boolean {
+  const digits = onlyDigits(phone);
+  return digits.length === 11 && digits[2] === "9";
+}
+
+interface CepData {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
 }
 
 export default function ConsumerCadastro() {
@@ -34,8 +47,15 @@ export default function ConsumerCadastro() {
   // Step 1
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
-  const [phone, setPhone] = useState("");
   const [cpfError, setCpfError] = useState("");
+  const [cpfChecked, setCpfChecked] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [cep, setCep] = useState("");
+  const [cepError, setCepError] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepAddress, setCepAddress] = useState<CepData | null>(null);
+  const [addressNumber, setAddressNumber] = useState("");
 
   // Step 2
   const [email, setEmail] = useState("");
@@ -50,29 +70,120 @@ export default function ConsumerCadastro() {
   const pwValidation = validatePassword(password);
   const showPwReqs = step === 2;
 
-  const handleCPFChange = (val: string) => {
-    const masked = maskCPF(val);
-    setCpf(masked);
+  // CPF handlers
+  const handleCpfChange = (val: string) => {
+    const digits = onlyDigits(val).slice(0, 11);
+    setCpf(digits);
     setCpfError("");
+    setCpfChecked(false);
   };
 
-  const validateStep1 = async () => {
-    if (!name.trim()) { toast.error(t("consumer_name_required")); return false; }
-    const rawCpf = unmask(cpf);
-    if (rawCpf.length !== 11 || !validateCPF(rawCpf)) {
-      setCpfError(t("consumer_cpf_invalid"));
-      return false;
+  const handleCpfBlur = useCallback(async () => {
+    if (cpf.length !== 11) return;
+    if (!isValidCPF(cpf)) {
+      setCpfError("CPF inválido");
+      return;
     }
     const { data: existing } = await supabase
       .from("profiles")
       .select("id")
-      .eq("cpf", rawCpf)
+      .eq("cpf", cpf)
+      .limit(1)
       .maybeSingle();
     if (existing) {
-      setCpfError(t("consumer_cpf_taken"));
+      setCpfError("Este CPF já está vinculado a outra conta. Entre em contato com o suporte.");
+    } else {
+      setCpfChecked(true);
+    }
+  }, [cpf]);
+
+  // Phone handler
+  const handlePhoneChange = (val: string) => {
+    const digits = onlyDigits(val).slice(0, 11);
+    setPhone(digits);
+    setPhoneError("");
+  };
+
+  const handlePhoneBlur = () => {
+    if (phone.length > 0 && !isValidPhone(phone)) {
+      setPhoneError("Telefone inválido. Digite DDD + 9 + número");
+    }
+  };
+
+  // CEP handlers
+  const fetchCep = useCallback(async (digits: string) => {
+    setCepLoading(true);
+    setCepError("");
+    setCepAddress(null);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data: CepData = await res.json();
+      if (data.erro) {
+        setCepError("CEP não encontrado");
+      } else {
+        setCepAddress(data);
+      }
+    } catch {
+      setCepError("CEP não encontrado");
+    } finally {
+      setCepLoading(false);
+    }
+  }, []);
+
+  const handleCepChange = (val: string) => {
+    const digits = onlyDigits(val).slice(0, 8);
+    setCep(digits);
+    setCepError("");
+    setCepAddress(null);
+    if (digits.length === 8) {
+      fetchCep(digits);
+    }
+  };
+
+  // Step 1 validity
+  const isStep1Valid =
+    name.trim().length > 0 &&
+    cpf.length === 11 &&
+    isValidCPF(cpf) &&
+    cpfChecked &&
+    !cpfError &&
+    isValidPhone(phone) &&
+    !phoneError &&
+    cep.length === 8 &&
+    !!cepAddress &&
+    !cepError &&
+    addressNumber.trim().length > 0;
+
+  const validateStep1 = async () => {
+    if (!name.trim()) { toast.error(t("consumer_name_required")); return false; }
+    if (cpf.length !== 11 || !isValidCPF(cpf)) {
+      setCpfError("CPF inválido");
       return false;
     }
-    if (unmask(phone).length < 10) { toast.error(t("consumer_phone_invalid")); return false; }
+    if (cpfError) return false;
+    // Re-check CPF availability
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("cpf", cpf)
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      setCpfError("Este CPF já está vinculado a outra conta. Entre em contato com o suporte.");
+      return false;
+    }
+    if (!isValidPhone(phone)) {
+      setPhoneError("Telefone inválido. Digite DDD + 9 + número");
+      return false;
+    }
+    if (cep.length !== 8 || !cepAddress) {
+      setCepError("CEP não encontrado");
+      return false;
+    }
+    if (!addressNumber.trim()) {
+      toast.error("Informe o número do endereço");
+      return false;
+    }
     return true;
   };
 
@@ -104,8 +215,6 @@ export default function ConsumerCadastro() {
   const handleSignup = async () => {
     if (!termsAccepted) { toast.error(t("consumer_accept_terms")); return; }
     setLoading(true);
-    const rawCpf = unmask(cpf);
-    const rawPhone = unmask(phone);
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -120,8 +229,15 @@ export default function ConsumerCadastro() {
 
     if (data.user) {
       await supabase.from("profiles").update({
-        cpf: rawCpf,
-        phone: rawPhone,
+        cpf,
+        phone,
+        postal_code: cep,
+        address_number: addressNumber.trim(),
+        city: cepAddress?.localidade || "",
+        state: cepAddress?.uf || "",
+        neighborhood: cepAddress?.bairro || "",
+        street: cepAddress?.logradouro || "",
+        registration_complete: true,
       }).eq("id", data.user.id);
 
       await supabase.from("user_roles").insert({
@@ -142,6 +258,8 @@ export default function ConsumerCadastro() {
     });
     if (error) toast.error(error.message);
   };
+
+  const inputClass = "h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50";
 
   return (
     <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col bg-background text-foreground overflow-hidden">
@@ -180,7 +298,7 @@ export default function ConsumerCadastro() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col px-6">
+      <div className="relative z-10 flex flex-1 flex-col px-6 overflow-y-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">
             {step === 1 ? t("consumer_step1_title") : step === 2 ? t("consumer_step2_title") : t("consumer_step3_title")}
@@ -192,33 +310,76 @@ export default function ConsumerCadastro() {
 
         {step === 1 && (
           <div className="flex flex-col gap-3">
+            {/* Nome */}
             <Input
               type="text"
               placeholder={t("full_name")}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
+              className={inputClass}
               required
             />
+
+            {/* CPF */}
             <div>
               <Input
                 type="text"
                 inputMode="numeric"
-                placeholder="CPF"
+                placeholder="Seu CPF (apenas números)"
                 value={cpf}
-                onChange={(e) => handleCPFChange(e.target.value)}
-                className={`h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 ${cpfError ? "border-destructive" : ""}`}
+                onChange={(e) => handleCpfChange(e.target.value)}
+                onBlur={handleCpfBlur}
+                maxLength={11}
+                className={`${inputClass} ${cpfError ? "border-destructive" : ""}`}
                 required
               />
               {cpfError && <p className="mt-1 text-xs text-destructive">{cpfError}</p>}
             </div>
+
+            {/* Telefone */}
+            <div>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="Celular com DDD (apenas números)"
+                value={phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                onBlur={handlePhoneBlur}
+                maxLength={11}
+                className={`${inputClass} ${phoneError ? "border-destructive" : ""}`}
+                required
+              />
+              {phoneError && <p className="mt-1 text-xs text-destructive">{phoneError}</p>}
+            </div>
+
+            {/* CEP */}
+            <div>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="CEP (apenas números)"
+                value={cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                maxLength={8}
+                className={`${inputClass} ${cepError ? "border-destructive" : ""}`}
+                required
+              />
+              {cepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
+              {cepError && <p className="mt-1 text-xs text-destructive">{cepError}</p>}
+              {cepAddress && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {cepAddress.logradouro}, {cepAddress.bairro} - {cepAddress.localidade}/{cepAddress.uf}
+                </p>
+              )}
+            </div>
+
+            {/* Número */}
             <Input
-              type="tel"
-              inputMode="numeric"
-              placeholder={t("consumer_phone_placeholder")}
-              value={phone}
-              onChange={(e) => setPhone(maskPhone(e.target.value))}
-              className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
+              type="text"
+              placeholder="Número"
+              value={addressNumber}
+              onChange={(e) => setAddressNumber(e.target.value)}
+              className={`${inputClass} w-32`}
               required
             />
           </div>
@@ -231,7 +392,7 @@ export default function ConsumerCadastro() {
               placeholder={t("email")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
+              className={inputClass}
               required
             />
             <div>
@@ -243,7 +404,7 @@ export default function ConsumerCadastro() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setPwFocused(true)}
                   onBlur={() => setPwFocused(false)}
-                  className={`h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 pr-12 ${
+                  className={`${inputClass} pr-12 ${
                     password.length > 0 ? (pwValidation.isValid ? "border-success" : "border-destructive") : ""
                   }`}
                   minLength={6}
@@ -264,7 +425,7 @@ export default function ConsumerCadastro() {
               placeholder={t("consumer_confirm_password")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
+              className={inputClass}
               minLength={6}
               required
             />
@@ -283,8 +444,14 @@ export default function ConsumerCadastro() {
                 <span className="text-sm font-medium text-foreground">{cpf}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">{t("consumer_phone_label")}</span>
+                <span className="text-xs text-muted-foreground">Celular</span>
                 <span className="text-sm font-medium text-foreground">{phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Endereço</span>
+                <span className="text-sm font-medium text-foreground text-right max-w-[60%]">
+                  {cepAddress ? `${cepAddress.logradouro}, ${addressNumber} - ${cepAddress.bairro}, ${cepAddress.localidade}/${cepAddress.uf}` : ""}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs text-muted-foreground">{t("email")}</span>
@@ -310,7 +477,7 @@ export default function ConsumerCadastro() {
           {step < 3 ? (
             <Button
               onClick={handleNext}
-              disabled={loading || (step === 2 && !isStep2Valid)}
+              disabled={loading || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
               className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98] transition-transform"
               style={{ boxShadow: "0 4px 24px hsl(24 100% 50% / 0.35)" }}
             >

@@ -145,6 +145,7 @@ export type Database = {
           card_holder_name: string | null
           card_last_four: string
           card_token: string
+          cpf_used: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -157,6 +158,7 @@ export type Database = {
           card_holder_name?: string | null
           card_last_four: string
           card_token: string
+          cpf_used?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -169,10 +171,35 @@ export type Database = {
           card_holder_name?: string | null
           card_last_four?: string
           card_token?: string
+          cpf_used?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           is_default?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      asaas_customer_map: {
+        Row: {
+          asaas_customer_id: string
+          cpf: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          asaas_customer_id: string
+          cpf: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          asaas_customer_id?: string
+          cpf?: string
+          created_at?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -2125,41 +2152,65 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_number: string | null
           asaas_customer_id: string | null
           avatar_url: string | null
+          city: string | null
           cpf: string | null
           created_at: string
           id: string
           language: string
+          last_payment_cpf: string | null
           name: string
+          neighborhood: string | null
           phone: string | null
+          postal_code: string | null
+          registration_complete: boolean
+          state: string | null
           status: string
+          street: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
+          address_number?: string | null
           asaas_customer_id?: string | null
           avatar_url?: string | null
+          city?: string | null
           cpf?: string | null
           created_at?: string
           id: string
           language?: string
+          last_payment_cpf?: string | null
           name?: string
+          neighborhood?: string | null
           phone?: string | null
+          postal_code?: string | null
+          registration_complete?: boolean
+          state?: string | null
           status?: string
+          street?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
+          address_number?: string | null
           asaas_customer_id?: string | null
           avatar_url?: string | null
+          city?: string | null
           cpf?: string | null
           created_at?: string
           id?: string
           language?: string
+          last_payment_cpf?: string | null
           name?: string
+          neighborhood?: string | null
           phone?: string | null
+          postal_code?: string | null
+          registration_complete?: boolean
+          state?: string | null
           status?: string
+          street?: string | null
           updated_at?: string
           username?: string | null
         }
