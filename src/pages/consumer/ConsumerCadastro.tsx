@@ -228,6 +228,19 @@ export default function ConsumerCadastro() {
     if (error) { toast.error(error.message); setLoading(false); return; }
 
     if (data.user) {
+      // Aguardar profile ser criado pelo trigger
+      let retries = 0;
+      while (retries < 5) {
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        if (existingProfile) break;
+        await new Promise(r => setTimeout(r, 500));
+        retries++;
+      }
+
       await supabase.from("profiles").update({
         cpf,
         phone,
