@@ -59,10 +59,34 @@ function maskCardNumber(value: string): string {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
 }
 
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isValidCPF(cpf: string): boolean {
+  const d = onlyDigits(cpf);
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+  for (let t = 9; t < 11; t++) {
+    let sum = 0;
+    for (let c = 0; c < t; c++) sum += parseInt(d[c]) * ((t + 1) - c);
+    sum = ((10 * sum) % 11) % 10;
+    if (parseInt(d[t]) !== sum) return false;
+  }
+  return true;
+}
+
+interface CepData {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
+}
+
 export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
 
   // ── Saved cards (Asaas) ──
