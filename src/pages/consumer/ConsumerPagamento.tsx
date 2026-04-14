@@ -458,13 +458,11 @@ export default function ConsumerPagamento() {
             body.card_token = savedCard.card_token;
           }
         } else {
-          body.card = {
-            holder_name: cardHolderName,
-            number: cardNumber.replace(/\D/g, ""),
-            expiry_month: cardExpMonth,
-            expiry_year: cardExpYear,
-            cvv: cardCvv,
-          };
+          body.card_holder_name = cardHolderName;
+          body.card_number = cardNumber.replace(/\D/g, "");
+          body.card_expiry_month = cardExpMonth;
+          body.card_expiry_year = cardExpYear;
+          body.card_cvv = cardCvv;
           body.save_card = saveCard;
         }
       }
