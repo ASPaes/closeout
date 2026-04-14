@@ -19,6 +19,7 @@ import {
   DollarSign,
   Inbox,
   Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { maskCPF, maskPhone, unmask } from "@/lib/masks";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -67,6 +78,9 @@ export default function ConsumerPerfil() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editUsername, setEditUsername] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editCpfError, setEditCpfError] = useState("");
+  const [cpfChangeConfirm, setCpfChangeConfirm] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const [saving, setSaving] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | "privacy" | "limits" | null>(null);
@@ -158,11 +172,26 @@ export default function ConsumerPerfil() {
     };
   }, [fetchAllData]);
 
+  /* ── CPF validation ── */
+  function isValidCPF(cpf: string): boolean {
+    cpf = cpf.replace(/\D/g, "");
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+    for (let t = 9; t < 11; t++) {
+      let d = 0;
+      for (let c = 0; c < t; c++) d += parseInt(cpf[c]) * ((t + 1) - c);
+      d = ((10 * d) % 11) % 10;
+      if (parseInt(cpf[t]) !== d) return false;
+    }
+    return true;
+  }
+
   /* ── actions ── */
   const openEdit = () => {
     setEditName(profile?.name || "");
     setEditPhone(profile?.phone ? maskPhone(profile.phone) : "");
     setEditUsername(profileUsername || "");
+    setEditCpf(profile?.cpf || "");
+    setEditCpfError("");
     setUsernameError("");
     setEditOpen(true);
   };
@@ -177,7 +206,25 @@ export default function ConsumerPerfil() {
     return true;
   };
 
-  const handleSave = async () => {
+  const cpfChanged = editCpf !== (profile?.cpf || "");
+
+  const handleSaveClick = async () => {
+    if (!user) return;
+    // Validate CPF
+    if (!editCpf || !isValidCPF(editCpf)) {
+      setEditCpfError("CPF inválido");
+      return;
+    }
+    setEditCpfError("");
+
+    if (cpfChanged) {
+      setCpfChangeConfirm(true);
+      return;
+    }
+    await performSave(false);
+  };
+
+  const performSave = async (withCpfChange: boolean) => {
     if (!user) return;
     if (editUsername && !validateUsername(editUsername)) return;
     if (editUsername && editUsername !== profileUsername) {
@@ -187,9 +234,25 @@ export default function ConsumerPerfil() {
     setSaving(true);
     const updates: any = { name: editName.trim(), phone: unmask(editPhone) };
     if (editUsername) updates.username = editUsername.toLowerCase();
+
+    if (withCpfChange) {
+      updates.cpf = editCpf;
+      // Invalidate saved cards and customer map
+      await Promise.all([
+        supabase.from("asaas_customer_cards").update({ is_active: false } as any).eq("user_id", user.id),
+        supabase.from("asaas_customer_map").delete().eq("user_id", user.id),
+      ]);
+    }
+
     const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
     setSaving(false);
-    if (error) { toast.error(error.message); } else { toast.success(t("consumer_profile_updated")); setEditOpen(false); window.location.reload(); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(withCpfChange ? "CPF atualizado. Cartões salvos foram removidos." : t("consumer_profile_updated"));
+      setEditOpen(false);
+      window.location.reload();
+    }
   };
 
   const handleToggleVisibility = async (val: boolean) => {
@@ -444,15 +507,30 @@ export default function ConsumerPerfil() {
               className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
               inputMode="numeric"
             />
-            <div className="rounded-xl bg-white/[0.03] p-3">
-              <p className="text-xs text-muted-foreground">
-                CPF: <span className="font-medium text-foreground">{displayCpf}</span>
-                <span className="ml-2 text-[10px]">({t("consumer_cpf_not_editable")})</span>
-              </p>
+            <div>
+              <Input
+                placeholder="CPF (apenas números)"
+                value={maskCPF(editCpf)}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  setEditCpf(v);
+                  if (v.length === 11 && !isValidCPF(v)) setEditCpfError("CPF inválido");
+                  else setEditCpfError("");
+                }}
+                className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
+                inputMode="numeric"
+              />
+              {editCpfError && <p className="text-xs text-destructive mt-1 ml-1">{editCpfError}</p>}
+              {cpfChanged && !editCpfError && editCpf.length === 11 && (
+                <p className="text-[10px] text-amber-400 mt-1 ml-1 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  Alterar o CPF removerá seus cartões salvos
+                </p>
+              )}
             </div>
             <Button
-              onClick={handleSave}
-              disabled={saving || !!usernameError}
+              onClick={handleSaveClick}
+              disabled={saving || !!usernameError || !!editCpfError}
               className="h-14 rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground"
             >
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_save")}
@@ -460,6 +538,28 @@ export default function ConsumerPerfil() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* CPF change confirmation */}
+      <AlertDialog open={cpfChangeConfirm} onOpenChange={setCpfChangeConfirm}>
+        <AlertDialogContent className="dark max-w-[400px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar CPF</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao alterar seu CPF, todos os seus cartões salvos serão removidos porque estão vinculados ao CPF anterior. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => performSave(true)}
+              disabled={saving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {saving ? "Salvando..." : "Confirmar e salvar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
