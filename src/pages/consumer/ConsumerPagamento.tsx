@@ -207,7 +207,7 @@ export default function ConsumerPagamento() {
   // ── Pre-fill CPF and card holder name from profile ──
   useEffect(() => {
     if (!profile) return;
-    const profileCpf = (profile as any).last_payment_cpf || profile.cpf || "";
+    const profileCpf = profile.last_payment_cpf || profile.cpf || "";
     setPaymentCpf(onlyDigits(profileCpf));
     if (profile.name) setCardHolderName(profile.name);
   }, [profile]);
@@ -551,8 +551,8 @@ export default function ConsumerPagamento() {
         client_id: activeEvent?.client_id,
         billing_type: isPix ? "PIX" : method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
         payment_cpf: paymentCpf,
-        payment_postal_code: useOtherAddress ? otherCep : (profile as any)?.postal_code || "",
-        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : (profile as any)?.address_number || "",
+        payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
+        payment_address_number: useOtherAddress ? otherAddressNumber.trim() : profile?.address_number || "",
       };
 
       // Card data
@@ -1054,9 +1054,9 @@ export default function ConsumerPagamento() {
               Outro endereço
             </button>
           </div>
-          {!useOtherAddress && (profile as any)?.postal_code && (
+          {!useOtherAddress && profile?.postal_code && (
             <p className="text-xs text-muted-foreground">
-              CEP {(profile as any).postal_code}, nº {(profile as any).address_number || "—"}
+              CEP {profile.postal_code}, nº {profile.address_number || "—"}
             </p>
           )}
           {useOtherAddress && (
