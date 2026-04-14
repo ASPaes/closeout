@@ -19,6 +19,7 @@ type Profile = {
   cpf: string | null;
   status: string;
   language: string | null;
+  registration_complete: boolean | null;
 };
 
 type AuthContextType = {

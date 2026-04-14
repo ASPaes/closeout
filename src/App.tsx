@@ -63,6 +63,8 @@ import WaiterHistorico from "@/pages/garcom/WaiterHistorico";
 // Consumer pages
 import ConsumerLogin from "@/pages/consumer/ConsumerLogin";
 import ConsumerCadastro from "@/pages/consumer/ConsumerCadastro";
+import ConsumerCompletarCadastro from "@/pages/consumer/ConsumerCompletarCadastro";
+import { RegistrationGuard } from "@/components/RegistrationGuard";
 import ConsumerEventos from "@/pages/consumer/ConsumerEventos";
 import ConsumerCardapio from "@/pages/consumer/ConsumerCardapio";
 import ConsumerCarrinho from "@/pages/consumer/ConsumerCarrinho";
@@ -157,9 +159,10 @@ const App = () => (
             {/* Consumer app — auth (no layout) */}
             <Route path="/app/login" element={<ConsumerLogin />} />
             <Route path="/app/cadastro" element={<ConsumerCadastro />} />
+            <Route path="/app/completar-cadastro" element={<ConsumerCompletarCadastro />} />
 
             {/* Consumer app — authenticated */}
-            <Route path="/app" element={<ConsumerLayout />}>
+            <Route path="/app" element={<RegistrationGuard><ConsumerLayout /></RegistrationGuard>}>
               <Route index element={<ConsumerEventos />} />
               <Route path="evento/:eventId" element={<ConsumerEventoCardapio />} />
               <Route path="cardapio" element={<ConsumerCardapio />} />
