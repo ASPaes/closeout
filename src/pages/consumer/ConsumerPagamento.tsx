@@ -103,6 +103,18 @@ export default function ConsumerPagamento() {
   const [cardCvv, setCardCvv] = useState("");
   const [saveCard, setSaveCard] = useState(true);
 
+  // ── Payment CPF ──
+  const [paymentCpf, setPaymentCpf] = useState("");
+  const [paymentCpfError, setPaymentCpfError] = useState("");
+
+  // ── Address toggle ──
+  const [useOtherAddress, setUseOtherAddress] = useState(false);
+  const [otherCep, setOtherCep] = useState("");
+  const [otherCepError, setOtherCepError] = useState("");
+  const [otherCepLoading, setOtherCepLoading] = useState(false);
+  const [otherCepAddress, setOtherCepAddress] = useState<CepData | null>(null);
+  const [otherAddressNumber, setOtherAddressNumber] = useState("");
+
   // ── Split payment ──
   const [splitMode, setSplitMode] = useState(false);
   const [splitMethod1, setSplitMethod1] = useState<PaymentMethod>("pix");
