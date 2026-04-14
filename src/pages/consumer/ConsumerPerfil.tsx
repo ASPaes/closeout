@@ -38,6 +38,7 @@ import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
 import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
+import { SavedCardsSection } from "@/components/consumer/SavedCardsSection";
 import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
 
 /* ── status mappings ── */
@@ -355,6 +356,9 @@ export default function ConsumerPerfil() {
           ]}
         />
       )}
+
+      {/* Saved cards */}
+      {user?.id && <SavedCardsSection userId={user.id} />}
 
       {/* Action cards */}
       <ProfileActionCards onAction={handleAction} />
