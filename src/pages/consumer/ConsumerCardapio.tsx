@@ -247,6 +247,13 @@ export default function ConsumerCardapio() {
   };
 
   if (!activeEvent) {
+    if (loadingEvent) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
         <p className="text-muted-foreground text-sm">{t("consumer_no_event_selected")}</p>
