@@ -217,6 +217,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         clearCart,
         refreshActiveOrder,
         loadingOrder,
+        loadingEvent,
       }}
     >
       {children}
