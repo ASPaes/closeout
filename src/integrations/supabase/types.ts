@@ -1490,6 +1490,7 @@ export type Database = {
           created_at: string
           description: string | null
           end_at: string | null
+          event_type: string | null
           geo_radius_meters: number | null
           id: string
           max_order_value: number | null
@@ -1507,6 +1508,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_at?: string | null
+          event_type?: string | null
           geo_radius_meters?: number | null
           id?: string
           max_order_value?: number | null
@@ -1524,6 +1526,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_at?: string | null
+          event_type?: string | null
           geo_radius_meters?: number | null
           id?: string
           max_order_value?: number | null
