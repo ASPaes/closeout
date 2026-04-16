@@ -296,7 +296,7 @@ export default function ConsumerEventos() {
     if (userLoc) return null;
     const groups = new Map<string, EnrichedEvent[]>();
     for (const ev of sortedFiltered) {
-      const city = ev.venue?.city || t("consumer_no_city") || "Outras";
+      const city = ev.venue?.city || t("consumer_no_city");
       if (!groups.has(city)) groups.set(city, []);
       groups.get(city)!.push(ev);
     }
@@ -306,10 +306,10 @@ export default function ConsumerEventos() {
   const displayName = profile?.name?.split(" ")[0] || "";
 
   const dateFilterPills: { key: DateFilter; label: string }[] = [
-    { key: "all", label: t("consumer_filter_all") || "Todos" },
-    { key: "today", label: t("consumer_filter_today") || "Hoje" },
-    { key: "week", label: t("consumer_filter_week") || "Esta semana" },
-    { key: "month", label: t("consumer_filter_month") || "Este mês" },
+    { key: "all", label: t("consumer_filter_all") },
+    { key: "today", label: t("consumer_filter_today") },
+    { key: "week", label: t("consumer_filter_week") },
+    { key: "month", label: t("consumer_filter_month") },
   ];
 
   const renderEventCard = (event: EnrichedEvent) => (
@@ -445,7 +445,7 @@ export default function ConsumerEventos() {
                 <CalendarDays className="h-3.5 w-3.5" />
                 {dateFilter === "custom" && customDate
                   ? format(customDate, "dd/MM", { locale: ptBR })
-                  : t("consumer_filter_pick_date") || "Escolher data"}
+                  : t("consumer_filter_pick_date")}
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 bg-card border-white/[0.08]" align="start">
@@ -475,7 +475,7 @@ export default function ConsumerEventos() {
                 <span className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                   {cityFilter === "all"
-                    ? t("consumer_filter_all_cities") || "Todas as cidades"
+                    ? t("consumer_filter_all_cities")
                     : cityFilter}
                 </span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -492,7 +492,7 @@ export default function ConsumerEventos() {
                   cityFilter === "all" ? "bg-primary/10 text-primary" : "hover:bg-white/[0.04] text-foreground"
                 )}
               >
-                {t("consumer_filter_all_cities") || "Todas as cidades"}
+                {t("consumer_filter_all_cities")}
               </button>
               {availableCities.map((city) => (
                 <button
@@ -522,10 +522,10 @@ export default function ConsumerEventos() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground font-medium leading-snug">
-              {t("consumer_gps_banner_title") || "Ative sua localização"}
+              {t("consumer_gps_banner_title")}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("consumer_gps_banner_desc") || "Para ver eventos perto de você"}
+              {t("consumer_gps_banner_desc")}
             </p>
           </div>
           <Button
@@ -533,7 +533,7 @@ export default function ConsumerEventos() {
             onClick={handleEnableGps}
             className="shrink-0 h-8 px-3 text-xs rounded-lg"
           >
-            {t("consumer_gps_banner_action") || "Ativar"}
+            {t("consumer_gps_banner_action")}
           </Button>
         </div>
       )}
@@ -591,7 +591,7 @@ export default function ConsumerEventos() {
               <div className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-primary" />
                 <h2 className="text-[17px] font-bold text-foreground">
-                  {t("consumer_section_nearby") || "Perto de você"}
+                  {t("consumer_section_nearby")}
                 </h2>
               </div>
               <div className="flex flex-col gap-3">{nearbyEvents.map(renderEventCard)}</div>
@@ -601,7 +601,7 @@ export default function ConsumerEventos() {
           {/* Seção "Todos os eventos" */}
           <div className="flex items-center justify-between">
             <h2 className="text-[17px] font-bold text-foreground">
-              {t("consumer_section_all") || "Todos os eventos"}
+              {t("consumer_section_all")}
             </h2>
             <span className="text-xs text-muted-foreground">
               {sortedFiltered.length} {t("consumer_events_count")}
