@@ -151,26 +151,19 @@ export function SavedCardsSection({ userId }: { userId: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <h3 className="text-sm font-semibold text-foreground">Cartões salvos</h3>
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:opacity-80 transition-opacity"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Adicionar
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => setAddOpen(true)}
+        className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/[0.12] bg-white/[0.03] text-base font-semibold text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary active:border-primary/40 active:bg-primary/5 active:text-primary"
+      >
+        <Plus className="h-5 w-5" />
+        Adicionar cartão
+      </button>
 
       {loading ? (
         Array.from({ length: 2 }).map((_, i) => (
           <Skeleton key={i} className="h-14 w-full rounded-2xl" />
         ))
-      ) : cards.length === 0 ? (
-        <div className={cn(glassCard, "flex items-center justify-center py-6")}>
-          <p className="text-sm text-muted-foreground">Nenhum cartão salvo</p>
-        </div>
       ) : (
         cards.map((card) => (
           <div
