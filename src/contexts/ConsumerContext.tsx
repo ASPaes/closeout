@@ -172,6 +172,29 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
       });
   }, [user]);
 
+  // Restore active event from active check-in (no localStorage)
+  useEffect(() => {
+    if (!user) {
+      setLoadingEvent(false);
+      return;
+    }
+    setLoadingEvent(true);
+    supabase
+      .from("event_checkins")
+      .select("event_id, events!inner(id, name, client_id)")
+      .eq("user_id", user.id)
+      .is("checked_out_at", null)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const ev = (data as any)?.events;
+        if (ev) {
+          setActiveEvent({ id: ev.id, name: ev.name, client_id: ev.client_id || "" });
+        }
+        setLoadingEvent(false);
+      });
+  }, [user]);
+
   // Fetch active order on mount
   useEffect(() => {
     refreshActiveOrder();
