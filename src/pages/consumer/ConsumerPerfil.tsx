@@ -143,88 +143,8 @@ export default function ConsumerPerfil() {
     };
   }, [fetchAllData]);
 
-  /* ── CPF validation ── */
-  function isValidCPF(cpf: string): boolean {
-    cpf = cpf.replace(/\D/g, "");
-    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-    for (let t = 9; t < 11; t++) {
-      let d = 0;
-      for (let c = 0; c < t; c++) d += parseInt(cpf[c]) * ((t + 1) - c);
-      d = ((10 * d) % 11) % 10;
-      if (parseInt(cpf[t]) !== d) return false;
-    }
-    return true;
-  }
-
   /* ── actions ── */
-  const openEdit = () => {
-    setEditName(profile?.name || "");
-    setEditPhone(profile?.phone ? maskPhone(profile.phone) : "");
-    setEditUsername(profileUsername || "");
-    setEditCpf(profile?.cpf || "");
-    setEditCpfError("");
-    setUsernameError("");
-    setEditOpen(true);
-  };
-
-  const validateUsername = (val: string) => {
-    if (!val) { setUsernameError(""); return true; }
-    if (!/^[a-z0-9._]{3,30}$/.test(val)) {
-      setUsernameError("3-30 caracteres: letras minúsculas, números, . e _");
-      return false;
-    }
-    setUsernameError("");
-    return true;
-  };
-
-  const cpfChanged = editCpf !== (profile?.cpf || "");
-
-  const handleSaveClick = async () => {
-    if (!user) return;
-    // Validate CPF
-    if (!editCpf || !isValidCPF(editCpf)) {
-      setEditCpfError("CPF inválido");
-      return;
-    }
-    setEditCpfError("");
-
-    if (cpfChanged) {
-      setCpfChangeConfirm(true);
-      return;
-    }
-    await performSave(false);
-  };
-
-  const performSave = async (withCpfChange: boolean) => {
-    if (!user) return;
-    if (editUsername && !validateUsername(editUsername)) return;
-    if (editUsername && editUsername !== profileUsername) {
-      const { data: available } = await supabase.rpc("check_username_available", { p_username: editUsername });
-      if (!available) { setUsernameError("Username já está em uso"); return; }
-    }
-    setSaving(true);
-    const updates: any = { name: editName.trim(), phone: unmask(editPhone) };
-    if (editUsername) updates.username = editUsername.toLowerCase();
-
-    if (withCpfChange) {
-      updates.cpf = editCpf;
-      // Invalidate saved cards and customer map
-      await Promise.all([
-        supabase.from("asaas_customer_cards").update({ is_active: false } as any).eq("user_id", user.id),
-        supabase.from("asaas_customer_map").delete().eq("user_id", user.id),
-      ]);
-    }
-
-    const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(withCpfChange ? "CPF atualizado. Cartões salvos foram removidos." : t("consumer_profile_updated"));
-      setEditOpen(false);
-      window.location.reload();
-    }
-  };
+  const openEdit = () => setEditOpen(true);
 
   const handleToggleVisibility = async (val: boolean) => {
     if (!activeCheckin) return;
