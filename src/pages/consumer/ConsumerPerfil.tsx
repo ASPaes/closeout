@@ -73,8 +73,6 @@ export default function ConsumerPerfil() {
 
   const displayName = profile?.name || user?.email?.split("@")[0] || "";
   const displayEmail = user?.email || "";
-  const displayCpf = profile?.cpf ? maskCPF(profile.cpf) : "—";
-  const displayPhone = profile?.phone ? maskPhone(profile.phone) : "—";
   const profileUsername = (profile as any)?.username || null;
   const avatarUrl = localAvatarUrl || profile?.avatar_url || null;
   const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -362,95 +360,17 @@ export default function ConsumerPerfil() {
       </p>
 
       {/* Edit Profile Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="dark max-w-[420px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground">
-          <DialogHeader>
-            <DialogTitle>{t("consumer_edit_profile")}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 pt-2">
-            <Input
-              placeholder={t("full_name")}
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
-            />
-            <div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">@</span>
-                <Input
-                  placeholder="username"
-                  value={editUsername}
-                  onChange={(e) => {
-                    const v = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, "");
-                    setEditUsername(v);
-                    validateUsername(v);
-                  }}
-                  className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base pl-8"
-                  maxLength={30}
-                />
-              </div>
-              {usernameError && <p className="text-xs text-destructive mt-1 ml-1">{usernameError}</p>}
-            </div>
-            <Input
-              placeholder={t("consumer_phone_placeholder")}
-              value={editPhone}
-              onChange={(e) => setEditPhone(maskPhone(e.target.value))}
-              className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
-              inputMode="numeric"
-            />
-            <div>
-              <Input
-                placeholder="CPF (apenas números)"
-                value={maskCPF(editCpf)}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "").slice(0, 11);
-                  setEditCpf(v);
-                  if (v.length === 11 && !isValidCPF(v)) setEditCpfError("CPF inválido");
-                  else setEditCpfError("");
-                }}
-                className="h-12 rounded-xl border-white/[0.08] bg-white/[0.04] text-base"
-                inputMode="numeric"
-              />
-              {editCpfError && <p className="text-xs text-destructive mt-1 ml-1">{editCpfError}</p>}
-              {cpfChanged && !editCpfError && editCpf.length === 11 && (
-                <p className="text-[10px] text-amber-400 mt-1 ml-1 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  Alterar o CPF removerá seus cartões salvos
-                </p>
-              )}
-            </div>
-            <Button
-              onClick={handleSaveClick}
-              disabled={saving || !!usernameError || !!editCpfError}
-              className="h-14 rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground"
-            >
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_save")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* CPF change confirmation */}
-      <AlertDialog open={cpfChangeConfirm} onOpenChange={setCpfChangeConfirm}>
-        <AlertDialogContent className="dark max-w-[400px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Alterar CPF</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ao alterar seu CPF, todos os seus cartões salvos serão removidos porque estão vinculados ao CPF anterior. Deseja continuar?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => performSave(true)}
-              disabled={saving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {saving ? "Salvando..." : "Confirmar e salvar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EditProfileDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        userId={user?.id || ""}
+        email={displayEmail}
+        profile={profile as any}
+        initials={initials}
+        avatarUrl={avatarUrl}
+        onAvatarUpdated={(url) => setLocalAvatarUrl(url)}
+        onSaved={() => fetchAllData()}
+      />
     </div>
   );
 }
