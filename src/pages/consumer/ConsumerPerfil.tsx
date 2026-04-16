@@ -276,6 +276,7 @@ export default function ConsumerPerfil() {
 
   const handleAction = (key: string) => {
     if (key === "profile") openEdit();
+    else if (key === "cards") setCardsDialogOpen(true);
     else if (key === "events") setDetailSheet("events");
     else if (key === "limits") setDetailSheet("limits");
     else if (key === "privacy") setDetailSheet("privacy");
