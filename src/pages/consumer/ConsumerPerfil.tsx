@@ -54,6 +54,7 @@ export default function ConsumerPerfil() {
   const { user, profile, signOut } = useAuth();
 
   const [editOpen, setEditOpen] = useState(false);
+  const [cardsDialogOpen, setCardsDialogOpen] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | "privacy" | "limits" | null>(null);
   
 
