@@ -312,8 +312,7 @@ export default function ConsumerPerfil() {
         />
       )}
 
-      {/* Saved cards */}
-      {user?.id && <SavedCardsSection userId={user.id} />}
+      {/* Action cards (saved cards moved into dialog opened from action card) */}
 
       {/* Action cards */}
       <ProfileActionCards onAction={handleAction} />
