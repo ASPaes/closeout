@@ -11,6 +11,7 @@ type ActionItem = {
 
 const actions: ActionItem[] = [
   { key: "profile", label: "Meu perfil", icon: User, accent: "text-primary" },
+  { key: "cards", label: "Meus cartões", icon: CreditCard, accent: "text-violet-400" },
   { key: "events", label: "Meus eventos", icon: CalendarDays, accent: "text-blue-400" },
   { key: "limits", label: "Meus limites", icon: Gauge, accent: "text-amber-400" },
   { key: "privacy", label: "Segurança e privacidade", icon: Shield, accent: "text-green-400" },
