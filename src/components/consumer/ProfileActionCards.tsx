@@ -1,4 +1,4 @@
-import { User, CalendarDays, Gauge, Shield, ChevronRight } from "lucide-react";
+import { User, CalendarDays, Gauge, Shield, ChevronRight, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ActionItem = {
