@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle } from "lucide-react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
