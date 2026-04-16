@@ -275,9 +275,10 @@ export default function ConsumerEventos() {
       .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
   }, [events, userLoc]);
 
-  // Sort filtered for "Todos os eventos" section
+  // Sort filtered for "Todos os eventos" section — exclui os já exibidos em "Perto de você"
   const sortedFiltered = useMemo(() => {
-    const arr = [...filtered];
+    const nearbyIds = new Set(nearbyEvents.map((e) => e.id));
+    const arr = filtered.filter((e) => !nearbyIds.has(e.id));
     if (userLoc) {
       arr.sort((a, b) => {
         if (a.distance != null && b.distance != null) return a.distance - b.distance;
@@ -289,7 +290,7 @@ export default function ConsumerEventos() {
       arr.sort((a, b) => (a.start_at || "").localeCompare(b.start_at || ""));
     }
     return arr;
-  }, [filtered, userLoc]);
+  }, [filtered, userLoc, nearbyEvents]);
 
   // Group by city when GPS denied
   const groupedByCity = useMemo(() => {
