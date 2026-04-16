@@ -1,15 +1,29 @@
 import { useTranslation } from "@/i18n/use-translation";
-import { Calendar, MapPin, ChevronRight, Zap, Search, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  ChevronRight,
+  Zap,
+  Search,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  ChevronDown,
+  CalendarDays,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocation } from "@/lib/native-bridge";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -65,6 +79,8 @@ type EnrichedEvent = EventRow & {
   hasPromo?: boolean;
 };
 
+type DateFilter = "all" | "today" | "week" | "month" | "custom";
+
 export default function ConsumerEventos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -79,6 +95,13 @@ export default function ConsumerEventos() {
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [search, setSearch] = useState("");
 
+  // Filters
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [customDate, setCustomDate] = useState<Date | undefined>();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
+
   // Pull-to-refresh refs
   const scrollRef = useRef<HTMLDivElement>(null);
   const [pullY, setPullY] = useState(0);
@@ -86,11 +109,11 @@ export default function ConsumerEventos() {
   const pulling = useRef(false);
 
   const fetchData = useCallback(async (loc: { lat: number; lng: number } | null) => {
-    // Fetch active/live events
+    // Fetch active/completed events
     const { data: eventsData } = await supabase
       .from("events")
       .select("id, name, description, start_at, end_at, status, client_id, venue_id")
-      .in("status", ["active", "live", "published"]);
+      .in("status", ["active", "completed"]);
 
     // Fetch venues for those events
     const venueIds = [...new Set((eventsData || []).map((e) => e.venue_id))];
@@ -117,9 +140,9 @@ export default function ConsumerEventos() {
 
     const campaignClientIds = new Set(activeCampaigns.map((c) => c.client_id));
 
-    // Fetch cover images (sort_order=0) for all events
+    // Fetch cover images (sort_order=0)
     const eventIds = (eventsData || []).map((e) => e.id);
-    let coverMap: Record<string, string> = {};
+    const coverMap: Record<string, string> = {};
     if (eventIds.length > 0) {
       const { data: imgData } = await supabase
         .from("event_images")
@@ -148,14 +171,6 @@ export default function ConsumerEventos() {
       };
     });
 
-    // Sort: by distance if available, else by date
-    enriched.sort((a, b) => {
-      if (a.distance != null && b.distance != null) return a.distance - b.distance;
-      if (a.distance != null) return -1;
-      if (b.distance != null) return 1;
-      return (a.start_at || "").localeCompare(b.start_at || "");
-    });
-
     setEvents(enriched);
   }, []);
 
@@ -181,6 +196,13 @@ export default function ConsumerEventos() {
     setPullY(0);
   };
 
+  const handleEnableGps = async () => {
+    const loc = await getLocation();
+    setUserLoc(loc);
+    setGpsAttempted(true);
+    if (loc) await fetchData(loc);
+  };
+
   // Touch-based pull-to-refresh
   const onTouchStart = (e: React.TouchEvent) => {
     if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
@@ -203,16 +225,143 @@ export default function ConsumerEventos() {
     navigate(`/app/evento/${ev.id}`);
   };
 
-  const filtered = search.trim()
-    ? events.filter(
-        (e) =>
-          e.name.toLowerCase().includes(search.toLowerCase()) ||
-          e.venue?.name?.toLowerCase().includes(search.toLowerCase()) ||
-          e.venue?.city?.toLowerCase().includes(search.toLowerCase())
-      )
-    : events;
+  // Available cities for filter
+  const availableCities = useMemo(() => {
+    const set = new Set<string>();
+    for (const ev of events) {
+      if (ev.venue?.city) set.add(ev.venue.city);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [events]);
+
+  // Date interval based on filter
+  const dateInterval = useMemo((): { start: Date; end: Date } | null => {
+    const now = new Date();
+    if (dateFilter === "today") return { start: startOfDay(now), end: endOfDay(now) };
+    if (dateFilter === "week")
+      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+    if (dateFilter === "month") return { start: startOfMonth(now), end: endOfMonth(now) };
+    if (dateFilter === "custom" && customDate)
+      return { start: startOfDay(customDate), end: endOfDay(customDate) };
+    return null;
+  }, [dateFilter, customDate]);
+
+  // Apply text + date + city filters
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return events.filter((e) => {
+      if (q) {
+        const match =
+          e.name.toLowerCase().includes(q) ||
+          e.venue?.name?.toLowerCase().includes(q) ||
+          e.venue?.city?.toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      if (cityFilter !== "all" && e.venue?.city !== cityFilter) return false;
+      if (dateInterval) {
+        if (!e.start_at) return false;
+        const d = new Date(e.start_at);
+        if (!isWithinInterval(d, dateInterval)) return false;
+      }
+      return true;
+    });
+  }, [events, search, cityFilter, dateInterval]);
+
+  // "Perto de você" — eventos com distance <= 25km, sem filtros aplicados
+  const nearbyEvents = useMemo(() => {
+    if (!userLoc) return [];
+    return events
+      .filter((e) => e.distance != null && e.distance <= 25)
+      .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+  }, [events, userLoc]);
+
+  // Sort filtered for "Todos os eventos" section
+  const sortedFiltered = useMemo(() => {
+    const arr = [...filtered];
+    if (userLoc) {
+      arr.sort((a, b) => {
+        if (a.distance != null && b.distance != null) return a.distance - b.distance;
+        if (a.distance != null) return -1;
+        if (b.distance != null) return 1;
+        return (a.start_at || "").localeCompare(b.start_at || "");
+      });
+    } else {
+      arr.sort((a, b) => (a.start_at || "").localeCompare(b.start_at || ""));
+    }
+    return arr;
+  }, [filtered, userLoc]);
+
+  // Group by city when GPS denied
+  const groupedByCity = useMemo(() => {
+    if (userLoc) return null;
+    const groups = new Map<string, EnrichedEvent[]>();
+    for (const ev of sortedFiltered) {
+      const city = ev.venue?.city || t("consumer_no_city");
+      if (!groups.has(city)) groups.set(city, []);
+      groups.get(city)!.push(ev);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [sortedFiltered, userLoc, t]);
 
   const displayName = profile?.name?.split(" ")[0] || "";
+
+  const dateFilterPills: { key: DateFilter; label: string }[] = [
+    { key: "all", label: t("consumer_filter_all") },
+    { key: "today", label: t("consumer_filter_today") },
+    { key: "week", label: t("consumer_filter_week") },
+    { key: "month", label: t("consumer_filter_month") },
+  ];
+
+  const renderEventCard = (event: EnrichedEvent) => (
+    <button
+      key={event.id}
+      onClick={() => handleSelectEvent(event)}
+      className="relative flex w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.98] transition-all"
+    >
+      <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none overflow-hidden">
+        {event.cover_url ? (
+          <img src={event.cover_url} alt={event.name} className="h-full w-full object-cover" />
+        ) : (
+          "🎉"
+        )}
+      </div>
+      <div className="flex flex-1 flex-col justify-center gap-1 p-3.5 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-1 flex-1">
+            {event.name}
+          </h3>
+          {event.hasPromo && (
+            <Badge
+              variant="outline"
+              className="shrink-0 border-primary/40 bg-primary/10 text-primary text-[10px] px-1.5 py-0"
+            >
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
+              {t("consumer_promo_badge")}
+            </Badge>
+          )}
+        </div>
+        {event.start_at && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3 shrink-0" />
+            {format(new Date(event.start_at), "EEE, dd MMM · HH'h'", { locale: ptBR })}
+          </span>
+        )}
+        <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+          <MapPin className="h-3 w-3 shrink-0" />
+          {event.venue?.name || ""}
+          {event.venue?.city ? ` · ${event.venue.city}` : ""}
+          {event.distance != null && (
+            <span className="ml-1 text-primary font-medium">
+              · {formatDistance(event.distance)}
+            </span>
+          )}
+        </span>
+      </div>
+      <div className="flex items-center pr-3">
+        <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+      </div>
+    </button>
+  );
 
   return (
     <div
@@ -248,17 +397,144 @@ export default function ConsumerEventos() {
         </div>
       </div>
 
-      {/* Search */}
-      {!userLoc && gpsAttempted && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder={t("consumer_search_events")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-12 rounded-xl border-border/60 bg-card pl-10 text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
-          />
+      {/* Search — sempre visível */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder={t("consumer_search_events")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-12 rounded-2xl border-white/[0.08] bg-white/[0.04] pl-10 text-base placeholder:text-muted-foreground focus-visible:ring-primary/50"
+        />
+      </div>
+
+      {/* Filtros de data — pills horizontais */}
+      <div className="flex flex-col gap-3 -mt-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 snap-x">
+          {dateFilterPills.map((pill) => {
+            const isActive = dateFilter === pill.key;
+            return (
+              <button
+                key={pill.key}
+                onClick={() => {
+                  setDateFilter(pill.key);
+                  setCustomDate(undefined);
+                }}
+                className={cn(
+                  "shrink-0 snap-start h-9 px-4 rounded-full text-xs font-medium transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground hover:bg-white/[0.1]"
+                )}
+              >
+                {pill.label}
+              </button>
+            );
+          })}
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "shrink-0 snap-start h-9 px-4 rounded-full text-xs font-medium transition-all flex items-center gap-1.5",
+                  dateFilter === "custom"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground hover:bg-white/[0.1]"
+                )}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                {dateFilter === "custom" && customDate
+                  ? format(customDate, "dd/MM", { locale: ptBR })
+                  : t("consumer_filter_pick_date")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-card border-white/[0.08]" align="start">
+              <CalendarPicker
+                mode="single"
+                selected={customDate}
+                onSelect={(d) => {
+                  if (d) {
+                    setCustomDate(d);
+                    setDateFilter("custom");
+                    setDatePickerOpen(false);
+                  }
+                }}
+                locale={ptBR}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Filtro de cidade */}
+        {availableCities.length > 0 && (
+          <Popover open={cityPopoverOpen} onOpenChange={setCityPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex items-center justify-between h-10 px-4 rounded-xl bg-white/[0.06] border border-white/[0.08] text-sm text-foreground">
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  {cityFilter === "all"
+                    ? t("consumer_filter_all_cities")
+                    : cityFilter}
+                </span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1 bg-card border-white/[0.08]" align="start">
+              <button
+                onClick={() => {
+                  setCityFilter("all");
+                  setCityPopoverOpen(false);
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                  cityFilter === "all" ? "bg-primary/10 text-primary" : "hover:bg-white/[0.04] text-foreground"
+                )}
+              >
+                {t("consumer_filter_all_cities")}
+              </button>
+              {availableCities.map((city) => (
+                <button
+                  key={city}
+                  onClick={() => {
+                    setCityFilter(city);
+                    setCityPopoverOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
+                    cityFilter === city ? "bg-primary/10 text-primary" : "hover:bg-white/[0.04] text-foreground"
+                  )}
+                >
+                  {city}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+
+      {/* Banner GPS — apenas quando negado */}
+      {gpsAttempted && !userLoc && (
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15">
+            <MapPin className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground font-medium leading-snug">
+              {t("consumer_gps_banner_title")}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("consumer_gps_banner_desc")}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleEnableGps}
+            className="shrink-0 h-8 px-3 text-xs rounded-lg"
+          >
+            {t("consumer_gps_banner_action")}
+          </Button>
         </div>
       )}
 
@@ -309,17 +585,30 @@ export default function ConsumerEventos() {
             </div>
           )}
 
-          {/* Events list */}
+          {/* Seção "Perto de você" — só com GPS ativo e eventos <= 25km */}
+          {userLoc && nearbyEvents.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-primary" />
+                <h2 className="text-[17px] font-bold text-foreground">
+                  {t("consumer_section_nearby")}
+                </h2>
+              </div>
+              <div className="flex flex-col gap-3">{nearbyEvents.map(renderEventCard)}</div>
+            </div>
+          )}
+
+          {/* Seção "Todos os eventos" */}
           <div className="flex items-center justify-between">
             <h2 className="text-[17px] font-bold text-foreground">
-              {userLoc ? t("consumer_events_nearby") : t("consumer_events_title")}
+              {t("consumer_section_all")}
             </h2>
             <span className="text-xs text-muted-foreground">
-              {filtered.length} {t("consumer_events_count")}
+              {sortedFiltered.length} {t("consumer_events_count")}
             </span>
           </div>
 
-          {filtered.length === 0 ? (
+          {sortedFiltered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
                 <Calendar className="h-7 w-7 text-primary" />
@@ -329,59 +618,20 @@ export default function ConsumerEventos() {
                 {t("consumer_no_events_desc")}
               </p>
             </div>
+          ) : userLoc ? (
+            <div className="flex flex-col gap-3">{sortedFiltered.map(renderEventCard)}</div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {filtered.map((event) => (
-                <button
-                  key={event.id}
-                  onClick={() => handleSelectEvent(event)}
-                  className="relative flex w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.98] transition-all"
-                >
-                   {/* Image area */}
-                   <div className="flex h-[100px] w-[100px] shrink-0 items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none overflow-hidden">
-                     {event.cover_url ? (
-                       <img src={event.cover_url} alt={event.name} className="h-full w-full object-cover" />
-                     ) : (
-                       "🎉"
-                     )}
-                   </div>
-                  {/* Info */}
-                  <div className="flex flex-1 flex-col justify-center gap-1 p-3.5 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-[15px] font-semibold text-foreground leading-snug line-clamp-1 flex-1">
-                        {event.name}
-                      </h3>
-                      {event.hasPromo && (
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 border-primary/40 bg-primary/10 text-primary text-[10px] px-1.5 py-0"
-                        >
-                          <Zap className="h-2.5 w-2.5 mr-0.5" />
-                          {t("consumer_promo_badge")}
-                        </Badge>
-                      )}
-                    </div>
-                    {event.start_at && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 shrink-0" />
-                        {format(new Date(event.start_at), "EEE, dd MMM · HH'h'", { locale: ptBR })}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      {event.venue?.name || ""}
-                      {event.venue?.city ? ` · ${event.venue.city}` : ""}
-                      {event.distance != null && (
-                        <span className="ml-1 text-primary font-medium">
-                          · {formatDistance(event.distance)}
-                        </span>
-                      )}
-                    </span>
+            <div className="flex flex-col gap-5">
+              {groupedByCity?.map(([city, list]) => (
+                <div key={city} className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {city}
+                    </h3>
                   </div>
-                  <div className="flex items-center pr-3">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
-                  </div>
-                </button>
+                  <div className="flex flex-col gap-3">{list.map(renderEventCard)}</div>
+                </div>
               ))}
             </div>
           )}

@@ -1076,6 +1076,18 @@ const ptBR = {
   consumer_events_count: "eventos",
   consumer_no_events: "Nenhum evento encontrado",
   consumer_no_events_desc: "Quando houver eventos disponíveis, eles aparecerão aqui",
+  consumer_no_city: "Outras",
+  consumer_filter_all: "Todos",
+  consumer_filter_today: "Hoje",
+  consumer_filter_week: "Esta semana",
+  consumer_filter_month: "Este mês",
+  consumer_filter_pick_date: "Escolher data",
+  consumer_filter_all_cities: "Todas as cidades",
+  consumer_gps_banner_title: "Ative sua localização",
+  consumer_gps_banner_desc: "Para ver eventos perto de você",
+  consumer_gps_banner_action: "Ativar",
+  consumer_section_nearby: "Perto de você",
+  consumer_section_all: "Todos os eventos",
 
   // Consumer Cardápio & Carrinho
   consumer_search_product: "Buscar produto...",

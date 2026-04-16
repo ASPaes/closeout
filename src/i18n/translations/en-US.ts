@@ -1078,6 +1078,18 @@ const enUS: Record<TranslationKey, string> = {
   consumer_events_count: "events",
   consumer_no_events: "No events found",
   consumer_no_events_desc: "When events are available, they will appear here",
+  consumer_no_city: "Other",
+  consumer_filter_all: "All",
+  consumer_filter_today: "Today",
+  consumer_filter_week: "This week",
+  consumer_filter_month: "This month",
+  consumer_filter_pick_date: "Pick a date",
+  consumer_filter_all_cities: "All cities",
+  consumer_gps_banner_title: "Enable your location",
+  consumer_gps_banner_desc: "To see events near you",
+  consumer_gps_banner_action: "Enable",
+  consumer_section_nearby: "Near you",
+  consumer_section_all: "All events",
 
   // Consumer Menu & Cart
   consumer_search_product: "Search product...",
