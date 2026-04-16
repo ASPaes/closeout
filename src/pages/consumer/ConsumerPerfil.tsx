@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LogOut,
-  Loader2,
   Calendar,
   CreditCard,
   Clock,
@@ -18,29 +17,8 @@ import {
   Smartphone,
   DollarSign,
   Inbox,
-  Wallet,
-  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { maskCPF, maskPhone, unmask } from "@/lib/masks";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { ProfileHeaderSocial } from "@/components/consumer/ProfileHeaderSocial";
@@ -50,6 +28,7 @@ import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
 import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
 import { SavedCardsSection } from "@/components/consumer/SavedCardsSection";
+import { EditProfileDialog } from "@/components/consumer/EditProfileDialog";
 import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
 
 /* ── status mappings ── */
@@ -75,14 +54,6 @@ export default function ConsumerPerfil() {
   const { user, profile, signOut } = useAuth();
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editUsername, setEditUsername] = useState("");
-  const [editCpf, setEditCpf] = useState("");
-  const [editCpfError, setEditCpfError] = useState("");
-  const [cpfChangeConfirm, setCpfChangeConfirm] = useState(false);
-  const [usernameError, setUsernameError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | "privacy" | "limits" | null>(null);
   
 
