@@ -69,6 +69,8 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(true);
+
+  const computeTotal = (items: CartItem[]) =>
     items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const addToCart = useCallback((item: Omit<CartItem, "quantity">) => {
