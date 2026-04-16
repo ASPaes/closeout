@@ -348,6 +348,16 @@ export default function ConsumerPerfil() {
         />
       </ProfileDetailSheet>
 
+      {/* Saved cards dialog */}
+      <Dialog open={cardsDialogOpen} onOpenChange={setCardsDialogOpen}>
+        <DialogContent className="dark max-w-[480px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Meus cartões</DialogTitle>
+          </DialogHeader>
+          {user?.id && <SavedCardsSection userId={user.id} />}
+        </DialogContent>
+      </Dialog>
+
       {/* Logout */}
       <button
         onClick={handleLogout}
