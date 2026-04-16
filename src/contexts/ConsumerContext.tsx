@@ -68,8 +68,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
   const [consumptionLimits, setConsumptionLimits] = useState<ConsumptionLimits | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
-
-  const computeTotal = (items: CartItem[]) =>
+  const [loadingEvent, setLoadingEvent] = useState(true);
     items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const addToCart = useCallback((item: Omit<CartItem, "quantity">) => {
