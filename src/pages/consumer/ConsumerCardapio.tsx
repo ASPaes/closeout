@@ -36,7 +36,7 @@ type Campaign = {
 export default function ConsumerCardapio() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart } = useConsumer();
+  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart, loadingEvent } = useConsumer();
   const { user } = useAuth();
 
   const [products, setProducts] = useState<CatalogProduct[]>([]);
