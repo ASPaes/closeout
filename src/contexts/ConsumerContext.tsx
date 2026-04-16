@@ -55,6 +55,7 @@ type ConsumerContextType = {
   clearCart: () => void;
   refreshActiveOrder: () => Promise<void>;
   loadingOrder: boolean;
+  loadingEvent: boolean;
 };
 
 const ConsumerContext = createContext<ConsumerContextType | null>(null);
