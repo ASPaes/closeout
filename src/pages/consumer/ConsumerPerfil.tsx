@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { ProfileHeaderSocial } from "@/components/consumer/ProfileHeaderSocial";
 import { ProfileStatsRow } from "@/components/consumer/ProfileStatsRow";
@@ -54,6 +55,7 @@ export default function ConsumerPerfil() {
   const { user, profile, signOut } = useAuth();
 
   const [editOpen, setEditOpen] = useState(false);
+  const [cardsDialogOpen, setCardsDialogOpen] = useState(false);
   const [detailSheet, setDetailSheet] = useState<"orders" | "events" | "transactions" | "privacy" | "limits" | null>(null);
   
 
@@ -274,6 +276,7 @@ export default function ConsumerPerfil() {
 
   const handleAction = (key: string) => {
     if (key === "profile") openEdit();
+    else if (key === "cards") setCardsDialogOpen(true);
     else if (key === "events") setDetailSheet("events");
     else if (key === "limits") setDetailSheet("limits");
     else if (key === "privacy") setDetailSheet("privacy");
@@ -309,8 +312,7 @@ export default function ConsumerPerfil() {
         />
       )}
 
-      {/* Saved cards */}
-      {user?.id && <SavedCardsSection userId={user.id} />}
+      {/* Action cards (saved cards moved into dialog opened from action card) */}
 
       {/* Action cards */}
       <ProfileActionCards onAction={handleAction} />
@@ -345,6 +347,16 @@ export default function ConsumerPerfil() {
           loading={togglingVisibility}
         />
       </ProfileDetailSheet>
+
+      {/* Saved cards dialog */}
+      <Dialog open={cardsDialogOpen} onOpenChange={setCardsDialogOpen}>
+        <DialogContent className="dark max-w-[480px] rounded-3xl border-white/[0.08] bg-card/95 backdrop-blur-xl text-foreground max-h-[85dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Meus cartões</DialogTitle>
+          </DialogHeader>
+          {user?.id && <SavedCardsSection userId={user.id} />}
+        </DialogContent>
+      </Dialog>
 
       {/* Logout */}
       <button
