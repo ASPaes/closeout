@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle } from "lucide-react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ type Campaign = {
 export default function ConsumerCardapio() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart } = useConsumer();
+  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart, loadingEvent } = useConsumer();
   const { user } = useAuth();
 
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -247,6 +247,13 @@ export default function ConsumerCardapio() {
   };
 
   if (!activeEvent) {
+    if (loadingEvent) {
+      return (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
         <p className="text-muted-foreground text-sm">{t("consumer_no_event_selected")}</p>

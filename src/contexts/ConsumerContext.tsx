@@ -55,6 +55,7 @@ type ConsumerContextType = {
   clearCart: () => void;
   refreshActiveOrder: () => Promise<void>;
   loadingOrder: boolean;
+  loadingEvent: boolean;
 };
 
 const ConsumerContext = createContext<ConsumerContextType | null>(null);
@@ -67,6 +68,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
   const [consumptionLimits, setConsumptionLimits] = useState<ConsumptionLimits | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
+  const [loadingEvent, setLoadingEvent] = useState(true);
 
   const computeTotal = (items: CartItem[]) =>
     items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -170,6 +172,29 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
       });
   }, [user]);
 
+  // Restore active event from active check-in (no localStorage)
+  useEffect(() => {
+    if (!user) {
+      setLoadingEvent(false);
+      return;
+    }
+    setLoadingEvent(true);
+    supabase
+      .from("event_checkins")
+      .select("event_id, events!inner(id, name, client_id)")
+      .eq("user_id", user.id)
+      .is("checked_out_at", null)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const ev = (data as any)?.events;
+        if (ev) {
+          setActiveEvent({ id: ev.id, name: ev.name, client_id: ev.client_id || "" });
+        }
+        setLoadingEvent(false);
+      });
+  }, [user]);
+
   // Fetch active order on mount
   useEffect(() => {
     refreshActiveOrder();
@@ -192,6 +217,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         clearCart,
         refreshActiveOrder,
         loadingOrder,
+        loadingEvent,
       }}
     >
       {children}
