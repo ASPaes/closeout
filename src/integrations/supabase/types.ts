@@ -1112,6 +1112,42 @@ export type Database = {
           },
         ]
       }
+      cpf_change_requests: {
+        Row: {
+          created_at: string
+          current_cpf: string
+          id: string
+          justification: string
+          requested_cpf: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_cpf: string
+          id?: string
+          justification: string
+          requested_cpf: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_cpf?: string
+          id?: string
+          justification?: string
+          requested_cpf?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_billing_overrides: {
         Row: {
           activation_amount: number | null
@@ -3456,6 +3492,10 @@ export type Database = {
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_order: { Args: { params: Json }; Returns: Json }
       create_consumer_split_order: { Args: { params: Json }; Returns: Json }
+      create_cpf_change_request: {
+        Args: { p_justification: string; p_requested_cpf: string }
+        Returns: string
+      }
       create_waiter_invite: {
         Args: { p_event_id: string; p_waiter_name: string }
         Returns: Json
