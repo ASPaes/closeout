@@ -80,7 +80,23 @@ export default function UsersRoles() {
   const [activeTab, setActiveTab] = useState<"staff" | "consumers">("staff");
   const [selectedClientAdmin, setSelectedClientAdmin] = useState<{ userId: string; clientId: string; userName: string; clientName: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [drilldownTab, setDrilldownTab] = useState<"gestao" | "caixas" | "garcons" | "bar">("gestao");
+  const [drilldownTab, setDrilldownTab] = useState<"gestao" | "caixas" | "garcons" | "bar" | "aovivo">("gestao");
+
+  // Live checkins state
+  type LiveCheckin = {
+    checkin_id: string;
+    user_id: string;
+    user_name: string;
+    event_id: string;
+    event_name: string;
+    venue_id: string;
+    venue_name: string;
+    checked_in_at: string;
+    total_spent: number;
+  };
+  const [liveCheckins, setLiveCheckins] = useState<LiveCheckin[]>([]);
+  const [loadingLive, setLoadingLive] = useState(false);
+  const [liveVenueFilter, setLiveVenueFilter] = useState<string>("all");
 
   // Super Admin creation (owner only)
   const [superAdminOpen, setSuperAdminOpen] = useState(false);
