@@ -62,15 +62,28 @@ export default function Events() {
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
 
+  const fetchRevenue = async (eventIds: string[]) => {
+    if (eventIds.length === 0) return;
+    const { data, error } = await supabase.rpc("get_events_revenue" as any, { p_event_ids: eventIds } as any);
+    if (!error && data) {
+      const map: Record<string, number> = {};
+      (data as any[]).forEach((r) => { map[r.event_id] = Number(r.revenue) || 0; });
+      setRevenueMap(map);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     const [e, v, c] = await Promise.all([
-      supabase.from("events").select("*, venues(name, clients(name))").order("start_at", { ascending: false }),
+      supabase.from("events").select("*, venues(name, clients(name))"),
       supabase.from("venues").select("id, name, client_id").eq("status", ENTITY_STATUS.ACTIVE),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
     if (e.error) toast.error(getPtBrErrorMessage(e.error));
-    if (e.data) setEvents(e.data as Event[]);
+    if (e.data) {
+      setEvents(e.data as Event[]);
+      fetchRevenue((e.data as Event[]).map((ev) => ev.id));
+    }
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
     setLoading(false);
