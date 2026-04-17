@@ -355,23 +355,23 @@ export default function UsersRoles() {
   // Helpers para abas
   const getClientAdminInfo = (userId: string) => {
     const roles = rolesByUser.get(userId) || [];
-    const adminRole = roles.find((r) => r.role === "client_admin");
-    if (!adminRole || !adminRole.client_id) return { clientId: null as string | null, clientName: "—" };
+    const adminRole = roles.find((r) => r?.role === "client_admin");
+    if (!adminRole || !adminRole.client_id) return { clientId: null as string | null, clientName: "Sem cliente" };
     const cName = clients.find((c) => c.id === adminRole.client_id)?.name ?? "—";
     return { clientId: adminRole.client_id, clientName: cName };
   };
 
-  const matchesStatus = (p: Profile) => statusFilter === "all" || p.status === statusFilter;
-  const matchesSearch = (p: Profile) => !search || (p.name?.toLowerCase().includes(search.toLowerCase()) ?? false);
+  const matchesStatus = (p: Profile) => statusFilter === "all" || p?.status === statusFilter;
+  const matchesSearch = (p: Profile) => !search || (p?.name || "").toLowerCase().includes((search || "").toLowerCase());
 
   const clientAdmins = profiles.filter((p) => {
     const roles = rolesByUser.get(p.id) || [];
-    return roles.some((r) => r.role === "client_admin") && matchesStatus(p) && matchesSearch(p);
+    return roles.some((r) => r?.role === "client_admin") && matchesStatus(p) && matchesSearch(p);
   });
 
   const consumers = profiles.filter((p) => {
     const roles = rolesByUser.get(p.id) || [];
-    return roles.some((r) => r.role === "consumer") && matchesStatus(p) && matchesSearch(p);
+    return roles.some((r) => r?.role === "consumer") && matchesStatus(p) && matchesSearch(p);
   });
 
   type AdminRow = Profile & { _clientId: string | null; _clientName: string };
