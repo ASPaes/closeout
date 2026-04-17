@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft, Radio, User as UserIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { APP_ROLE } from "@/config";
@@ -79,7 +80,23 @@ export default function UsersRoles() {
   const [activeTab, setActiveTab] = useState<"staff" | "consumers">("staff");
   const [selectedClientAdmin, setSelectedClientAdmin] = useState<{ userId: string; clientId: string; userName: string; clientName: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [drilldownTab, setDrilldownTab] = useState<"gestao" | "caixas" | "garcons" | "bar">("gestao");
+  const [drilldownTab, setDrilldownTab] = useState<"gestao" | "caixas" | "garcons" | "bar" | "aovivo">("gestao");
+
+  // Live checkins state
+  type LiveCheckin = {
+    checkin_id: string;
+    user_id: string;
+    user_name: string;
+    event_id: string;
+    event_name: string;
+    venue_id: string;
+    venue_name: string;
+    checked_in_at: string;
+    total_spent: number;
+  };
+  const [liveCheckins, setLiveCheckins] = useState<LiveCheckin[]>([]);
+  const [loadingLive, setLoadingLive] = useState(false);
+  const [liveVenueFilter, setLiveVenueFilter] = useState<string>("all");
 
   // Super Admin creation (owner only)
   const [superAdminOpen, setSuperAdminOpen] = useState(false);
@@ -123,6 +140,82 @@ export default function UsersRoles() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const fetchLiveCheckins = async () => {
+    if (!selectedClientAdmin?.clientId) return;
+    setLoadingLive(true);
+    const { data, error } = await (supabase.rpc as any)("get_client_admin_active_checkins", {
+      p_client_id: selectedClientAdmin.clientId,
+    });
+    if (!error && data) setLiveCheckins(data as LiveCheckin[]);
+    setLoadingLive(false);
+  };
+
+  useEffect(() => {
+    if (drilldownTab !== "aovivo" || !selectedClientAdmin?.clientId) return;
+    fetchLiveCheckins();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchLiveCheckins(), 500);
+    };
+
+    const channel = supabase
+      .channel(`live-checkins-${selectedClientAdmin.clientId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "event_checkins",
+          filter: `client_id=eq.${selectedClientAdmin.clientId}`,
+        },
+        () => debouncedFetch()
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drilldownTab, selectedClientAdmin?.clientId]);
+
+  const uniqueLiveVenues = useMemo(() => {
+    const map = new Map<string, string>();
+    liveCheckins.forEach((c) => { if (c.venue_id) map.set(c.venue_id, c.venue_name); });
+    return Array.from(map.entries())
+      .map(([venue_id, venue_name]) => ({ venue_id, venue_name }))
+      .sort((a, b) => a.venue_name.localeCompare(b.venue_name));
+  }, [liveCheckins]);
+
+  const filteredLive = useMemo(() => {
+    if (liveVenueFilter === "all") return liveCheckins;
+    return liveCheckins.filter((c) => c.venue_id === liveVenueFilter);
+  }, [liveCheckins, liveVenueFilter]);
+
+  const uniqueLiveEventsCount = useMemo(() => {
+    const set = new Set<string>();
+    filteredLive.forEach((c) => { if (c.event_id) set.add(c.event_id); });
+    return set.size;
+  }, [filteredLive]);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+
+  const formatHourMinute = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || name[0].toUpperCase();
+  };
 
   const handleBootstrap = async () => {
     setBootstrapping(true);
@@ -429,7 +522,7 @@ export default function UsersRoles() {
             <div className="flex items-start gap-3">
               <Button
                 variant="outline"
-                onClick={() => { setSelectedClientAdmin(null); setSearch(""); setStatusFilter("all"); }}
+                onClick={() => { setSelectedClientAdmin(null); setSearch(""); setStatusFilter("all"); setLiveCheckins([]); setLiveVenueFilter("all"); }}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
@@ -479,26 +572,87 @@ export default function UsersRoles() {
             ];
 
             return (
-              <Tabs value={drilldownTab} onValueChange={(v) => { setDrilldownTab(v as "gestao" | "caixas" | "garcons" | "bar"); setSearch(""); }}>
+              <Tabs value={drilldownTab} onValueChange={(v) => { setDrilldownTab(v as "gestao" | "caixas" | "garcons" | "bar" | "aovivo"); setSearch(""); }}>
                 <TabsList>
                   <TabsTrigger value="gestao">Gestão</TabsTrigger>
                   <TabsTrigger value="caixas">Caixas</TabsTrigger>
                   <TabsTrigger value="garcons">Garçons</TabsTrigger>
                   <TabsTrigger value="bar">Bar</TabsTrigger>
+                  <TabsTrigger value="aovivo">
+                    <span className="mr-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    Ao vivo
+                  </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value={drilldownTab} className="space-y-4">
-                  <DataTable
-                    columns={drillColumns}
-                    data={drillRows}
-                    keyExtractor={(r) => r.ur.id}
-                    loading={loading}
-                    search={search}
-                    onSearchChange={setSearch}
-                    searchPlaceholder="Buscar..."
-                    emptyMessage="Nenhum usuário nesta categoria"
-                    filters={statusFilterSelect}
-                  />
+                {drilldownTab !== "aovivo" && (
+                  <TabsContent value={drilldownTab} className="space-y-4">
+                    <DataTable
+                      columns={drillColumns}
+                      data={drillRows}
+                      keyExtractor={(r) => r.ur.id}
+                      loading={loading}
+                      search={search}
+                      onSearchChange={setSearch}
+                      searchPlaceholder="Buscar..."
+                      emptyMessage="Nenhum usuário nesta categoria"
+                      filters={statusFilterSelect}
+                    />
+                  </TabsContent>
+                )}
+
+                <TabsContent value="aovivo" className="space-y-4">
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm p-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <Radio className="h-5 w-5 text-green-500 animate-pulse" />
+                        <div>
+                          <div className="font-bold text-lg">{filteredLive.length} consumidores ativos</div>
+                          <div className="text-sm text-muted-foreground">em {uniqueLiveEventsCount} evento(s)</div>
+                        </div>
+                      </div>
+                      <Select value={liveVenueFilter} onValueChange={setLiveVenueFilter}>
+                        <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os locais</SelectItem>
+                          {uniqueLiveVenues.map((v) => (
+                            <SelectItem key={v.venue_id} value={v.venue_id}>{v.venue_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {loadingLive ? (
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-16 w-full rounded-xl" />
+                      <Skeleton className="h-16 w-full rounded-xl" />
+                      <Skeleton className="h-16 w-full rounded-xl" />
+                    </div>
+                  ) : filteredLive.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-12">
+                      Nenhum consumidor ativo no momento
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {filteredLive.map((c) => (
+                        <div key={c.checkin_id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                            {c.user_name ? getInitials(c.user_name) : <UserIcon className="h-4 w-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{c.user_name || "—"}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {c.event_name} · {c.venue_name}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-bold text-primary">{formatCurrency(c.total_spent)}</div>
+                            <div className="text-[10px] text-muted-foreground">desde {formatHourMinute(c.checked_in_at)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             );
