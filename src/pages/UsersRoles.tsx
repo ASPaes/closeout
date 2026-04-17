@@ -44,6 +44,13 @@ const roleKeys: Record<string, string> = {
   [APP_ROLE.CONSUMER]: "role_consumer",
 };
 
+const ROLE_GROUPS: Record<"gestao" | "caixas" | "garcons" | "bar", string[]> = {
+  gestao: ["client_manager", "venue_manager", "event_manager", "event_organizer"],
+  caixas: ["cashier"],
+  garcons: ["waiter"],
+  bar: ["bar_staff", "staff"],
+};
+
 function generatePassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let pass = "";
