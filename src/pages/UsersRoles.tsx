@@ -442,9 +442,67 @@ export default function UsersRoles() {
             {headerActions}
           </div>
 
-          <div className="rounded-lg border border-dashed border-border bg-card/50 p-12 text-center text-muted-foreground">
-            Drill-down em construção
-          </div>
+          {(() => {
+            const profileById = new Map(profiles.map((p) => [p.id, p]));
+            const allowedRoles = ROLE_GROUPS[drilldownTab];
+            const q = search.toLowerCase();
+            const rows = userRoles.filter((ur) => {
+              if (ur.client_id !== selectedClientAdmin.clientId) return false;
+              if (!allowedRoles.includes(ur.role)) return false;
+              const prof = profileById.get(ur.user_id);
+              if (!prof) return false;
+              if (statusFilter !== "all" && prof.status !== statusFilter) return false;
+              if (!q) return true;
+              const nameMatch = prof.name?.toLowerCase().includes(q) ?? false;
+              const roleMatch = ur.role.toLowerCase().includes(q);
+              return nameMatch || roleMatch;
+            });
+
+            type DrillRow = { ur: UserRole; profile: Profile };
+            const drillRows: DrillRow[] = rows
+              .map((ur) => ({ ur, profile: profileById.get(ur.user_id)! }))
+              .filter((r) => !!r.profile);
+
+            const drillColumns: DataTableColumn<DrillRow>[] = [
+              { key: "user", header: t("user"), render: (r) => <span className="font-medium">{r.profile.name || r.profile.id.slice(0, 12) + "…"}</span> },
+              { key: "status", header: t("status"), render: (r) => <StatusBadge status={r.profile.status === "active" ? "active" : "inactive"} label={r.profile.status === "active" ? t("active") : t("inactive")} /> },
+              { key: "role", header: t("role"), render: (r) => <Badge variant="outline" className="capitalize">{roleKeys[r.ur.role] ? t(roleKeys[r.ur.role] as any) : r.ur.role}</Badge> },
+              { key: "scope", header: t("scope"), render: (r) => <span className="text-muted-foreground text-xs">{renderScope(r.ur)}</span> },
+              ...((isSuperAdmin || isOwner) ? [{
+                key: "actions", header: t("actions"), className: "w-20",
+                render: (r: DrillRow) => (
+                  <Button variant="ghost" size="icon" onClick={() => handleRemove(r.ur)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                ),
+              }] : []),
+            ];
+
+            return (
+              <Tabs value={drilldownTab} onValueChange={(v) => { setDrilldownTab(v as "gestao" | "caixas" | "garcons" | "bar"); setSearch(""); }}>
+                <TabsList>
+                  <TabsTrigger value="gestao">Gestão</TabsTrigger>
+                  <TabsTrigger value="caixas">Caixas</TabsTrigger>
+                  <TabsTrigger value="garcons">Garçons</TabsTrigger>
+                  <TabsTrigger value="bar">Bar</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value={drilldownTab} className="space-y-4">
+                  <DataTable
+                    columns={drillColumns}
+                    data={drillRows}
+                    keyExtractor={(r) => r.ur.id}
+                    loading={loading}
+                    search={search}
+                    onSearchChange={setSearch}
+                    searchPlaceholder="Buscar..."
+                    emptyMessage="Nenhum usuário nesta categoria"
+                    filters={statusFilterSelect}
+                  />
+                </TabsContent>
+              </Tabs>
+            );
+          })()}
         </>
       )}
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={t("assign_role")}
