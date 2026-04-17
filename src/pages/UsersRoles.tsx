@@ -141,6 +141,82 @@ export default function UsersRoles() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const fetchLiveCheckins = async () => {
+    if (!selectedClientAdmin?.clientId) return;
+    setLoadingLive(true);
+    const { data, error } = await (supabase.rpc as any)("get_client_admin_active_checkins", {
+      p_client_id: selectedClientAdmin.clientId,
+    });
+    if (!error && data) setLiveCheckins(data as LiveCheckin[]);
+    setLoadingLive(false);
+  };
+
+  useEffect(() => {
+    if (drilldownTab !== "aovivo" || !selectedClientAdmin?.clientId) return;
+    fetchLiveCheckins();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchLiveCheckins(), 500);
+    };
+
+    const channel = supabase
+      .channel(`live-checkins-${selectedClientAdmin.clientId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "event_checkins",
+          filter: `client_id=eq.${selectedClientAdmin.clientId}`,
+        },
+        () => debouncedFetch()
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drilldownTab, selectedClientAdmin?.clientId]);
+
+  const uniqueLiveVenues = useMemo(() => {
+    const map = new Map<string, string>();
+    liveCheckins.forEach((c) => { if (c.venue_id) map.set(c.venue_id, c.venue_name); });
+    return Array.from(map.entries())
+      .map(([venue_id, venue_name]) => ({ venue_id, venue_name }))
+      .sort((a, b) => a.venue_name.localeCompare(b.venue_name));
+  }, [liveCheckins]);
+
+  const filteredLive = useMemo(() => {
+    if (liveVenueFilter === "all") return liveCheckins;
+    return liveCheckins.filter((c) => c.venue_id === liveVenueFilter);
+  }, [liveCheckins, liveVenueFilter]);
+
+  const uniqueLiveEventsCount = useMemo(() => {
+    const set = new Set<string>();
+    filteredLive.forEach((c) => { if (c.event_id) set.add(c.event_id); });
+    return set.size;
+  }, [filteredLive]);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
+
+  const formatHourMinute = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || name[0].toUpperCase();
+  };
+
   const handleBootstrap = async () => {
     setBootstrapping(true);
     const { data, error } = await supabase.rpc("bootstrap_super_admin");
