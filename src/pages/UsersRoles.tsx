@@ -251,16 +251,182 @@ export default function UsersRoles() {
     </div>
   );
 
+  // Helpers para abas
+  const getClientAdminInfo = (userId: string) => {
+    const roles = rolesByUser.get(userId) || [];
+    const adminRole = roles.find((r) => r.role === "client_admin");
+    if (!adminRole || !adminRole.client_id) return { clientId: null as string | null, clientName: "—" };
+    const cName = clients.find((c) => c.id === adminRole.client_id)?.name ?? "—";
+    return { clientId: adminRole.client_id, clientName: cName };
+  };
+
+  const matchesStatus = (p: Profile) => statusFilter === "all" || p.status === statusFilter;
+  const matchesSearch = (p: Profile) => !search || (p.name?.toLowerCase().includes(search.toLowerCase()) ?? false);
+
+  const clientAdmins = profiles.filter((p) => {
+    const roles = rolesByUser.get(p.id) || [];
+    return roles.some((r) => r.role === "client_admin") && matchesStatus(p) && matchesSearch(p);
+  });
+
+  const consumers = profiles.filter((p) => {
+    const roles = rolesByUser.get(p.id) || [];
+    return roles.some((r) => r.role === "consumer") && matchesStatus(p) && matchesSearch(p);
+  });
+
+  type AdminRow = Profile & { _clientId: string | null; _clientName: string };
+  const clientAdminRows: AdminRow[] = clientAdmins.map((p) => {
+    const info = getClientAdminInfo(p.id);
+    return { ...p, _clientId: info.clientId, _clientName: info.clientName };
+  });
+
+  const adminColumns: DataTableColumn<AdminRow>[] = [
+    {
+      key: "admin",
+      header: "Admin",
+      render: (r) => (
+        <span className={`font-medium transition-colors ${r._clientId ? "cursor-pointer hover:text-primary" : "cursor-not-allowed text-muted-foreground"}`}>
+          {r.name || r.id.slice(0, 12) + "…"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: t("status"),
+      render: (r) => (
+        <StatusBadge status={r.status === "active" ? "active" : "inactive"} label={r.status === "active" ? t("active") : t("inactive")} />
+      ),
+    },
+    {
+      key: "client",
+      header: t("client"),
+      render: (r) => <span className="text-sm">{r._clientName}</span>,
+    },
+    {
+      key: "chevron",
+      header: "",
+      className: "w-10",
+      render: () => <ChevronRight className="h-4 w-4 text-muted-foreground/50" />,
+    },
+  ];
+
+  const consumerColumns: DataTableColumn<Profile>[] = [
+    { key: "consumer", header: "Consumidor", render: (p) => <span className="font-medium">{p.name || p.id.slice(0, 12) + "…"}</span> },
+    {
+      key: "status",
+      header: t("status"),
+      render: (p) => (
+        <StatusBadge status={p.status === "active" ? "active" : "inactive"} label={p.status === "active" ? t("active") : t("inactive")} />
+      ),
+    },
+    ...((isSuperAdmin || isOwner)
+      ? [{
+          key: "actions",
+          header: t("actions"),
+          className: "w-20",
+          render: (p: Profile) => {
+            const consumerRole = (rolesByUser.get(p.id) || []).find((r) => r.role === "consumer");
+            return consumerRole ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemove(consumerRole)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null;
+          },
+        }]
+      : []),
+  ];
+
+  const handleRowClick = (r: AdminRow) => {
+    if (!r._clientId) return;
+    setSelectedClientAdmin({ userId: r.id, clientId: r._clientId, userName: r.name || r.id.slice(0, 12), clientName: r._clientName });
+    setSearch("");
+    setStatusFilter("all");
+  };
+
+  const statusFilterSelect = (
+    <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "active" | "inactive")}>
+      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todos status</SelectItem>
+        <SelectItem value="active">Ativos</SelectItem>
+        <SelectItem value="inactive">Inativos</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <div className="space-y-6">
-      <PageHeader title={t("users_roles")} subtitle={t("manage_roles")} icon={Users} actions={headerActions} />
+      {selectedClientAdmin === null ? (
+        <>
+          <PageHeader title={t("users_roles")} subtitle={t("manage_roles")} icon={Users} actions={headerActions} />
 
-      <DataTable
-        columns={columns} data={flatRows} keyExtractor={(r) => r.rowKey}
-        loading={loading} search={search} onSearchChange={setSearch} searchPlaceholder={t("search_users_roles")}
-        emptyMessage={t("no_roles_assigned")}
-      />
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => { setActiveTab(v as "staff" | "consumers"); setStatusFilter("all"); setSearch(""); }}
+          >
+            <TabsList>
+              <TabsTrigger value="staff">Staff</TabsTrigger>
+              <TabsTrigger value="consumers">Consumidores</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="staff" className="space-y-4">
+              <DataTable
+                columns={adminColumns}
+                data={clientAdminRows}
+                keyExtractor={(r) => r.id}
+                loading={loading}
+                search={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar admin..."
+                emptyMessage="Nenhum admin encontrado"
+                filters={statusFilterSelect}
+                onRowClick={handleRowClick}
+              />
+            </TabsContent>
+
+            <TabsContent value="consumers" className="space-y-4">
+              <DataTable
+                columns={consumerColumns}
+                data={consumers}
+                keyExtractor={(p) => p.id}
+                loading={loading}
+                search={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Buscar consumidor..."
+                emptyMessage="Nenhum consumidor encontrado"
+                filters={statusFilterSelect}
+              />
+            </TabsContent>
+          </Tabs>
+        </>
+      ) : (
+        <>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3">
+              <Button
+                variant="outline"
+                onClick={() => { setSelectedClientAdmin(null); setSearch(""); setStatusFilter("all"); }}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">{selectedClientAdmin.userName}</h1>
+                <p className="text-sm text-muted-foreground">{selectedClientAdmin.clientName}</p>
+              </div>
+            </div>
+            {headerActions}
+          </div>
+
+          <div className="rounded-lg border border-dashed border-border bg-card/50 p-12 text-center text-muted-foreground">
+            Drill-down em construção
+          </div>
+        </>
+      )}
       <ModalForm open={sheetOpen} onOpenChange={setSheetOpen} title={t("assign_role")}
         onSubmit={handleAssign} saving={saving} submitLabel={t("assign_role")} disabled={!form.user_id}>
         <div className="space-y-2">
