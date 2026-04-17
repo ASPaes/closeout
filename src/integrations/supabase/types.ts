@@ -3506,6 +3506,20 @@ export type Database = {
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       ensure_consumer_role: { Args: never; Returns: undefined }
+      get_client_admin_active_checkins: {
+        Args: { p_client_id: string }
+        Returns: {
+          checked_in_at: string
+          checkin_id: string
+          event_id: string
+          event_name: string
+          total_spent: number
+          user_id: string
+          user_name: string
+          venue_id: string
+          venue_name: string
+        }[]
+      }
       get_client_managers: {
         Args: { p_client_id: string }
         Returns: {
