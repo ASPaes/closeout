@@ -38,6 +38,9 @@ const statusMap: Record<string, "active" | "inactive" | "draft" | "completed" | 
   [EVENT_STATUS.CANCELLED]: "cancelled",
 };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
 export default function Events() {
   const { isSuperAdmin, hasRole } = useAuth();
   const { t } = useTranslation();
