@@ -215,13 +215,25 @@ export default function Events() {
         loading={loading} search={search} onSearchChange={setSearch} searchPlaceholder={t("search_events")}
         emptyMessage={t("no_events_found")}
         filters={
-          <Select value={filterVenue} onValueChange={setFilterVenue}>
-            <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("all_venues")}</SelectItem>
-              {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={filterVenue} onValueChange={setFilterVenue}>
+              <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all_venues")}</SelectItem>
+                {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value={EVENT_STATUS.ACTIVE}>{t("active")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.DRAFT}>{t("draft")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.COMPLETED}>{t("completed")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.CANCELLED}>{t("cancelled")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
         }
       />
 
