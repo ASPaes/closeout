@@ -397,7 +397,6 @@ export default function UsersRoles() {
                 searchPlaceholder="Buscar admin..."
                 emptyMessage="Nenhum admin encontrado"
                 filters={statusFilterSelect}
-                onRowClick={handleRowClick}
               />
             </TabsContent>
 
