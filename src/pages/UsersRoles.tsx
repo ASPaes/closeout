@@ -284,28 +284,41 @@ export default function UsersRoles() {
       key: "admin",
       header: "Admin",
       render: (r) => (
-        <span className={`font-medium transition-colors ${r._clientId ? "cursor-pointer hover:text-primary" : "cursor-not-allowed text-muted-foreground"}`}>
+        <div
+          onClick={() => handleRowClick(r)}
+          className={`font-medium transition-colors ${r._clientId ? "cursor-pointer hover:text-primary" : "cursor-not-allowed text-muted-foreground"}`}
+        >
           {r.name || r.id.slice(0, 12) + "…"}
-        </span>
+        </div>
       ),
     },
     {
       key: "status",
       header: t("status"),
       render: (r) => (
-        <StatusBadge status={r.status === "active" ? "active" : "inactive"} label={r.status === "active" ? t("active") : t("inactive")} />
+        <div onClick={() => handleRowClick(r)} className={r._clientId ? "cursor-pointer" : "cursor-not-allowed"}>
+          <StatusBadge status={r.status === "active" ? "active" : "inactive"} label={r.status === "active" ? t("active") : t("inactive")} />
+        </div>
       ),
     },
     {
       key: "client",
       header: t("client"),
-      render: (r) => <span className="text-sm">{r._clientName}</span>,
+      render: (r) => (
+        <div onClick={() => handleRowClick(r)} className={`text-sm ${r._clientId ? "cursor-pointer" : "cursor-not-allowed"}`}>
+          {r._clientName}
+        </div>
+      ),
     },
     {
       key: "chevron",
       header: "",
       className: "w-10",
-      render: () => <ChevronRight className="h-4 w-4 text-muted-foreground/50" />,
+      render: (r) => (
+        <div onClick={() => handleRowClick(r)} className={r._clientId ? "cursor-pointer" : "cursor-not-allowed"}>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+        </div>
+      ),
     },
   ];
 
