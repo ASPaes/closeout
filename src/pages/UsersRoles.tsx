@@ -522,7 +522,7 @@ export default function UsersRoles() {
             <div className="flex items-start gap-3">
               <Button
                 variant="outline"
-                onClick={() => { setSelectedClientAdmin(null); setSearch(""); setStatusFilter("all"); }}
+                onClick={() => { setSelectedClientAdmin(null); setSearch(""); setStatusFilter("all"); setLiveCheckins([]); setLiveVenueFilter("all"); }}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
