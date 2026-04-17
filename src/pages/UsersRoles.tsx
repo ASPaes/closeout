@@ -68,6 +68,11 @@ export default function UsersRoles() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
+  // Tabs / drill-down state
+  const [activeTab, setActiveTab] = useState<"staff" | "consumers">("staff");
+  const [selectedClientAdmin, setSelectedClientAdmin] = useState<{ userId: string; clientId: string; userName: string; clientName: string } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
   // Super Admin creation (owner only)
   const [superAdminOpen, setSuperAdminOpen] = useState(false);
   const [saName, setSaName] = useState("");
