@@ -50,6 +50,8 @@ export default function Events() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [filterVenue, setFilterVenue] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
   const [saving, setSaving] = useState(false);
