@@ -537,17 +537,18 @@ export default function UsersRoles() {
 
           {(() => {
             const profileById = new Map(profiles.map((p) => [p.id, p]));
-            const allowedRoles = ROLE_GROUPS[drilldownTab];
-            const q = search.toLowerCase();
+            const allowedRoles = ROLE_GROUPS[drilldownTab] || [];
+            const q = (search || "").toLowerCase();
             const rows = userRoles.filter((ur) => {
-              if (ur.client_id !== selectedClientAdmin.clientId) return false;
-              if (!allowedRoles.includes(ur.role)) return false;
+              if (!ur) return false;
+              if (ur?.client_id !== selectedClientAdmin?.clientId) return false;
+              if (!allowedRoles?.includes(ur?.role)) return false;
               const prof = profileById.get(ur.user_id);
               if (!prof) return false;
-              if (statusFilter !== "all" && prof.status !== statusFilter) return false;
+              if (statusFilter !== "all" && prof?.status !== statusFilter) return false;
               if (!q) return true;
-              const nameMatch = prof.name?.toLowerCase().includes(q) ?? false;
-              const roleMatch = ur.role.toLowerCase().includes(q);
+              const nameMatch = (prof?.name || "").toLowerCase().includes(q);
+              const roleMatch = (ur?.role || "").toLowerCase().includes(q);
               return nameMatch || roleMatch;
             });
 
