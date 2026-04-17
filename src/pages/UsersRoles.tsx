@@ -288,11 +288,11 @@ export default function UsersRoles() {
   };
 
   const filteredProfiles = profiles.filter((p) => {
-    const q = search.toLowerCase();
+    const q = (search || "").toLowerCase();
     if (!q) return true;
-    if (p.name?.toLowerCase().includes(q)) return true;
+    if ((p?.name || "").toLowerCase().includes(q)) return true;
     const roles = rolesByUser.get(p.id) || [];
-    return roles.some((r) => r.role.includes(q));
+    return roles.some((r) => (r?.role || "").includes(q));
   });
 
   const flatRows: FlatRow[] = useMemo(() => {
