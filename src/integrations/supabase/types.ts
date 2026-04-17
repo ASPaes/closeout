@@ -3544,6 +3544,13 @@ export type Database = {
           event_id: string
         }[]
       }
+      get_events_revenue: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          event_id: string
+          revenue: number
+        }[]
+      }
       get_my_roles: {
         Args: never
         Returns: {

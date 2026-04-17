@@ -38,6 +38,9 @@ const statusMap: Record<string, "active" | "inactive" | "draft" | "completed" | 
   [EVENT_STATUS.CANCELLED]: "cancelled",
 };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
 export default function Events() {
   const { isSuperAdmin, hasRole } = useAuth();
   const { t } = useTranslation();
@@ -47,6 +50,8 @@ export default function Events() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [filterVenue, setFilterVenue] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [revenueMap, setRevenueMap] = useState<Record<string, number>>({});
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
   const [saving, setSaving] = useState(false);
@@ -57,15 +62,28 @@ export default function Events() {
     unretrieved_order_alert_minutes: "", stock_control_enabled: true,
   });
 
+  const fetchRevenue = async (eventIds: string[]) => {
+    if (eventIds.length === 0) return;
+    const { data, error } = await supabase.rpc("get_events_revenue" as any, { p_event_ids: eventIds } as any);
+    if (!error && data) {
+      const map: Record<string, number> = {};
+      (data as any[]).forEach((r) => { map[r.event_id] = Number(r.revenue) || 0; });
+      setRevenueMap(map);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     const [e, v, c] = await Promise.all([
-      supabase.from("events").select("*, venues(name, clients(name))").order("start_at", { ascending: false }),
+      supabase.from("events").select("*, venues(name, clients(name))"),
       supabase.from("venues").select("id, name, client_id").eq("status", ENTITY_STATUS.ACTIVE),
       supabase.from("clients").select("id, name").eq("status", ENTITY_STATUS.ACTIVE),
     ]);
     if (e.error) toast.error(getPtBrErrorMessage(e.error));
-    if (e.data) setEvents(e.data as Event[]);
+    if (e.data) {
+      setEvents(e.data as Event[]);
+      fetchRevenue((e.data as Event[]).map((ev) => ev.id));
+    }
     if (v.data) setVenues(v.data as Venue[]);
     if (c.data) setClients(c.data as Client[]);
     setLoading(false);
@@ -134,13 +152,45 @@ export default function Events() {
     fetchData();
   };
 
-  const filtered = events.filter((e) => filterVenue === "all" || e.venue_id === filterVenue).filter((e) => e.name.toLowerCase().includes(search.toLowerCase()));
+  const sortedEvents = useMemo(() => {
+    const now = new Date().toISOString();
+    const getGroup = (ev: Event) => {
+      if (ev.status === EVENT_STATUS.ACTIVE) return 0;
+      if (ev.status === EVENT_STATUS.DRAFT) {
+        if (ev.start_at && ev.start_at >= now) return 1;
+        return 2;
+      }
+      if (ev.status === EVENT_STATUS.COMPLETED) return 3;
+      if (ev.status === EVENT_STATUS.CANCELLED) return 4;
+      return 99;
+    };
+    return [...events].sort((a, b) => {
+      const ga = getGroup(a);
+      const gb = getGroup(b);
+      if (ga !== gb) return ga - gb;
+      if (ga === 1) return (a.start_at || "").localeCompare(b.start_at || "");
+      return (b.start_at || "").localeCompare(a.start_at || "");
+    });
+  }, [events]);
+
+  const filtered = sortedEvents
+    .filter((e) => filterVenue === "all" || e.venue_id === filterVenue)
+    .filter((e) => filterStatus === "all" || e.status === filterStatus)
+    .filter((e) => (e.name || "").toLowerCase().includes(search.toLowerCase()));
 
   const columns: DataTableColumn<Event>[] = [
     { key: "name", header: t("name"), render: (e) => <span className="font-medium">{e.name}</span> },
     { key: "venue", header: t("venue"), render: (e) => <span className="text-muted-foreground">{e.venues?.name || "—"}</span> },
     { key: "client", header: t("client"), render: (e) => <span className="text-muted-foreground">{e.venues?.clients?.name || "—"}</span> },
     { key: "start", header: t("start"), render: (e) => <span className="text-muted-foreground text-sm">{e.start_at ? format(new Date(e.start_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</span> },
+    { key: "revenue", header: "Faturamento", render: (e) => {
+      const rev = revenueMap[e.id] || 0;
+      return (
+        <span className={rev > 0 ? "font-semibold text-primary" : "text-muted-foreground text-sm"}>
+          {formatCurrency(rev)}
+        </span>
+      );
+    }},
     { key: "status", header: t("status"), render: (e) => <StatusBadge status={statusMap[e.status] ?? "inactive"} label={t(e.status as any)} /> },
     ...(canManage ? [{ key: "actions", header: t("actions"), className: "w-24", render: (e: Event) => (
       <div className="flex gap-1">
@@ -165,13 +215,25 @@ export default function Events() {
         loading={loading} search={search} onSearchChange={setSearch} searchPlaceholder={t("search_events")}
         emptyMessage={t("no_events_found")}
         filters={
-          <Select value={filterVenue} onValueChange={setFilterVenue}>
-            <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("all_venues")}</SelectItem>
-              {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={filterVenue} onValueChange={setFilterVenue}>
+              <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all_venues")}</SelectItem>
+                {venues.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-48 bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value={EVENT_STATUS.ACTIVE}>{t("active")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.DRAFT}>{t("draft")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.COMPLETED}>{t("completed")}</SelectItem>
+                <SelectItem value={EVENT_STATUS.CANCELLED}>{t("cancelled")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
         }
       />
 
