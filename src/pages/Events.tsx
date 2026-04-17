@@ -152,13 +152,45 @@ export default function Events() {
     fetchData();
   };
 
-  const filtered = events.filter((e) => filterVenue === "all" || e.venue_id === filterVenue).filter((e) => e.name.toLowerCase().includes(search.toLowerCase()));
+  const sortedEvents = useMemo(() => {
+    const now = new Date().toISOString();
+    const getGroup = (ev: Event) => {
+      if (ev.status === EVENT_STATUS.ACTIVE) return 0;
+      if (ev.status === EVENT_STATUS.DRAFT) {
+        if (ev.start_at && ev.start_at >= now) return 1;
+        return 2;
+      }
+      if (ev.status === EVENT_STATUS.COMPLETED) return 3;
+      if (ev.status === EVENT_STATUS.CANCELLED) return 4;
+      return 99;
+    };
+    return [...events].sort((a, b) => {
+      const ga = getGroup(a);
+      const gb = getGroup(b);
+      if (ga !== gb) return ga - gb;
+      if (ga === 1) return (a.start_at || "").localeCompare(b.start_at || "");
+      return (b.start_at || "").localeCompare(a.start_at || "");
+    });
+  }, [events]);
+
+  const filtered = sortedEvents
+    .filter((e) => filterVenue === "all" || e.venue_id === filterVenue)
+    .filter((e) => filterStatus === "all" || e.status === filterStatus)
+    .filter((e) => (e.name || "").toLowerCase().includes(search.toLowerCase()));
 
   const columns: DataTableColumn<Event>[] = [
     { key: "name", header: t("name"), render: (e) => <span className="font-medium">{e.name}</span> },
     { key: "venue", header: t("venue"), render: (e) => <span className="text-muted-foreground">{e.venues?.name || "—"}</span> },
     { key: "client", header: t("client"), render: (e) => <span className="text-muted-foreground">{e.venues?.clients?.name || "—"}</span> },
     { key: "start", header: t("start"), render: (e) => <span className="text-muted-foreground text-sm">{e.start_at ? format(new Date(e.start_at), "dd MMM yyyy, HH:mm", { locale: datePtBR }) : "—"}</span> },
+    { key: "revenue", header: "Faturamento", render: (e) => {
+      const rev = revenueMap[e.id] || 0;
+      return (
+        <span className={rev > 0 ? "font-semibold text-primary" : "text-muted-foreground text-sm"}>
+          {formatCurrency(rev)}
+        </span>
+      );
+    }},
     { key: "status", header: t("status"), render: (e) => <StatusBadge status={statusMap[e.status] ?? "inactive"} label={t(e.status as any)} /> },
     ...(canManage ? [{ key: "actions", header: t("actions"), className: "w-24", render: (e: Event) => (
       <div className="flex gap-1">
