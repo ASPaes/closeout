@@ -142,7 +142,7 @@ Cada tela abaixo lista: **propósito · KPIs · visualizações · ações · fo
   - Crescimento MoM em %
 - **Tabelas:** receita por client (ranking), histórico de invoices recentes
 - **Filtros:** período, tipo (mensalidade / fee / ativação)
-- **Fonte:** RPC `get_revenue_metrics` (consome `platform_invoices` + `payments.closeout_amount` + `billing_rules`)
+- **Fonte:** RPC `get_revenue_metrics` (consome `platform_invoices` + `asaas_charges.closeout_amount` JOIN `payments` + `billing_rules`)
 
 #### 2.2.3 Análise → GMV & Transações (`/admin/analise/gmv`)
 
@@ -537,7 +537,7 @@ Cada item mapeado para:
 | # | Item | Status | Fonte | Tela | Fase |
 |---|---|---|---|---|---|
 | 1 | MRR | 🟡 | `platform_invoices` (criar em F4a) | Receita + Painel | F4a |
-| 2 | Receita de fees do mês | 🟢 | `SUM(payments.closeout_amount)` | Receita + Painel | F2 |
+| 2 | Receita de fees do mês | 🟢 | `SUM(asaas_charges.closeout_amount)` (JOIN payments p WHERE p.status=approved) | Receita + Painel | F2 |
 | 3 | Receita total (MRR + fees) | 🟡 | soma das duas | Receita + Painel | F4a |
 | 4 | ARR | 🟡 | MRR × 12 | Receita | F4a |
 | 5 | Receita por modelo (mensalidade vs fee) | 🟡 | breakdown | Receita | F4a |
@@ -560,7 +560,7 @@ Cada item mapeado para:
 | # | Item | Status | Fonte | Tela | Fase |
 |---|---|---|---|---|---|
 | 1 | LTV | 🟡 | soma histórica de invoices por client | Clientes (analítico) | F4a |
-| 4 | Clients mais valiosos (top 10) | 🟢 | `SUM(payments.closeout_amount) + MRR` | Clientes + Painel | F2/F4a |
+| 4 | Clients mais valiosos (top 10) | 🟢 | `SUM(asaas_charges.closeout_amount) + MRR` (JOIN payments p WHERE p.status=approved) | Clientes + Painel | F2/F4a |
 | 5 | Concentração de receita | 🟢 | % top 3/5/10 | Clientes | F2 |
 | 6 | Clients em risco | 🟢 | score composto (inatividade + queda + ticket) | Clientes + Alertas | F2/F5 |
 | 7 | Expansão (aumento de plano) | 🟢 | `audit_logs` de `billing_rules` | Clientes | F2 |
@@ -571,7 +571,7 @@ Cada item mapeado para:
 |---|---|---|---|---|---|
 | 1 | GMV total | 🟢 | `SUM(payments.amount)` aprovadas | GMV + Painel | F2 |
 | 2 | GMV por período | 🟢 | agregação temporal | GMV | F2 |
-| 3 | Take rate | 🟢 | `closeout_amount / amount` | GMV | F2 |
+| 3 | Take rate | 🟢 | `SUM(ac.closeout_amount) / SUM(p.amount)` (JOIN `asaas_charges ac` ON `p.id=ac.payment_id`) | GMV | F2 |
 | 4 | GMV por client | 🟢 | GROUP BY client_id | GMV + Painel | F2 |
 | 5 | GMV por local | 🟢 | JOIN venues | GMV | F2 |
 | 6 | GMV por método de pagamento | 🟢 | GROUP BY payment_method | GMV | F2 |
@@ -703,7 +703,7 @@ Execução estritamente **em ordem**. Cada fase tem: objetivo, pré-requisitos, 
 #### Critérios de aceite
 
 - [ ] Rodar `Supabase:get_advisors` type=performance, comparar antes/depois.
-- [ ] Testar query real de dashboard (ex: `SELECT SUM(closeout_amount) FROM payments WHERE created_at >= now() - interval '30 days'`) e medir tempo. Deve ser <100ms.
+- [ ] Testar query real de dashboard (ex: `SELECT SUM(ac.closeout_amount) FROM asaas_charges ac JOIN payments p ON p.id=ac.payment_id WHERE p.status='approved' AND p.created_at >= now() - interval '30 days'`) e medir tempo. Deve ser <100ms.
 - [ ] Confirmar que nenhuma funcionalidade existente quebrou (testar Consumer login, criar pedido, pagar PIX).
 
 #### Estimativa
@@ -728,7 +728,7 @@ Execução estritamente **em ordem**. Cada fase tem: objetivo, pré-requisitos, 
 1. **RPC `get_admin_dashboard_metrics(p_start_date, p_end_date)`** — retorna JSON único com:
    - `mrr_expected` (soma de `billing_rules.monthly_amount` WHERE is_active AND rule_type='monthly_saas') — stub até F4a
    - `gmv_total_period`
-   - `fees_total_period` (SUM `closeout_amount`)
+   - `fees_total_period` (`SUM(asaas_charges.closeout_amount)` JOIN payments WHERE status=approved)
    - `new_clients_period`
    - `active_events_now`
    - `alerts_open` — stub até F5 (retorna 0)
@@ -1518,8 +1518,8 @@ Lista de tópicos identificados durante o discovery que **não entram no escopo 
 
 4. **`is_client_manager()` não trata `role = 'owner'`** — verificado na auditoria. Pode ser bug de segurança ou decisão intencional. Decidir em F0 (§5.F0.10).
 
-5. **3 WARNs de segurança do advisor:**
-   - `pg_net` em schema `public` — coberto em F0 item 9.
+5. **3 WARNs de segurança do advisor (status pós-F0):**
+   - `pg_net` em schema `public` — **tentado em F0.4, falhou.** `ALTER EXTENSION pg_net SET SCHEMA extensions` retornou `0A000: extension "pg_net" does not support SET SCHEMA`. Workaround (`DROP EXTENSION ... CASCADE; CREATE EXTENSION ... WITH SCHEMA extensions`) é arriscado em produção porque apaga fila HTTP in-flight e exige reagendar cron `expire-pix-charges`. **Fazer em branch de dev, validar cron dispara, mergear.**
    - Bucket `avatars` com policy de listagem ampla — decidir se corrige ou aceita (avatars são públicos mesmo).
    - Bucket `event-images` com policy de listagem ampla — idem.
 
@@ -1537,6 +1537,16 @@ Lista de tópicos identificados durante o discovery que **não entram no escopo 
 
 12. **Testes de pentesting/bypass RLS** (24-28 na lista original de testes) — não cobertos. Devem ser executados pós-F0 pra validar a limpeza de RLS.
 
+13. **47 índices sem uso pós-F0** (`unused_index` lint) — criados em F0.1 (`idx_payments_*`, `idx_clients_*`, FKs em tabelas operacionais) + alguns pré-existentes. O advisor reporta por ainda não terem sido usados — app ainda precisa rodar pra contabilizar. **Revisar após 30 dias de tráfego real de produção.** Manter se `idx_scan > 0`, dropar se permanecerem zerados.
+
+14. **39 FKs ainda sem índice cobertor** (`unindexed_foreign_keys` lint) — após F0.1 sobraram FKs em tabelas de baixo volume (waiter_*, user_invites, cash_orders, exchanges, returns). Custo de manter índice pode não compensar leitura. **Avaliar caso a caso medindo plano de queries reais.**
+
+15. **`auth_db_connections_absolute`** — Auth usa 10 connections absolute. Trocar pra percentage-based na config do projeto quando escalar tier. Não urgente em tier atual. [Remediation](https://supabase.com/docs/guides/deployment/going-into-prod).
+
+16. **Leak em `asaas_subaccounts` — CORRIGIDO em F0.3 Lote 3:** policy `asaas_sub_select` tinha `USING true` pra role `authenticated`, expondo todas subcontas Asaas (incluindo `asaas_account_id`, `wallet_id`) a qualquer usuário logado. **Fix aplicado** (`as_select/insert/update/delete` restritos ao próprio client ou super_admin). ⚠️ **Se alguma UI ou Edge Function dependia do acesso amplo, vai retornar vazio** — ajustar consulta pra filtrar por `client_id` do usuário.
+
+17. **Consolidação RLS bloqueou mais otimizações** — pós-F0 cada tabela tem 4 policies (1 por cmd: SELECT/INSERT/UPDATE/DELETE) OU menos quando `consumer_select_authenticated` cobre SELECT. Não dá pra reduzir mais sem mudar comportamento de acesso. Status: **aceito.**
+
 ---
 
 ## §9 Glossário
@@ -1546,7 +1556,7 @@ Lista de tópicos identificados durante o discovery que **não entram no escopo 
 | **MRR** | Monthly Recurring Revenue — receita mensal recorrente | Soma de `platform_invoices` tipo `monthly` pagas no mês |
 | **ARR** | Annual Recurring Revenue | MRR × 12 |
 | **GMV** | Gross Merchandise Value — volume transacionado | Soma de `payments.amount` aprovadas |
-| **Take Rate** | % do GMV que fica pra plataforma | `SUM(closeout_amount) / SUM(amount)` |
+| **Take Rate** | % do GMV que fica pra plataforma | `SUM(ac.closeout_amount) / SUM(p.amount)` onde `ac` = `asaas_charges` JOIN `p` = `payments` |
 | **ARPU** | Average Revenue Per User — receita média por client | Receita total / clients ativos |
 | **LTV** | Lifetime Value — receita total esperada por client | Soma histórica de invoices pagas do client |
 | **Churn Rate** | % de clients perdidos no período | Clients que ficaram inativos / clients ativos no início do período |
@@ -1594,6 +1604,47 @@ Template para registrar mudanças nas decisões originais ao longo do projeto. *
 
 ---
 
-**FIM DO DOCUMENTO MESTRE v1.0**
+### v1.1 — 19/04/2026 (pós-F0)
 
-*Próxima ação: Fase 0 — Limpeza de dívida técnica.*
+**Correções de documentação:**
+- Bug §4.7 + §9 Glossário + múltiplas menções: `payments.closeout_amount` → `asaas_charges.closeout_amount`. A coluna `closeout_amount` (taxa da plataforma) existe em `asaas_charges`, não em `payments`. Queries de GMV/fees/take rate atualizadas pra usar JOIN `asaas_charges ac JOIN payments p ON p.id=ac.payment_id`.
+
+**Progresso — Fase 0 CONCLUÍDA:**
+
+| Categoria | Início | Final | Δ |
+|---|---|---|---|
+| `auth_rls_initplan` | 169 | **0** | -169 (100%) |
+| `multiple_permissive_policies` | 142 | **0** | -142 (100%) |
+| `duplicate_index` | 4 | **0** | -4 |
+| `unindexed_foreign_keys` | 49 | 39 | -10 |
+| **TOTAL** | **401** | **~87** | **-78%** |
+
+**Execução — 7 migrations aplicadas em produção (`qfwyjatumwgdrzaqnmlg`):**
+
+1. `fase_0_1_limpeza_segura_indexes_e_cleanup` — 8 índices em FKs críticas + 6 em `payments` + 4 drops de duplicatas + delete ghost row
+2. `fase_0_1_duplicate_events_cleanup` — drop `events_venue_id_idx`
+3. `fase_0_2_auth_rls_initplan_fix_169_policies` — DO block dinâmico que wrapped `auth.uid()` → `(SELECT auth.uid())` em todas 169 policies
+4. `fase_0_3_consolidate_permissive_policies_lotes_1_e_2` — 20 tabelas de config/produtos
+5. `fase_0_3_lote_3_m1_gestao_config_tables` — 12 tabelas (profiles, clients, user_roles, venues, events, event_checkins, event_images, waiter_*, asaas_subaccounts)
+6. `fase_0_3_lote_3_m2_fluxo_pedido_critico` — 6 tabelas do core de pedido (orders, order_items, payments, qr_tokens, validations, stock_reservations)
+7. `fase_0_3_cleanup_remaining_9_conflicts` — 9 drops finais de policies management_select redundantes
+
+**Destaques:**
+- 27 tabelas com policies reescritas/consolidadas sem mudar semântica de acesso
+- Redução drástica em `user_roles` (10 → 4 policies) e `events` (11 → 5 policies)
+- 🔐 **Security fix em `asaas_subaccounts`**: removido `USING true` que expunha todas subcontas Asaas a qualquer autenticado
+- `is_client_manager()` confirmado incluindo super_admin (via audit `pg_get_functiondef`)
+
+**Não concluídos (viraram débito técnico — §8):**
+- F0.4 (mover `pg_net` pra `extensions`) — `ALTER EXTENSION SET SCHEMA` não suportado. Fix seguro exige branch dev.
+- F0.5 (drop 47 unused indexes) — adiado pra 30 dias pós-produção pra medir uso real.
+
+**Débitos novos adicionados em §8:** 13-17.
+
+**Próxima ação:** **Fase 1 — Painel executivo** (RPC `get_admin_dashboard_metrics` + RPC `get_platform_health_summary` + tela consolidada).
+
+---
+
+**FIM DO DOCUMENTO MESTRE v1.1**
+
+*Próxima ação: Fase 1 — Painel executivo do Admin.*
