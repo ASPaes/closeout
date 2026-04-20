@@ -148,6 +148,167 @@ export default function Dashboard() {
               </Card>
             ))}
       </div>
+
+      {/* Seção A — Gráfico de Receita */}
+      {loading ? (
+        <Skeleton className="h-[280px] rounded-lg" />
+      ) : (
+        <Card className="border-border bg-card hover:border-primary/20 transition-colors">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-foreground">
+              Receita (últimos 30 dias)
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">GMV e taxas capturadas por dia</p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                gmv: { label: "GMV", color: "hsl(24, 100%, 50%)" },
+                fees: { label: "Fees", color: "hsl(24, 100%, 70%)" },
+              }}
+              className="h-[260px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data?.revenue_timeseries ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(v) => {
+                      const d = new Date(v);
+                      return `${d.getDate()}/${d.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line
+                    type="monotone"
+                    dataKey="gmv"
+                    stroke="hsl(24, 100%, 50%)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="fees"
+                    stroke="hsl(24, 100%, 70%)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Seção B — Top Clients + Saúde da Plataforma */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        {loading ? (
+          <>
+            <Skeleton className="h-48 rounded-lg" />
+            <Skeleton className="h-48 rounded-lg" />
+          </>
+        ) : (
+          <>
+            <Card className="border-border bg-card hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold text-foreground">
+                  Top Clientes (período)
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Por volume transacionado</p>
+              </CardHeader>
+              <CardContent>
+                {!data?.top_clients || data.top_clients.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">
+                    Sem dados no período
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {data.top_clients.map((c: any, idx: number) => (
+                      <li
+                        key={c.client_id}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-semibold text-primary">
+                              {idx + 1}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {c.client_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {c.payment_count} pagamento(s)
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground shrink-0">
+                          {formatBRL(c.gmv)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border bg-card hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <CardTitle className="text-base font-semibold text-foreground">
+                  Saúde da Plataforma
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {[
+                    { key: "platform", label: "Plataforma" },
+                    { key: "payments", label: "Pagamentos" },
+                    { key: "security", label: "Segurança" },
+                    { key: "events", label: "Eventos" },
+                  ].map(({ key, label }) => {
+                    const item = health?.[key];
+                    if (!item) return null;
+                    const statusColors: Record<string, string> = {
+                      green: "bg-green-500",
+                      yellow: "bg-yellow-500",
+                      red: "bg-red-500",
+                      gray: "bg-muted-foreground",
+                    };
+                    return (
+                      <li key={key} className="flex items-center gap-3">
+                        <span
+                          className={`h-3 w-3 rounded-full shrink-0 ${
+                            statusColors[item.status] || "bg-muted-foreground"
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground">{label}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.detail}
+                          </p>
+                        </div>
+                        {item.is_stub && (
+                          <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                            stub
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
     </div>
   );
 }
