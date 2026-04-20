@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft, Radio, User as UserIcon } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft, Radio, User as UserIcon, Clock, HelpCircle, Briefcase, UserCircle, Zap } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Profile = { id: string; name: string; status: string; created_at: string };
@@ -29,6 +31,47 @@ type Venue = { id: string; name: string; client_id: string };
 type Event = { id: string; name: string; venue_id: string };
 
 type FlatRow = { rowKey: string; profile: Profile; userRole: UserRole | null; isFirstOfUser: boolean; userRoleCount: number };
+
+type UserAuthInfo = { last_sign_in_at: string | null; email_confirmed_at: string | null };
+type UserDetail = {
+  profile: any;
+  auth: any;
+  roles: any[];
+  is_consumer: boolean;
+  is_staff: boolean;
+  consumer_stats: any | null;
+  staff_stats: any | null;
+};
+
+const formatRelativeTime = (iso: string | null | undefined): string => {
+  if (!iso) return "Nunca";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Agora";
+  if (diffMin < 60) return `${diffMin}min atrás`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h atrás`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return `${diffD}d atrás`;
+  const diffMo = Math.floor(diffD / 30);
+  if (diffMo < 12) return `${diffMo} ${diffMo === 1 ? "mês" : "meses"} atrás`;
+  const diffY = Math.floor(diffMo / 12);
+  return `${diffY} ${diffY === 1 ? "ano" : "anos"} atrás`;
+};
+
+const formatBRL = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+
+const formatDateTimeBR = (iso: string | null | undefined) => {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  });
+};
 
 const roleKeys: Record<string, string> = {
   [APP_ROLE.OWNER]: "role_owner",
@@ -108,6 +151,16 @@ export default function UsersRoles() {
   const [saSuccessData, setSaSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
   const [saSuccessOpen, setSaSuccessOpen] = useState(false);
 
+  // KPIs e auth info
+  const [kpisData, setKpisData] = useState<any>(null);
+  const [usersAuthInfo, setUsersAuthInfo] = useState<Record<string, UserAuthInfo>>({});
+  const [loadingKpis, setLoadingKpis] = useState(true);
+
+  // Modal drill-down individual
+  const [selectedUserDetailId, setSelectedUserDetailId] = useState<string | null>(null);
+  const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
   const rolesByUser = useMemo(() => {
     const map = new Map<string, UserRole[]>();
     userRoles.forEach((ur) => {
@@ -140,6 +193,19 @@ export default function UsersRoles() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    const fetchKpis = async () => {
+      setLoadingKpis(true);
+      const { data, error } = await (supabase.rpc as any)("get_users_kpis");
+      if (!error && data) {
+        setKpisData(data);
+        setUsersAuthInfo((data as any).users_auth_info || {});
+      }
+      setLoadingKpis(false);
+    };
+    fetchKpis();
+  }, []);
 
   const fetchLiveCheckins = async () => {
     if (!selectedClientAdmin?.clientId) return;
@@ -385,12 +451,13 @@ export default function UsersRoles() {
       key: "admin",
       header: "Admin",
       render: (r) => (
-        <div
-          onClick={() => handleRowClick(r)}
-          className={`font-medium transition-colors ${r._clientId ? "cursor-pointer hover:text-primary" : "cursor-not-allowed text-muted-foreground"}`}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); openUserDetail(r.id); }}
+          className="font-medium text-left hover:text-primary transition-colors"
         >
           {r.name || r.id.slice(0, 12) + "…"}
-        </div>
+        </button>
       ),
     },
     {
@@ -412,6 +479,18 @@ export default function UsersRoles() {
       ),
     },
     {
+      key: "last_login",
+      header: "Último login",
+      render: (r) => {
+        const info = usersAuthInfo[r.id];
+        return (
+          <div onClick={() => handleRowClick(r)} className={`text-xs text-muted-foreground ${r._clientId ? "cursor-pointer" : "cursor-not-allowed"}`}>
+            {formatRelativeTime(info?.last_sign_in_at)}
+          </div>
+        );
+      },
+    },
+    {
       key: "chevron",
       header: "",
       className: "w-10",
@@ -424,7 +503,19 @@ export default function UsersRoles() {
   ];
 
   const consumerColumns: DataTableColumn<Profile>[] = [
-    { key: "consumer", header: "Consumidor", render: (p) => <span className="font-medium">{p.name || p.id.slice(0, 12) + "…"}</span> },
+    {
+      key: "consumer",
+      header: "Consumidor",
+      render: (p) => (
+        <button
+          type="button"
+          onClick={() => openUserDetail(p.id)}
+          className="font-medium text-left hover:text-primary transition-colors"
+        >
+          {p.name || p.id.slice(0, 12) + "…"}
+        </button>
+      ),
+    },
     {
       key: "status",
       header: t("status"),
@@ -472,11 +563,79 @@ export default function UsersRoles() {
     </Select>
   );
 
+  const openUserDetail = async (userId: string) => {
+    setSelectedUserDetailId(userId);
+    setUserDetail(null);
+    setLoadingDetail(true);
+    const { data, error } = await (supabase.rpc as any)("get_user_detail", { p_user_id: userId });
+    if (error) {
+      toast.error(getPtBrErrorMessage(error));
+      setSelectedUserDetailId(null);
+    } else {
+      setUserDetail(data as UserDetail);
+    }
+    setLoadingDetail(false);
+  };
+
+  const closeUserDetail = () => {
+    setSelectedUserDetailId(null);
+    setUserDetail(null);
+  };
+
+  const KpisBlock = () => {
+    const items = [
+      { label: "Staff", value: kpisData?.kpis?.staff_count ?? 0, icon: Briefcase, tooltip: "Usuários com pelo menos 1 role que não seja consumer (owner, super_admin, client_admin, staff, waiter, cashier, etc.)." },
+      { label: "Consumidores", value: kpisData?.kpis?.consumer_count ?? 0, icon: UserCircle, tooltip: "Usuários com role 'consumer' — fazem pedidos pela plataforma." },
+      { label: "Logaram 24h", value: kpisData?.kpis?.logaram_24h ?? 0, icon: Zap, tooltip: "Usuários que fizeram login nas últimas 24 horas (baseado em last_sign_in_at do Supabase Auth)." },
+      { label: "Logaram 7d", value: kpisData?.kpis?.logaram_7d ?? 0, icon: Clock, tooltip: "Usuários que fizeram login nos últimos 7 dias." },
+    ];
+    return (
+      <TooltipProvider delayDuration={200}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {items.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <Card key={kpi.label}>
+                <CardContent className="py-4 px-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{kpi.label}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="inline-flex">
+                              <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="text-xs">{kpi.tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="mt-1 text-2xl font-bold">
+                        {loadingKpis ? <Skeleton className="h-7 w-16" /> : kpi.value}
+                      </div>
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </TooltipProvider>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {selectedClientAdmin === null ? (
         <>
           <PageHeader title={t("users_roles")} subtitle={t("manage_roles")} icon={Users} actions={headerActions} />
+
+          <KpisBlock />
 
           <Tabs
             value={activeTab}
@@ -558,10 +717,26 @@ export default function UsersRoles() {
               .filter((r) => !!r.profile);
 
             const drillColumns: DataTableColumn<DrillRow>[] = [
-              { key: "user", header: t("user"), render: (r) => <span className="font-medium">{r.profile.name || r.profile.id.slice(0, 12) + "…"}</span> },
+              { key: "user", header: t("user"), render: (r) => (
+                <button
+                  type="button"
+                  onClick={() => openUserDetail(r.profile.id)}
+                  className="font-medium text-left hover:text-primary transition-colors"
+                >
+                  {r.profile.name || r.profile.id.slice(0, 12) + "…"}
+                </button>
+              ) },
               { key: "status", header: t("status"), render: (r) => <StatusBadge status={r.profile.status === "active" ? "active" : "inactive"} label={r.profile.status === "active" ? t("active") : t("inactive")} /> },
               { key: "role", header: t("role"), render: (r) => <Badge variant="outline" className="capitalize">{roleKeys[r.ur.role] ? t(roleKeys[r.ur.role] as any) : r.ur.role}</Badge> },
               { key: "scope", header: t("scope"), render: (r) => <span className="text-muted-foreground text-xs">{renderScope(r.ur)}</span> },
+              {
+                key: "last_login",
+                header: "Último login",
+                render: (r) => {
+                  const info = usersAuthInfo[r.profile.id];
+                  return <span className="text-xs text-muted-foreground">{formatRelativeTime(info?.last_sign_in_at)}</span>;
+                },
+              },
               ...((isSuperAdmin || isOwner) ? [{
                 key: "actions", header: t("actions"), className: "w-20",
                 render: (r: DrillRow) => (
@@ -776,6 +951,192 @@ export default function UsersRoles() {
       </Dialog>
 
       <InviteLinkDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} clients={clients} venues={venues} events={events} />
+
+      {/* User detail drill-down modal */}
+      <Dialog open={!!selectedUserDetailId} onOpenChange={(open) => { if (!open) closeUserDetail(); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold">
+                {loadingDetail || !userDetail ? "Carregando..." : (userDetail.profile?.name || "Sem nome")}
+              </h2>
+              {userDetail?.auth?.email && (
+                <p className="text-sm text-muted-foreground">{userDetail.auth.email}</p>
+              )}
+            </div>
+
+            {loadingDetail || !userDetail ? (
+              <div className="space-y-3">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : (
+              <>
+                {/* Info principal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Status</div>
+                    <div className="mt-1">
+                      <StatusBadge
+                        status={userDetail.profile?.status === "active" ? "active" : "inactive"}
+                        label={userDetail.profile?.status === "active" ? t("active") : t("inactive")}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Último login</div>
+                    <div className="mt-1 text-sm font-medium">
+                      {formatRelativeTime(userDetail.auth?.last_sign_in_at)}
+                      {userDetail.auth?.last_sign_in_at && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {formatDateTimeBR(userDetail.auth.last_sign_in_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {userDetail.profile?.cpf && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">CPF</div>
+                      <div className="mt-1 text-sm font-medium">{userDetail.profile.cpf}</div>
+                    </div>
+                  )}
+                  {userDetail.profile?.phone && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Telefone</div>
+                      <div className="mt-1 text-sm font-medium">{userDetail.profile.phone}</div>
+                    </div>
+                  )}
+                  {userDetail.profile?.username && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Username</div>
+                      <div className="mt-1 text-sm font-medium">@{userDetail.profile.username}</div>
+                    </div>
+                  )}
+                  {(userDetail.profile?.city || userDetail.profile?.state) && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Cidade/UF</div>
+                      <div className="mt-1 text-sm font-medium">
+                        {[userDetail.profile.city, userDetail.profile.state].filter(Boolean).join(", ") || "-"}
+                      </div>
+                    </div>
+                  )}
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Cadastrado</div>
+                    <div className="mt-1 text-sm font-medium">{formatDateTimeBR(userDetail.profile?.created_at)}</div>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Registro completo</div>
+                    <div className="mt-1 text-sm font-medium">{userDetail.profile?.registration_complete ? "Sim" : "Não"}</div>
+                  </div>
+                </div>
+
+                {/* Roles */}
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Papéis ({userDetail.roles.length})
+                  </div>
+                  {userDetail.roles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sem papéis atribuídos</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {userDetail.roles.map((ur: any) => (
+                        <div key={ur.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-secondary/40 px-3 py-2">
+                          <Badge variant="outline" className="capitalize shrink-0">
+                            {roleKeys[ur.role] ? t(roleKeys[ur.role] as any) : ur.role}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground text-right truncate">
+                            {(() => {
+                              const parts: string[] = [];
+                              if (ur.client_name) parts.push(`Cliente: ${ur.client_name}`);
+                              if (ur.venue_name) parts.push(`Local: ${ur.venue_name}`);
+                              if (ur.event_name) parts.push(`Evento: ${ur.event_name}`);
+                              return parts.length > 0 ? parts.join(" · ") : "Global";
+                            })()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats Staff */}
+                {userDetail.is_staff && userDetail.staff_stats && (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      Atividade (Staff)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos atendidos (garçom)</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_as_waiter}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos entregues</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_delivered_by}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos cancelados por</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_cancelled_by}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Ações no sistema</span>
+                        <span className="font-medium">{userDetail.staff_stats.audit_actions_count}</span>
+                      </div>
+                      {userDetail.staff_stats.audit_last_action_at && (
+                        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm col-span-2">
+                          <span className="text-muted-foreground">Última ação</span>
+                          <span className="font-medium text-xs">
+                            {formatRelativeTime(userDetail.staff_stats.audit_last_action_at)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats Consumer */}
+                {userDetail.is_consumer && userDetail.consumer_stats && (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      Atividade (Consumidor)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos totais</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos pagos</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_paid_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Cancelados</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_cancelled_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">GMV gerado</span>
+                        <span className="font-medium">{formatBRL(userDetail.consumer_stats.gmv_total)}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Eventos participados</span>
+                        <span className="font-medium">{userDetail.consumer_stats.events_attended}</span>
+                      </div>
+                      {userDetail.consumer_stats.last_order_at && (
+                        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Último pedido</span>
+                          <span className="font-medium text-xs">
+                            {formatRelativeTime(userDetail.consumer_stats.last_order_at)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
