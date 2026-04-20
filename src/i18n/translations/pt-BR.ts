@@ -59,6 +59,10 @@ const ptBR = {
   system: "Sistema",
   admin_panel: "Painel Admin",
   sign_out: "Sair",
+  panel: "Painel",
+  analysis: "Análise",
+  management: "Gestão",
+  gmv_transactions: "GMV & Transações",
 
   // Clients
   clients: "Clientes",

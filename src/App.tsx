@@ -15,6 +15,7 @@ import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
+import AnaliseGMV from "@/pages/admin/analise/AnaliseGMV";
 import Clients from "@/pages/Clients";
 import Venues from "@/pages/Venues";
 import Events from "@/pages/Events";
@@ -97,6 +98,7 @@ const App = () => (
             {/* Admin area */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="analise/gmv" element={<AnaliseGMV />} />
               <Route path="clients" element={<Clients />} />
               <Route path="venues" element={<Venues />} />
               <Route path="events" element={<Events />} />

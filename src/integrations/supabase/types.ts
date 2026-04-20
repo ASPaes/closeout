@@ -3555,6 +3555,17 @@ export type Database = {
           revenue: number
         }[]
       }
+      get_gmv_metrics: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_granularity?: string
+          p_payment_method?: string
+          p_start_date?: string
+          p_venue_id?: string
+        }
+        Returns: Json
+      }
       get_my_roles: {
         Args: never
         Returns: {
