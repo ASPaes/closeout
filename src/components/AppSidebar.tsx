@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,15 +12,25 @@ import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 import logoMark from "@/assets/brand/logo-mark.png";
 
-const mainItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
+type NavItem = { titleKey: TranslationKey; url: string; icon: any };
+
+const panelItems: NavItem[] = [
   { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
+];
+
+const analysisItems: NavItem[] = [
+  { titleKey: "gmv_transactions", url: "/admin/analise/gmv", icon: DollarSign },
+];
+
+const managementItems: NavItem[] = [
   { titleKey: "clients", url: "/admin/clients", icon: Building2 },
   { titleKey: "venues", url: "/admin/venues", icon: MapPin },
   { titleKey: "events", url: "/admin/events", icon: CalendarDays },
+  { titleKey: "users_roles", url: "/admin/users", icon: Users },
 ];
 
-const systemItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "users_roles", url: "/admin/users", icon: Users },
+const systemItems: NavItem[] = [
+  { titleKey: "audit_logs", url: "/admin/audit-logs", icon: FileText },
   { titleKey: "settings", url: "/admin/settings", icon: Settings },
 ];
 
@@ -36,7 +46,7 @@ const roleLabels: Record<string, string> = {
   consumer: "Consumidor",
 };
 
-function SidebarNavItem({ item, collapsed, isActive, t }: { item: typeof mainItems[0]; collapsed: boolean; isActive: boolean; t: (key: TranslationKey) => string }) {
+function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; collapsed: boolean; isActive: boolean; t: (key: TranslationKey) => string }) {
   const content = (
     <SidebarMenuButton asChild isActive={isActive}>
       <NavLink
