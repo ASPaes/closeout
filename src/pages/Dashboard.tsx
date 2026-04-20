@@ -138,13 +138,49 @@ export default function Dashboard() {
 
   const alerts = useMemo(() => buildLocalAlerts(data, health), [data, health]);
 
-  const cards: Array<{ title: string; value: string; icon: LucideIcon }> = [
-    { title: "MRR Esperado", value: formatBRL(kpis.mrr_expected), icon: TrendingUp },
-    { title: "GMV do Período", value: formatBRL(kpis.gmv_total_period), icon: DollarSign },
-    { title: "Receita (Fees)", value: formatBRL(kpis.fees_total_period), icon: Wallet },
-    { title: "Novos Clientes", value: formatInt(kpis.new_clients_period), icon: Building2 },
-    { title: "Eventos Ativos", value: formatInt(kpis.active_events_now), icon: CalendarCheck },
-    { title: "Alertas Abertos", value: formatInt(kpis.alerts_open), icon: AlertCircle },
+  const cards: Array<{ title: string; value: string; icon: LucideIcon; tooltip: string }> = [
+    {
+      title: "MRR Esperado",
+      value: formatBRL(kpis.mrr_expected),
+      icon: TrendingUp,
+      tooltip:
+        "Monthly Recurring Revenue. Soma das mensalidades fixas ativas dos clientes da plataforma. Receita recorrente que entra todo mês, independente de pedidos.",
+    },
+    {
+      title: "GMV do Período",
+      value: formatBRL(kpis.gmv_total_period),
+      icon: DollarSign,
+      tooltip:
+        "Gross Merchandise Value. Volume total transacionado pelos consumidores no período — soma dos pagamentos aprovados, incluindo o que vai pro cliente e o que vira fee da plataforma.",
+    },
+    {
+      title: "Receita (Fees)",
+      value: formatBRL(kpis.fees_total_period),
+      icon: Wallet,
+      tooltip:
+        "Valor total que ficou com a plataforma no período. Calculado a partir das taxas configuradas em cada cliente aplicadas sobre os pagamentos aprovados.",
+    },
+    {
+      title: "Novos Clientes",
+      value: formatInt(kpis.new_clients_period),
+      icon: Building2,
+      tooltip:
+        "Quantidade de clientes (bares, eventos) que foram cadastrados pela primeira vez na plataforma dentro do período selecionado.",
+    },
+    {
+      title: "Eventos Ativos",
+      value: formatInt(kpis.active_events_now),
+      icon: CalendarCheck,
+      tooltip:
+        "Eventos em andamento neste exato momento — com status 'active' e horário atual entre start_at e end_at. Não depende do período selecionado.",
+    },
+    {
+      title: "Alertas Abertos",
+      value: formatInt(kpis.alerts_open),
+      icon: AlertCircle,
+      tooltip:
+        "Alertas operacionais que precisam de atenção (pedidos travados, PIX expirando, falhas). Sistema completo de alertas chega na Fase 5.",
+    },
   ];
 
   return (
