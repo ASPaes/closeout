@@ -108,10 +108,32 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("navigation")}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("panel")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {panelItems.map((item) => (
+                <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("analysis")}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {analysisItems.map((item) => (
+                <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("management")}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {managementItems.map((item) => (
                 <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
               ))}
             </SidebarMenu>
