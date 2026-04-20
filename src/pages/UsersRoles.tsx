@@ -451,12 +451,13 @@ export default function UsersRoles() {
       key: "admin",
       header: "Admin",
       render: (r) => (
-        <div
-          onClick={() => handleRowClick(r)}
-          className={`font-medium transition-colors ${r._clientId ? "cursor-pointer hover:text-primary" : "cursor-not-allowed text-muted-foreground"}`}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); openUserDetail(r.id); }}
+          className="font-medium text-left hover:text-primary transition-colors"
         >
           {r.name || r.id.slice(0, 12) + "…"}
-        </div>
+        </button>
       ),
     },
     {
@@ -476,6 +477,18 @@ export default function UsersRoles() {
           {r._clientName}
         </div>
       ),
+    },
+    {
+      key: "last_login",
+      header: "Último login",
+      render: (r) => {
+        const info = usersAuthInfo[r.id];
+        return (
+          <div onClick={() => handleRowClick(r)} className={`text-xs text-muted-foreground ${r._clientId ? "cursor-pointer" : "cursor-not-allowed"}`}>
+            {formatRelativeTime(info?.last_sign_in_at)}
+          </div>
+        );
+      },
     },
     {
       key: "chevron",
