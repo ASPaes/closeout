@@ -356,6 +356,65 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Seção C — Alertas (preview local, será substituído na F5) */}
+      {!loading && (
+        <Card className="border-border bg-card hover:border-primary/20 transition-colors">
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold text-foreground">
+                Alertas
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {alerts.length === 0
+                  ? "Nenhum alerta ativo"
+                  : `${alerts.length} alerta(s) ativo(s)`}
+              </p>
+            </div>
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider shrink-0">
+              preview — sistema completo na fase 5
+            </span>
+          </CardHeader>
+          <CardContent>
+            {alerts.length === 0 ? (
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <span className="text-sm">Tudo sob controle.</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alerts.map((alert, idx) => {
+                  const severityConfig = {
+                    critical: { icon: AlertOctagon, color: "text-red-500", bg: "bg-red-500/10" },
+                    warning: { icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10" },
+                    info: { icon: Info, color: "text-blue-400", bg: "bg-blue-500/10" },
+                  };
+                  const cfg = severityConfig[alert.severity];
+                  const AlertIcon = cfg.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-start gap-3 p-3 rounded-md ${cfg.bg}`}
+                    >
+                      <AlertIcon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {alert.title}
+                        </p>
+                        {alert.detail && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {alert.detail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
