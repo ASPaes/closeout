@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft, Radio, User as UserIcon } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Link2, Users, CheckCircle2, ChevronRight, ArrowLeft, Radio, User as UserIcon, Clock, HelpCircle, Briefcase, UserCircle, Zap } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type UserRole = { id: string; user_id: string; role: string; client_id: string | null; venue_id: string | null; event_id: string | null; created_at: string };
 type Profile = { id: string; name: string; status: string; created_at: string };
@@ -29,6 +31,47 @@ type Venue = { id: string; name: string; client_id: string };
 type Event = { id: string; name: string; venue_id: string };
 
 type FlatRow = { rowKey: string; profile: Profile; userRole: UserRole | null; isFirstOfUser: boolean; userRoleCount: number };
+
+type UserAuthInfo = { last_sign_in_at: string | null; email_confirmed_at: string | null };
+type UserDetail = {
+  profile: any;
+  auth: any;
+  roles: any[];
+  is_consumer: boolean;
+  is_staff: boolean;
+  consumer_stats: any | null;
+  staff_stats: any | null;
+};
+
+const formatRelativeTime = (iso: string | null | undefined): string => {
+  if (!iso) return "Nunca";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Agora";
+  if (diffMin < 60) return `${diffMin}min atrás`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h atrás`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return `${diffD}d atrás`;
+  const diffMo = Math.floor(diffD / 30);
+  if (diffMo < 12) return `${diffMo} ${diffMo === 1 ? "mês" : "meses"} atrás`;
+  const diffY = Math.floor(diffMo / 12);
+  return `${diffY} ${diffY === 1 ? "ano" : "anos"} atrás`;
+};
+
+const formatBRL = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+
+const formatDateTimeBR = (iso: string | null | undefined) => {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  });
+};
 
 const roleKeys: Record<string, string> = {
   [APP_ROLE.OWNER]: "role_owner",
