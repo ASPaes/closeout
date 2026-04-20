@@ -3571,6 +3571,10 @@ export type Database = {
           revenue: number
         }[]
       }
+      get_geography_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
+      }
       get_gmv_metrics: {
         Args: {
           p_client_id?: string
