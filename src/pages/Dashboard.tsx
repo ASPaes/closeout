@@ -32,6 +32,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Badge } from "@/components/ui/badge";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -201,11 +202,21 @@ export default function Dashboard() {
         <Skeleton className="h-[280px] rounded-lg" />
       ) : (
         <Card className="border-border bg-card hover:border-primary/20 transition-colors">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold text-foreground">
-              Receita (últimos 30 dias)
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">GMV e taxas capturadas por dia</p>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold text-foreground">
+                Tendência de Receita
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                GMV e taxas capturadas por dia — sempre últimos 30 dias
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase tracking-wider shrink-0"
+            >
+              Independente do filtro
+            </Badge>
           </CardHeader>
           <CardContent>
             <ChartContainer
