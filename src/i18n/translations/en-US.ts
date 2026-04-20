@@ -61,6 +61,10 @@ const enUS: Record<TranslationKey, string> = {
   system: "System",
   admin_panel: "Admin Panel",
   sign_out: "Sign out",
+  panel: "Panel",
+  analysis: "Analysis",
+  management: "Management",
+  gmv_transactions: "GMV & Transactions",
 
   // Clients
   clients: "Clients",
