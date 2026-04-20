@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Info,
   CheckCircle2,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +34,12 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -131,16 +138,53 @@ export default function Dashboard() {
 
   const alerts = useMemo(() => buildLocalAlerts(data, health), [data, health]);
 
-  const cards: Array<{ title: string; value: string; icon: LucideIcon }> = [
-    { title: "MRR Esperado", value: formatBRL(kpis.mrr_expected), icon: TrendingUp },
-    { title: "GMV do Período", value: formatBRL(kpis.gmv_total_period), icon: DollarSign },
-    { title: "Receita (Fees)", value: formatBRL(kpis.fees_total_period), icon: Wallet },
-    { title: "Novos Clientes", value: formatInt(kpis.new_clients_period), icon: Building2 },
-    { title: "Eventos Ativos", value: formatInt(kpis.active_events_now), icon: CalendarCheck },
-    { title: "Alertas Abertos", value: formatInt(kpis.alerts_open), icon: AlertCircle },
+  const cards: Array<{ title: string; value: string; icon: LucideIcon; tooltip: string }> = [
+    {
+      title: "MRR Esperado",
+      value: formatBRL(kpis.mrr_expected),
+      icon: TrendingUp,
+      tooltip:
+        "Monthly Recurring Revenue. Soma das mensalidades fixas ativas dos clientes da plataforma. Receita recorrente que entra todo mês, independente de pedidos.",
+    },
+    {
+      title: "GMV do Período",
+      value: formatBRL(kpis.gmv_total_period),
+      icon: DollarSign,
+      tooltip:
+        "Gross Merchandise Value. Volume total transacionado pelos consumidores no período — soma dos pagamentos aprovados, incluindo o que vai pro cliente e o que vira fee da plataforma.",
+    },
+    {
+      title: "Receita (Fees)",
+      value: formatBRL(kpis.fees_total_period),
+      icon: Wallet,
+      tooltip:
+        "Valor total que ficou com a plataforma no período. Calculado a partir das taxas configuradas em cada cliente aplicadas sobre os pagamentos aprovados.",
+    },
+    {
+      title: "Novos Clientes",
+      value: formatInt(kpis.new_clients_period),
+      icon: Building2,
+      tooltip:
+        "Quantidade de clientes (bares, eventos) que foram cadastrados pela primeira vez na plataforma dentro do período selecionado.",
+    },
+    {
+      title: "Eventos Ativos",
+      value: formatInt(kpis.active_events_now),
+      icon: CalendarCheck,
+      tooltip:
+        "Eventos em andamento neste exato momento — com status 'active' e horário atual entre start_at e end_at. Não depende do período selecionado.",
+    },
+    {
+      title: "Alertas Abertos",
+      value: formatInt(kpis.alerts_open),
+      icon: AlertCircle,
+      tooltip:
+        "Alertas operacionais que precisam de atenção (pedidos travados, PIX expirando, falhas). Sistema completo de alertas chega na Fase 5.",
+    },
   ];
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -181,9 +225,25 @@ export default function Dashboard() {
                 className="border-border bg-card hover:border-primary/20 transition-colors"
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {card.title}
-                  </CardTitle>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <CardTitle className="text-sm font-medium text-muted-foreground truncate">
+                      {card.title}
+                    </CardTitle>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors shrink-0"
+                          aria-label={`Sobre ${card.title}`}
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-sm">{card.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <card.icon className="h-5 w-5 text-primary" />
                   </div>
@@ -427,5 +487,6 @@ export default function Dashboard() {
         </Card>
       )}
     </div>
+    </TooltipProvider>
   );
 }

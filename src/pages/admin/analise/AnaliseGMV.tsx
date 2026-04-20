@@ -25,6 +25,13 @@ import {
   CartesianGrid,
 } from "recharts";
 import { DollarSign, Percent, Receipt, ShoppingCart, Users } from "lucide-react";
+import { HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -172,6 +179,7 @@ export default function AnaliseGMV() {
   const byMethod: any[] = data?.by_payment_method ?? [];
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -279,27 +287,32 @@ export default function AnaliseGMV() {
                 value={formatBRL(kpis.gmv_total)}
                 icon={<DollarSign className="h-4 w-4 text-primary" />}
                 subtitle={`Fees: ${formatBRL(kpis.fees_total)}`}
+                tooltip="Volume total de pagamentos aprovados no período, considerando os filtros aplicados. É o 'tamanho' do que passou pela plataforma."
               />
               <KpiCard
                 title="Take Rate"
                 value={formatPct(kpis.take_rate_medio)}
                 icon={<Percent className="h-4 w-4 text-primary" />}
+                tooltip="Percentual do GMV que ficou com a plataforma como receita. Calculado como fees ÷ GMV. Quanto maior, mais a plataforma captura por transação."
               />
               <KpiCard
                 title="Ticket Médio"
                 value={formatBRL(kpis.ticket_medio)}
                 icon={<Receipt className="h-4 w-4 text-primary" />}
+                tooltip="Valor médio de cada pagamento aprovado no período. Calculado como GMV ÷ total de pagamentos. Não é o mesmo que valor médio por pedido."
               />
               <KpiCard
                 title="Total Pedidos"
                 value={formatInt(kpis.total_pedidos)}
                 icon={<ShoppingCart className="h-4 w-4 text-primary" />}
+                tooltip="Quantidade de pedidos distintos (por order_id) que geraram ao menos um pagamento aprovado no período. Um pedido pode ter múltiplos pagamentos (split)."
               />
               <KpiCard
                 title="Consumers Únicos"
                 value={formatInt(kpis.consumers_unicos)}
                 icon={<Users className="h-4 w-4 text-primary" />}
                 className="col-span-2 lg:col-span-1"
+                tooltip="Consumidores distintos (por consumer_id) que fizeram ao menos um pagamento aprovado no período. Mede base ativa, não transações."
               />
             </>
           )}
@@ -493,6 +506,7 @@ export default function AnaliseGMV() {
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   );
 }
 
@@ -502,19 +516,39 @@ function KpiCard({
   icon,
   subtitle,
   className,
+  tooltip,
 }: {
   title: string;
   value: string;
   icon: React.ReactNode;
   subtitle?: string;
   className?: string;
+  tooltip?: string;
 }) {
   return (
     <Card className={`hover:border-primary/20 transition-colors ${className ?? ""}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          {tooltip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  aria-label={`Sobre ${title}`}
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm">{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
           {icon}
         </div>
