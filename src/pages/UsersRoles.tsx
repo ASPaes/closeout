@@ -151,6 +151,16 @@ export default function UsersRoles() {
   const [saSuccessData, setSaSuccessData] = useState<{ name: string; email: string; password: string } | null>(null);
   const [saSuccessOpen, setSaSuccessOpen] = useState(false);
 
+  // KPIs e auth info
+  const [kpisData, setKpisData] = useState<any>(null);
+  const [usersAuthInfo, setUsersAuthInfo] = useState<Record<string, UserAuthInfo>>({});
+  const [loadingKpis, setLoadingKpis] = useState(true);
+
+  // Modal drill-down individual
+  const [selectedUserDetailId, setSelectedUserDetailId] = useState<string | null>(null);
+  const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
   const rolesByUser = useMemo(() => {
     const map = new Map<string, UserRole[]>();
     userRoles.forEach((ur) => {
