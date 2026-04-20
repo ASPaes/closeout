@@ -42,6 +42,15 @@ const monthLabel = (m: string) => {
   return `${months[parseInt(mo, 10) - 1]}/${y.slice(2)}`;
 };
 
+function getCellColor(count: number, max: number): string {
+  if (count === 0) return "hsl(var(--muted) / 0.3)";
+  const ratio = count / max;
+  if (ratio <= 0.25) return "hsl(24, 100%, 50% / 0.4)";
+  if (ratio <= 0.5) return "hsl(24, 100%, 50% / 0.6)";
+  if (ratio <= 0.75) return "hsl(24, 100%, 50% / 0.8)";
+  return "hsl(24, 100%, 55%)";
+}
+
 type Period = "today" | "7d" | "30d" | "month";
 
 function computePeriod(period: Period): { start: Date; end: Date } {
