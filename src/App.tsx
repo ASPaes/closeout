@@ -16,6 +16,8 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import AnaliseGMV from "@/pages/admin/analise/AnaliseGMV";
+import AnaliseEventos from "@/pages/admin/analise/AnaliseEventos";
+import AnaliseProdutos from "@/pages/admin/analise/AnaliseProdutos";
 import Clients from "@/pages/Clients";
 import Venues from "@/pages/Venues";
 import Events from "@/pages/Events";
@@ -99,6 +101,8 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="analise/gmv" element={<AnaliseGMV />} />
+              <Route path="analise/eventos" element={<AnaliseEventos />} />
+              <Route path="analise/produtos" element={<AnaliseProdutos />} />
               <Route path="clients" element={<Clients />} />
               <Route path="venues" element={<Venues />} />
               <Route path="events" element={<Events />} />

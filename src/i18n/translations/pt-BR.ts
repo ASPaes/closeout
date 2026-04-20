@@ -63,6 +63,8 @@ const ptBR = {
   analysis: "Análise",
   management: "Gestão",
   gmv_transactions: "GMV & Transações",
+  analysis_events: "Eventos",
+  analysis_products: "Produtos",
 
   // Clients
   clients: "Clientes",

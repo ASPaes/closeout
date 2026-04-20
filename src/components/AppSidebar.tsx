@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,8 @@ const panelItems: NavItem[] = [
 
 const analysisItems: NavItem[] = [
   { titleKey: "gmv_transactions", url: "/admin/analise/gmv", icon: DollarSign },
+  { titleKey: "analysis_events", url: "/admin/analise/eventos", icon: CalendarDays },
+  { titleKey: "analysis_products", url: "/admin/analise/produtos", icon: Package },
 ];
 
 const managementItems: NavItem[] = [

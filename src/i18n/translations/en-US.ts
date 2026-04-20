@@ -65,6 +65,8 @@ const enUS: Record<TranslationKey, string> = {
   analysis: "Analysis",
   management: "Management",
   gmv_transactions: "GMV & Transactions",
+  analysis_events: "Events",
+  analysis_products: "Products",
 
   // Clients
   clients: "Clients",
