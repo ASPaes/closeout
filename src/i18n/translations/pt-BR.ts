@@ -65,6 +65,8 @@ const ptBR = {
   gmv_transactions: "GMV & Transações",
   analysis_events: "Eventos",
   analysis_products: "Produtos",
+  analysis_behavior: "Comportamento",
+  analysis_clients: "Clientes",
 
   // Clients
   clients: "Clientes",

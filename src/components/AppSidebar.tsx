@@ -22,8 +22,8 @@ const analysisItems: NavItem[] = [
   { titleKey: "gmv_transactions", url: "/admin/analise/gmv", icon: DollarSign },
   { titleKey: "analysis_events", url: "/admin/analise/eventos", icon: CalendarDays },
   { titleKey: "analysis_products", url: "/admin/analise/produtos", icon: Package },
-  { titleKey: "analysis_behavior" as any, url: "/admin/analise/comportamento", icon: Activity },
-  { titleKey: "analysis_clients" as any, url: "/admin/analise/clientes", icon: Target },
+  { titleKey: "analysis_behavior", url: "/admin/analise/comportamento", icon: Activity },
+  { titleKey: "analysis_clients", url: "/admin/analise/clientes", icon: Target },
 ];
 
 const managementItems: NavItem[] = [
