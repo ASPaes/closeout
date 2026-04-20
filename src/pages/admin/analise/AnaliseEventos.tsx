@@ -309,16 +309,14 @@ export default function AnaliseEventos() {
                         <div className="text-xs text-muted-foreground flex items-center">{dowName}</div>
                         {Array.from({ length: 24 }, (_, h) => {
                           const count = heatmapMatrix.grid[dowIdx][h];
-                          const intensity = count === 0 ? 0 : Math.max(0.15, count / heatmapMatrix.max);
-                          const bg = count === 0
-                            ? "hsl(var(--muted) / 0.3)"
-                            : `hsl(24, 100%, 50% / ${intensity})`;
                           return (
                             <Tooltip key={h}>
                               <TooltipTrigger asChild>
                                 <div
-                                  className="aspect-square rounded-sm cursor-pointer transition-transform hover:scale-110"
-                                  style={{ background: bg }}
+                                  className={`h-7 rounded-sm transition-all hover:ring-1 hover:ring-primary cursor-help ${
+                                    count > 0 ? "ring-1 ring-primary/20" : ""
+                                  }`}
+                                  style={{ backgroundColor: getCellColor(count, heatmapMatrix.max) }}
                                 />
                               </TooltipTrigger>
                               <TooltipContent side="top">
@@ -332,15 +330,16 @@ export default function AnaliseEventos() {
                   </div>
                 </div>
                 {/* Legenda */}
-                <div className="flex items-center gap-2 mt-4 justify-end">
-                  <span className="text-xs text-muted-foreground">Menos</span>
-                  <div
-                    className="h-3 w-32 rounded-sm"
-                    style={{
-                      background: "linear-gradient(to right, hsl(var(--muted) / 0.3), hsl(24, 100%, 50%))"
-                    }}
-                  />
-                  <span className="text-xs text-muted-foreground">Mais</span>
+                <div className="flex items-center gap-2 mt-3 justify-end text-xs text-muted-foreground">
+                  <span>Menos</span>
+                  <div className="flex gap-1">
+                    <div className="w-5 h-3 rounded-sm" style={{ backgroundColor: "hsl(var(--muted) / 0.3)" }} />
+                    <div className="w-5 h-3 rounded-sm" style={{ backgroundColor: "hsl(24, 100%, 50% / 0.4)" }} />
+                    <div className="w-5 h-3 rounded-sm" style={{ backgroundColor: "hsl(24, 100%, 50% / 0.6)" }} />
+                    <div className="w-5 h-3 rounded-sm" style={{ backgroundColor: "hsl(24, 100%, 50% / 0.8)" }} />
+                    <div className="w-5 h-3 rounded-sm" style={{ backgroundColor: "hsl(24, 100%, 55%)" }} />
+                  </div>
+                  <span>Mais</span>
                 </div>
               </>
             )}
