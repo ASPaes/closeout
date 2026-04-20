@@ -223,7 +223,7 @@ export default function Dashboard() {
       value: formatInt(kpis.alerts_open),
       icon: AlertCircle,
       tooltip:
-        "Alertas operacionais que precisam de atenção (pedidos travados, PIX expirando, falhas). Sistema completo de alertas chega na Fase 5.",
+        "Alertas abertos do sistema. Inclui problemas críticos (webhook Asaas, split divergente, cron offline) e de atenção (pedidos travados, PIX expirando em série, eventos sem atividade). Atualiza em tempo real via Supabase Realtime.",
     },
   ];
 
