@@ -8,7 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Line, Bar, XAxis, YAxis, CartesianGrid, ComposedChart } from "recharts";
-import { Users, Activity, Repeat, HelpCircle, Info } from "lucide-react";
+import { Users, Activity, Repeat, HelpCircle, Info, UserCheck } from "lucide-react";
 
 const formatInt = (n: number) => new Intl.NumberFormat("pt-BR").format(n ?? 0);
 const formatPct = (n: number) => `${((n ?? 0) * 100).toFixed(1)}%`;
