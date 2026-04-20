@@ -293,9 +293,51 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-foreground tracking-tight">
-                    {card.value}
-                  </p>
+                  {card.title === "Alertas Abertos" ? (
+                    <>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {alertsLoading ? (
+                          <Skeleton className="h-9 w-16" />
+                        ) : (
+                          <>
+                            <p
+                              className={`text-3xl font-bold tracking-tight ${
+                                (alertsSummary?.open_critical ?? 0) > 0
+                                  ? "text-red-400"
+                                  : (alertsSummary?.open_warning ?? 0) > 0
+                                  ? "text-yellow-400"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {alertsSummary?.open_total ?? 0}
+                            </p>
+                            {(alertsSummary?.open_critical ?? 0) > 0 && (
+                              <Badge className="bg-red-500/15 text-red-400 border-red-500/30 animate-pulse">
+                                {alertsSummary?.open_critical} crítico(s)
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {alertsSummary?.newest_open && !alertsLoading && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
+                            Mais recente
+                          </p>
+                          <p className="text-xs font-medium text-foreground truncate">
+                            {alertsSummary.newest_open.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {alertsSummary.newest_open.message}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-3xl font-bold text-foreground tracking-tight">
+                      {card.value}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
