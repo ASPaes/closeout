@@ -503,7 +503,19 @@ export default function UsersRoles() {
   ];
 
   const consumerColumns: DataTableColumn<Profile>[] = [
-    { key: "consumer", header: "Consumidor", render: (p) => <span className="font-medium">{p.name || p.id.slice(0, 12) + "…"}</span> },
+    {
+      key: "consumer",
+      header: "Consumidor",
+      render: (p) => (
+        <button
+          type="button"
+          onClick={() => openUserDetail(p.id)}
+          className="font-medium text-left hover:text-primary transition-colors"
+        >
+          {p.name || p.id.slice(0, 12) + "…"}
+        </button>
+      ),
+    },
     {
       key: "status",
       header: t("status"),
