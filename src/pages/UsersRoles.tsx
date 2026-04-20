@@ -951,6 +951,192 @@ export default function UsersRoles() {
       </Dialog>
 
       <InviteLinkDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} clients={clients} venues={venues} events={events} />
+
+      {/* User detail drill-down modal */}
+      <Dialog open={!!selectedUserDetailId} onOpenChange={(open) => { if (!open) closeUserDetail(); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold">
+                {loadingDetail || !userDetail ? "Carregando..." : (userDetail.profile?.name || "Sem nome")}
+              </h2>
+              {userDetail?.auth?.email && (
+                <p className="text-sm text-muted-foreground">{userDetail.auth.email}</p>
+              )}
+            </div>
+
+            {loadingDetail || !userDetail ? (
+              <div className="space-y-3">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : (
+              <>
+                {/* Info principal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Status</div>
+                    <div className="mt-1">
+                      <StatusBadge
+                        status={userDetail.profile?.status === "active" ? "active" : "inactive"}
+                        label={userDetail.profile?.status === "active" ? t("active") : t("inactive")}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Último login</div>
+                    <div className="mt-1 text-sm font-medium">
+                      {formatRelativeTime(userDetail.auth?.last_sign_in_at)}
+                      {userDetail.auth?.last_sign_in_at && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {formatDateTimeBR(userDetail.auth.last_sign_in_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {userDetail.profile?.cpf && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">CPF</div>
+                      <div className="mt-1 text-sm font-medium">{userDetail.profile.cpf}</div>
+                    </div>
+                  )}
+                  {userDetail.profile?.phone && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Telefone</div>
+                      <div className="mt-1 text-sm font-medium">{userDetail.profile.phone}</div>
+                    </div>
+                  )}
+                  {userDetail.profile?.username && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Username</div>
+                      <div className="mt-1 text-sm font-medium">@{userDetail.profile.username}</div>
+                    </div>
+                  )}
+                  {(userDetail.profile?.city || userDetail.profile?.state) && (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                      <div className="text-xs text-muted-foreground">Cidade/UF</div>
+                      <div className="mt-1 text-sm font-medium">
+                        {[userDetail.profile.city, userDetail.profile.state].filter(Boolean).join(", ") || "-"}
+                      </div>
+                    </div>
+                  )}
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Cadastrado</div>
+                    <div className="mt-1 text-sm font-medium">{formatDateTimeBR(userDetail.profile?.created_at)}</div>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="text-xs text-muted-foreground">Registro completo</div>
+                    <div className="mt-1 text-sm font-medium">{userDetail.profile?.registration_complete ? "Sim" : "Não"}</div>
+                  </div>
+                </div>
+
+                {/* Roles */}
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Papéis ({userDetail.roles.length})
+                  </div>
+                  {userDetail.roles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sem papéis atribuídos</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {userDetail.roles.map((ur: any) => (
+                        <div key={ur.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-secondary/40 px-3 py-2">
+                          <Badge variant="outline" className="capitalize shrink-0">
+                            {roleKeys[ur.role] ? t(roleKeys[ur.role] as any) : ur.role}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground text-right truncate">
+                            {(() => {
+                              const parts: string[] = [];
+                              if (ur.client_name) parts.push(`Cliente: ${ur.client_name}`);
+                              if (ur.venue_name) parts.push(`Local: ${ur.venue_name}`);
+                              if (ur.event_name) parts.push(`Evento: ${ur.event_name}`);
+                              return parts.length > 0 ? parts.join(" · ") : "Global";
+                            })()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats Staff */}
+                {userDetail.is_staff && userDetail.staff_stats && (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      Atividade (Staff)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos atendidos (garçom)</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_as_waiter}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos entregues</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_delivered_by}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos cancelados por</span>
+                        <span className="font-medium">{userDetail.staff_stats.orders_cancelled_by}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Ações no sistema</span>
+                        <span className="font-medium">{userDetail.staff_stats.audit_actions_count}</span>
+                      </div>
+                      {userDetail.staff_stats.audit_last_action_at && (
+                        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm col-span-2">
+                          <span className="text-muted-foreground">Última ação</span>
+                          <span className="font-medium text-xs">
+                            {formatRelativeTime(userDetail.staff_stats.audit_last_action_at)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats Consumer */}
+                {userDetail.is_consumer && userDetail.consumer_stats && (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      Atividade (Consumidor)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos totais</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Pedidos pagos</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_paid_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Cancelados</span>
+                        <span className="font-medium">{userDetail.consumer_stats.orders_cancelled_count}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">GMV gerado</span>
+                        <span className="font-medium">{formatBRL(userDetail.consumer_stats.gmv_total)}</span>
+                      </div>
+                      <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Eventos participados</span>
+                        <span className="font-medium">{userDetail.consumer_stats.events_attended}</span>
+                      </div>
+                      {userDetail.consumer_stats.last_order_at && (
+                        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Último pedido</span>
+                          <span className="font-medium text-xs">
+                            {formatRelativeTime(userDetail.consumer_stats.last_order_at)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
