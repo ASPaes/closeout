@@ -3506,6 +3506,10 @@ export type Database = {
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       ensure_consumer_role: { Args: never; Returns: undefined }
+      get_admin_dashboard_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
+      }
       get_client_admin_active_checkins: {
         Args: { p_client_id: string }
         Returns: {
@@ -3560,6 +3564,7 @@ export type Database = {
           venue_id: string
         }[]
       }
+      get_platform_health_summary: { Args: never; Returns: Json }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
@@ -3597,6 +3602,7 @@ export type Database = {
       }
       is_cashier: { Args: { p_client_id: string }; Returns: boolean }
       is_client_manager: { Args: { p_client_id: string }; Returns: boolean }
+      is_owner_or_super_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_waiter_for_event: { Args: { p_event_id: string }; Returns: boolean }
       log_audit: {
