@@ -18,6 +18,8 @@ import Dashboard from "@/pages/Dashboard";
 import AnaliseGMV from "@/pages/admin/analise/AnaliseGMV";
 import AnaliseEventos from "@/pages/admin/analise/AnaliseEventos";
 import AnaliseProdutos from "@/pages/admin/analise/AnaliseProdutos";
+import AnaliseComportamento from "@/pages/admin/analise/AnaliseComportamento";
+import AnaliseClientes from "@/pages/admin/analise/AnaliseClientes";
 import Clients from "@/pages/Clients";
 import Venues from "@/pages/Venues";
 import Events from "@/pages/Events";
@@ -103,6 +105,8 @@ const App = () => (
               <Route path="analise/gmv" element={<AnaliseGMV />} />
               <Route path="analise/eventos" element={<AnaliseEventos />} />
               <Route path="analise/produtos" element={<AnaliseProdutos />} />
+              <Route path="analise/comportamento" element={<AnaliseComportamento />} />
+              <Route path="analise/clientes" element={<AnaliseClientes />} />
               <Route path="clients" element={<Clients />} />
               <Route path="venues" element={<Venues />} />
               <Route path="events" element={<Events />} />

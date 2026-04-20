@@ -3510,6 +3510,10 @@ export type Database = {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_behavior_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
+      }
       get_client_admin_active_checkins: {
         Args: { p_client_id: string }
         Returns: {
@@ -3531,6 +3535,10 @@ export type Database = {
           user_id: string
           user_name: string
         }[]
+      }
+      get_client_value_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
       }
       get_clients_for_user_events: {
         Args: { _user_id: string }
