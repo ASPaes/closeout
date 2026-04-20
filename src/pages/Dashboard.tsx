@@ -128,6 +128,8 @@ export default function Dashboard() {
 
   const kpis = data?.kpis ?? {};
 
+  const alerts = useMemo(() => buildLocalAlerts(data, health), [data, health]);
+
   const cards: Array<{ title: string; value: string; icon: LucideIcon }> = [
     { title: "MRR Esperado", value: formatBRL(kpis.mrr_expected), icon: TrendingUp },
     { title: "GMV do Período", value: formatBRL(kpis.gmv_total_period), icon: DollarSign },
