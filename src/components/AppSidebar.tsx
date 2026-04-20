@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target, Banknote, TrendingUp } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,8 @@ const analysisItems: NavItem[] = [
   { titleKey: "analysis_products", url: "/admin/analise/produtos", icon: Package },
   { titleKey: "analysis_behavior", url: "/admin/analise/comportamento", icon: Activity },
   { titleKey: "analysis_clients", url: "/admin/analise/clientes", icon: Target },
+  { titleKey: "analysis_revenue", url: "/admin/analise/receita", icon: Banknote },
+  { titleKey: "analysis_growth", url: "/admin/analise/crescimento", icon: TrendingUp },
 ];
 
 const managementItems: NavItem[] = [

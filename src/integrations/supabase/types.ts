@@ -3582,6 +3582,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_growth_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
+      }
       get_my_roles: {
         Args: never
         Returns: {
@@ -3598,6 +3602,10 @@ export type Database = {
           p_end_date?: string
           p_start_date?: string
         }
+        Returns: Json
+      }
+      get_revenue_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
