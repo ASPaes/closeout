@@ -610,6 +610,8 @@ export default function UsersRoles() {
         <>
           <PageHeader title={t("users_roles")} subtitle={t("manage_roles")} icon={Users} actions={headerActions} />
 
+          <KpisBlock />
+
           <Tabs
             value={activeTab}
             onValueChange={(v) => { setActiveTab(v as "staff" | "consumers"); setStatusFilter("all"); setSearch(""); }}
