@@ -3548,6 +3548,14 @@ export type Database = {
           event_id: string
         }[]
       }
+      get_events_analytics: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_events_revenue: {
         Args: { p_event_ids: string[] }
         Returns: {
@@ -3576,6 +3584,14 @@ export type Database = {
         }[]
       }
       get_platform_health_summary: { Args: never; Returns: Json }
+      get_products_analytics: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
