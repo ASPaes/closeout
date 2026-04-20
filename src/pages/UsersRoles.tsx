@@ -717,10 +717,26 @@ export default function UsersRoles() {
               .filter((r) => !!r.profile);
 
             const drillColumns: DataTableColumn<DrillRow>[] = [
-              { key: "user", header: t("user"), render: (r) => <span className="font-medium">{r.profile.name || r.profile.id.slice(0, 12) + "…"}</span> },
+              { key: "user", header: t("user"), render: (r) => (
+                <button
+                  type="button"
+                  onClick={() => openUserDetail(r.profile.id)}
+                  className="font-medium text-left hover:text-primary transition-colors"
+                >
+                  {r.profile.name || r.profile.id.slice(0, 12) + "…"}
+                </button>
+              ) },
               { key: "status", header: t("status"), render: (r) => <StatusBadge status={r.profile.status === "active" ? "active" : "inactive"} label={r.profile.status === "active" ? t("active") : t("inactive")} /> },
               { key: "role", header: t("role"), render: (r) => <Badge variant="outline" className="capitalize">{roleKeys[r.ur.role] ? t(roleKeys[r.ur.role] as any) : r.ur.role}</Badge> },
               { key: "scope", header: t("scope"), render: (r) => <span className="text-muted-foreground text-xs">{renderScope(r.ur)}</span> },
+              {
+                key: "last_login",
+                header: "Último login",
+                render: (r) => {
+                  const info = usersAuthInfo[r.profile.id];
+                  return <span className="text-xs text-muted-foreground">{formatRelativeTime(info?.last_sign_in_at)}</span>;
+                },
+              },
               ...((isSuperAdmin || isOwner) ? [{
                 key: "actions", header: t("actions"), className: "w-20",
                 render: (r: DrillRow) => (
