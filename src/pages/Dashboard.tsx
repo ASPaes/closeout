@@ -40,6 +40,39 @@ const formatInt = (n: number) =>
 
 type Period = "today" | "7d" | "30d" | "month";
 
+type AlertSeverity = "critical" | "warning" | "info";
+type LocalAlert = { severity: AlertSeverity; title: string; detail?: string };
+
+function buildLocalAlerts(data: any, health: any): LocalAlert[] {
+  const alerts: LocalAlert[] = [];
+
+  if ((data?.frozen_orders_count ?? 0) > 0) {
+    alerts.push({
+      severity: "critical",
+      title: `${data.frozen_orders_count} pedido(s) travado(s)`,
+      detail: "Status partially_paid há mais de 30 minutos",
+    });
+  }
+
+  if ((health?.payments?.pix_expiring_soon ?? 0) > 0) {
+    alerts.push({
+      severity: "warning",
+      title: `${health.payments.pix_expiring_soon} PIX expirando`,
+      detail: "Próximos 5 minutos",
+    });
+  }
+
+  if (health?.events?.active_count === 0 && health?.events?.upcoming_count === 0) {
+    alerts.push({
+      severity: "info",
+      title: "Nenhum evento ativo",
+      detail: "Sem eventos em andamento ou nas próximas 24h",
+    });
+  }
+
+  return alerts;
+}
+
 function computePeriod(period: Period): { start: Date; end: Date } {
   const end = new Date();
   const start = new Date();
