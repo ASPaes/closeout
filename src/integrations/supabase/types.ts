@@ -3653,8 +3653,10 @@ export type Database = {
         Returns: Json
       }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_detail: { Args: { p_user_id: string }; Returns: Json }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_venue_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_users_kpis: { Args: never; Returns: Json }
       get_venues_for_user_clients: {
         Args: { _user_id: string }
         Returns: string[]
