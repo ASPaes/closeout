@@ -1,10 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, Wallet, Building2, CalendarCheck, AlertCircle, type LucideIcon } from "lucide-react";
+import {
+  TrendingUp,
+  DollarSign,
+  Wallet,
+  Building2,
+  CalendarCheck,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  Info,
+  CheckCircle2,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import {
