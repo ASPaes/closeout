@@ -70,6 +70,9 @@ const ptBR = {
   analysis_revenue: "Receita",
   analysis_growth: "Crescimento",
   analysis_geography: "Geografia",
+  operations: "Operações",
+  operations_orders: "Pedidos",
+  operations_payments: "Pagamentos",
 
   // Clients
   clients: "Clientes",
