@@ -1,15 +1,380 @@
-export default function AnaliseClientes() {
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Building2, UserCheck, UserX, AlertTriangle, TrendingUp, Coins, PieChart, Trophy, HelpCircle } from "lucide-react";
+
+const formatBRL = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+const formatInt = (n: number) => new Intl.NumberFormat("pt-BR").format(n ?? 0);
+const formatPct = (n: number) => `${((n ?? 0) * 100).toFixed(1)}%`;
+const formatDateBR = (iso: string) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+};
+const monthLabel = (m: string) => {
+  const [y, mo] = m.split("-");
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${months[parseInt(mo, 10) - 1]}/${y.slice(2)}`;
+};
+
+type Period = "today" | "7d" | "30d" | "month";
+
+function computePeriod(period: Period): { start: Date; end: Date } {
+  const end = new Date();
+  const start = new Date();
+  if (period === "today") {
+    start.setHours(0, 0, 0, 0);
+  } else if (period === "7d") {
+    start.setDate(start.getDate() - 7);
+  } else if (period === "30d") {
+    start.setDate(start.getDate() - 30);
+  } else {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+  }
+  return { start, end };
+}
+
+type KpiCardProps = {
+  title: string;
+  tooltip: string;
+  value: string;
+  Icon: any;
+  badge?: React.ReactNode;
+};
+
+function KpiCard({ title, tooltip, value, Icon, badge }: KpiCardProps) {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Análise de valor e performance dos clientes da plataforma
-        </p>
+    <Card className="hover:border-primary/20 transition-colors">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm">{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <Icon className="h-4 w-4 text-primary" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {badge ? (
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <div className="text-2xl font-bold text-foreground">{value}</div>
+            {badge}
+          </div>
+        ) : (
+          <div className="text-2xl font-bold text-foreground">{value}</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AnaliseClientes() {
+  const [period, setPeriod] = useState<Period>("30d");
+  const [data, setData] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { start, end } = computePeriod(period);
+    const { data: rpcData, error: rpcError } = await supabase.rpc("get_client_value_metrics" as any, {
+      p_start_date: start.toISOString(),
+      p_end_date: end.toISOString(),
+    } as any);
+    if (rpcError) {
+      setError(rpcError.message);
+      setLoading(false);
+      return;
+    }
+    setData(rpcData);
+    setError(null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [period]);
+
+  const kpis = data?.kpis ?? {};
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Análise de valor e performance dos clientes da plataforma
+            </p>
+          </div>
+          <ToggleGroup
+            type="single"
+            value={period}
+            onValueChange={(v) => v && setPeriod(v as Period)}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
+            <ToggleGroupItem value="7d">7 dias</ToggleGroupItem>
+            <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
+            <ToggleGroupItem value="month">Mês atual</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-4 flex items-center justify-between">
+            <p className="text-sm text-destructive">Erro ao carregar dados: {error}</p>
+            <Button variant="outline" size="sm" onClick={fetchData}>Tentar novamente</Button>
+          </div>
+        )}
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          {loading || !data ? (
+            Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-28" />)
+          ) : (
+            <>
+              <KpiCard
+                title="Total Ativos"
+                value={formatInt(kpis.total_clients ?? 0)}
+                Icon={Building2}
+                tooltip="Clientes (bares/estabelecimentos) com status 'active' na plataforma. Independe do período."
+              />
+              <KpiCard
+                title="Com Vendas"
+                value={formatInt(kpis.clients_ativos ?? 0)}
+                Icon={UserCheck}
+                tooltip="Clientes que receberam ao menos 1 pagamento aprovado nos últimos 30 dias. Mede atividade operacional real."
+              />
+              <KpiCard
+                title="Sem Vendas"
+                value={formatInt(kpis.clients_inativos ?? 0)}
+                Icon={UserX}
+                tooltip="Clientes ativos no sistema mas sem nenhum pagamento nos últimos 30 dias."
+              />
+              <KpiCard
+                title="Em Risco"
+                value={formatInt(kpis.clients_em_risco ?? 0)}
+                Icon={AlertTriangle}
+                tooltip="Clientes que tinham atividade 30-60 dias atrás mas pararam de vender nos últimos 30 dias. Sinal precoce de churn."
+              />
+              <KpiCard
+                title="LTV Médio"
+                value={formatBRL(kpis.ltv_medio ?? 0)}
+                Icon={Coins}
+                tooltip="Lifetime Value médio — soma histórica de fees capturadas por cliente. ATUAL: apenas fees de pagamentos. Não inclui mensalidades (chega na Fase 4a)."
+                badge={
+                  kpis.ltv_is_partial ? (
+                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-yellow-500/40 text-yellow-400">
+                      parcial
+                    </Badge>
+                  ) : undefined
+                }
+              />
+              <KpiCard
+                title="ARPU Período"
+                value={formatBRL(kpis.arpu_periodo ?? 0)}
+                Icon={TrendingUp}
+                tooltip="Average Revenue Per User. Fees do período ÷ quantidade de clients únicos com pagamento. Mede receita média por cliente ativo."
+              />
+              <KpiCard
+                title="Concentração Top 3"
+                value={formatPct(kpis.concentracao_top3 ?? 0)}
+                Icon={PieChart}
+                tooltip="Percentual do GMV do período que vem dos 3 maiores clientes. Quanto maior, mais dependência de poucos clientes (risco)."
+              />
+            </>
+          )}
+        </div>
+
+        {/* Novos Clientes por Mês */}
+        <Card className="hover:border-primary/20 transition-colors">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">Novos Clientes por Mês</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Últimos 12 meses — expansão da base</p>
+              </div>
+              <Badge variant="outline" className="text-[10px]">Independente do filtro</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading || !data ? (
+              <Skeleton className="h-[260px] w-full" />
+            ) : (
+              <ChartContainer
+                config={{ count: { label: "Novos", color: "hsl(24, 100%, 50%)" } }}
+                className="h-[260px] w-full"
+              >
+                <BarChart data={data.new_clients_by_month ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={monthLabel} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => formatInt(v)} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top LTV + Em Risco */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Top LTV */}
+          <Card className="hover:border-primary/20 transition-colors">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    Top 10 por LTV
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Por fees capturadas (histórico total)</p>
+                </div>
+                <Badge variant="outline" className="text-[10px] border-yellow-500/40 text-yellow-400">
+                  parcial até F4a
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading || !data ? (
+                <Skeleton className="h-[400px] w-full" />
+              ) : (data.top_ltv ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Sem dados</p>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {data.top_ltv.map((c: any, idx: number) => (
+                    <div
+                      key={c.client_id}
+                      className="flex items-center gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="h-7 w-7 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{c.client_name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {formatInt(c.payments_count)} pgto(s) · GMV {formatBRL(c.gmv_total)} · Cliente desde {formatDateBR(c.client_created_at)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground shrink-0">{formatBRL(c.ltv)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Em Risco */}
+          <Card className="hover:border-primary/20 transition-colors">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                Clientes em Risco
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Tiveram vendas 30-60d atrás, zero nos últimos 30d</p>
+            </CardHeader>
+            <CardContent>
+              {loading || !data ? (
+                <Skeleton className="h-[400px] w-full" />
+              ) : (data.clients_at_risk ?? []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <UserCheck className="h-10 w-10 text-green-500 mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum cliente em risco no momento</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {data.clients_at_risk.map((c: any) => (
+                    <div
+                      key={c.client_id}
+                      className="flex items-center gap-3 p-2.5 rounded-md bg-yellow-500/5 border border-yellow-500/15 hover:bg-yellow-500/10 transition-colors"
+                    >
+                      <div className="h-7 w-7 shrink-0 rounded-full bg-yellow-500/15 flex items-center justify-center">
+                        <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{c.client_name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          Último pgto há {formatInt(c.days_since_last)} dia(s) · {formatInt(c.total_payments_ever)} pgto(s) histórico
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground shrink-0">{formatBRL(c.ltv)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Receita por Cliente */}
+        <Card className="hover:border-primary/20 transition-colors">
+          <CardHeader>
+            <CardTitle className="text-base">Receita por Cliente</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Todos os clientes com vendas no período selecionado</p>
+          </CardHeader>
+          <CardContent>
+            {loading || !data ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (data.revenue_by_client ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhum cliente com vendas no período</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Cliente</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">GMV</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Fees</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Pgtos</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Eventos</th>
+                      <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Consumers</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.revenue_by_client.map((c: any) => (
+                      <tr key={c.client_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground font-medium">{c.client_name}</span>
+                            {c.status !== "active" && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5">{c.status}</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-right text-foreground">{formatBRL(c.gmv)}</td>
+                        <td className="py-2 px-3 text-right text-primary font-medium">{formatBRL(c.fees)}</td>
+                        <td className="py-2 px-3 text-right text-muted-foreground">{formatInt(c.payments_count)}</td>
+                        <td className="py-2 px-3 text-right text-muted-foreground">{formatInt(c.events_count)}</td>
+                        <td className="py-2 px-3 text-right text-muted-foreground">{formatInt(c.consumers_unicos)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      <div className="rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-muted-foreground">Em construção — próximo prompt.</p>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }
