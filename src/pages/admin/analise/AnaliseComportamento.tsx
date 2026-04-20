@@ -140,44 +140,92 @@ export default function AnaliseComportamento() {
           </div>
         )}
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {loading || !data ? (
-            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28" />)
-          ) : (
-            <>
-              <KpiCard
-                title="DAU Médio"
-                value={formatInt(Math.round(kpis.dau_avg ?? 0))}
-                Icon={Users}
-                tooltip="Daily Active Users. Média diária de consumidores únicos que criaram ao menos 1 pedido nos últimos 30 dias. Independe do período selecionado."
-              />
-              <KpiCard
-                title="WAU Médio"
-                value={formatInt(Math.round(kpis.wau_avg ?? 0))}
-                Icon={Users}
-                tooltip="Weekly Active Users. Média semanal de consumidores únicos nas últimas 4 semanas rolantes."
-              />
-              <KpiCard
-                title="MAU"
-                value={formatInt(kpis.mau ?? 0)}
-                Icon={Users}
-                tooltip="Monthly Active Users. Consumidores únicos que criaram ao menos 1 pedido nos últimos 30 dias."
-              />
-              <KpiCard
-                title="Stickiness"
-                value={formatPct(kpis.stickiness ?? 0)}
-                Icon={Activity}
-                tooltip="DAU ÷ MAU. Mede engajamento: quanto maior, mais gente volta todo dia. Benchmarks: >20% é bom, >50% é excepcional."
-              />
-              <KpiCard
-                title="Pedidos/Consumer"
-                value={(kpis.orders_per_consumer ?? 0).toFixed(1)}
-                Icon={Repeat}
-                tooltip="Média de pedidos criados por consumidor único no período selecionado. Métrica de frequência de compra."
-              />
-            </>
-          )}
+        {/* KPIs — Engajamento Geral (fixo 30d) */}
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            {loading || !data ? (
+              <Skeleton className="h-4 w-40" />
+            ) : (
+              <>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Engajamento Geral
+                </h2>
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                  últimos 30 dias
+                </Badge>
+              </>
+            )}
+          </div>
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            {loading || !data ? (
+              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)
+            ) : (
+              <>
+                <KpiCard
+                  title="DAU Médio"
+                  value={formatInt(Math.round(kpis.dau_avg ?? 0))}
+                  Icon={Users}
+                  tooltip="Daily Active Users. Média diária de consumidores únicos que criaram ao menos 1 pedido nos últimos 30 dias. SEMPRE 30 dias — não muda com o filtro de período."
+                />
+                <KpiCard
+                  title="WAU Médio"
+                  value={formatInt(Math.round(kpis.wau_avg ?? 0))}
+                  Icon={Users}
+                  tooltip="Weekly Active Users. Média semanal de consumidores únicos nas últimas 4 semanas rolantes. Métrica fixa, não muda com o filtro."
+                />
+                <KpiCard
+                  title="MAU"
+                  value={formatInt(kpis.mau ?? 0)}
+                  Icon={Users}
+                  tooltip="Monthly Active Users. Consumidores únicos que criaram ao menos 1 pedido nos últimos 30 dias. Fixo em 30 dias por definição (é o que o 'M' significa)."
+                />
+                <KpiCard
+                  title="Stickiness"
+                  value={formatPct(kpis.stickiness ?? 0)}
+                  Icon={Activity}
+                  tooltip="DAU ÷ MAU. Mede engajamento: quanto maior, mais gente volta todo dia. Benchmarks: >20% é bom, >50% é excepcional. Métrica fixa em 30 dias."
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* KPIs — Do Período Selecionado (dinâmico) */}
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            {loading || !data ? (
+              <Skeleton className="h-4 w-40" />
+            ) : (
+              <>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Do Período Selecionado
+                </h2>
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-primary/40 text-primary">
+                  reage ao filtro
+                </Badge>
+              </>
+            )}
+          </div>
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
+            {loading || !data ? (
+              Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-28" />)
+            ) : (
+              <>
+                <KpiCard
+                  title="Consumers no Período"
+                  value={formatInt(kpis.total_consumers_period ?? 0)}
+                  Icon={UserCheck}
+                  tooltip="Consumidores únicos que criaram ao menos 1 pedido dentro do período selecionado no filtro. Muda quando você troca o período."
+                />
+                <KpiCard
+                  title="Pedidos/Consumer"
+                  value={(kpis.orders_per_consumer ?? 0).toFixed(1)}
+                  Icon={Repeat}
+                  tooltip="Média de pedidos criados por consumidor único no período selecionado. Métrica de frequência de compra. Muda com o filtro."
+                />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Atividade Diária */}
