@@ -538,6 +538,72 @@ export default function UsersRoles() {
     </Select>
   );
 
+  const openUserDetail = async (userId: string) => {
+    setSelectedUserDetailId(userId);
+    setUserDetail(null);
+    setLoadingDetail(true);
+    const { data, error } = await (supabase.rpc as any)("get_user_detail", { p_user_id: userId });
+    if (error) {
+      toast.error(getPtBrErrorMessage(error));
+      setSelectedUserDetailId(null);
+    } else {
+      setUserDetail(data as UserDetail);
+    }
+    setLoadingDetail(false);
+  };
+
+  const closeUserDetail = () => {
+    setSelectedUserDetailId(null);
+    setUserDetail(null);
+  };
+
+  const KpisBlock = () => {
+    const items = [
+      { label: "Staff", value: kpisData?.kpis?.staff_count ?? 0, icon: Briefcase, tooltip: "Usuários com pelo menos 1 role que não seja consumer (owner, super_admin, client_admin, staff, waiter, cashier, etc.)." },
+      { label: "Consumidores", value: kpisData?.kpis?.consumer_count ?? 0, icon: UserCircle, tooltip: "Usuários com role 'consumer' — fazem pedidos pela plataforma." },
+      { label: "Logaram 24h", value: kpisData?.kpis?.logaram_24h ?? 0, icon: Zap, tooltip: "Usuários que fizeram login nas últimas 24 horas (baseado em last_sign_in_at do Supabase Auth)." },
+      { label: "Logaram 7d", value: kpisData?.kpis?.logaram_7d ?? 0, icon: Clock, tooltip: "Usuários que fizeram login nos últimos 7 dias." },
+    ];
+    return (
+      <TooltipProvider delayDuration={200}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {items.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <Card key={kpi.label}>
+                <CardContent className="py-4 px-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>{kpi.label}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="inline-flex">
+                              <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="text-xs">{kpi.tooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="mt-1 text-2xl font-bold">
+                        {loadingKpis ? <Skeleton className="h-7 w-16" /> : kpi.value}
+                      </div>
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </TooltipProvider>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {selectedClientAdmin === null ? (
