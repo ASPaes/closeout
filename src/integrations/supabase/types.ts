@@ -3510,6 +3510,18 @@ export type Database = {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_asaas_charges_global: {
+        Args: {
+          p_asaas_statuses?: string[]
+          p_billing_types?: string[]
+          p_client_id?: string
+          p_end_date?: string
+          p_page?: number
+          p_page_size?: number
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_behavior_metrics: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
@@ -3598,6 +3610,34 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           venue_id: string
         }[]
+      }
+      get_order_detail: { Args: { p_order_id: string }; Returns: Json }
+      get_orders_global: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_event_id?: string
+          p_origin?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_start_date?: string
+          p_statuses?: string[]
+        }
+        Returns: Json
+      }
+      get_payments_global: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_only_divergent?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_payment_method?: string
+          p_start_date?: string
+          p_statuses?: string[]
+        }
+        Returns: Json
       }
       get_platform_health_summary: { Args: never; Returns: Json }
       get_products_analytics: {
