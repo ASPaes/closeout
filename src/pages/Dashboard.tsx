@@ -107,6 +107,13 @@ export default function Dashboard() {
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [alertsSummary, setAlertsSummary] = useState<{
+    open_total: number;
+    open_critical: number;
+    open_warning: number;
+    newest_open: any | null;
+  } | null>(null);
+  const [alertsLoading, setAlertsLoading] = useState(true);
 
   const fetchMetrics = useCallback(async () => {
     setLoading(true);
@@ -133,6 +140,43 @@ export default function Dashboard() {
   useEffect(() => {
     fetchMetrics();
   }, [fetchMetrics]);
+
+  useEffect(() => {
+    const fetchAlertsSummary = async () => {
+      const { data, error } = await (supabase.rpc as any)("get_alerts_summary");
+      if (!error && data) {
+        setAlertsSummary({
+          open_total: data.open_total ?? 0,
+          open_critical: data.open_critical ?? 0,
+          open_warning: data.open_warning ?? 0,
+          newest_open: data.newest_open ?? null,
+        });
+      }
+      setAlertsLoading(false);
+    };
+
+    fetchAlertsSummary();
+
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRefetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchAlertsSummary(), 300);
+    };
+
+    const channel = supabase
+      .channel("alerts-dashboard")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alerts" },
+        () => debouncedRefetch()
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const kpis = data?.kpis ?? {};
 
