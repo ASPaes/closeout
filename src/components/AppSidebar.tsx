@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target, Banknote, TrendingUp, Globe } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target, Banknote, TrendingUp, Globe, Receipt, CreditCard } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,11 @@ const analysisItems: NavItem[] = [
   { titleKey: "analysis_revenue", url: "/admin/analise/receita", icon: Banknote },
   { titleKey: "analysis_growth", url: "/admin/analise/crescimento", icon: TrendingUp },
   { titleKey: "analysis_geography", url: "/admin/analise/geografia", icon: Globe },
+];
+
+const operationsItems: NavItem[] = [
+  { titleKey: "operations_orders", url: "/admin/operacoes/pedidos", icon: Receipt },
+  { titleKey: "operations_payments", url: "/admin/operacoes/pagamentos", icon: CreditCard },
 ];
 
 const managementItems: NavItem[] = [
@@ -130,6 +135,17 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {analysisItems.map((item) => (
+                <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("operations")}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {operationsItems.map((item) => (
                 <SidebarNavItem key={item.titleKey} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
               ))}
             </SidebarMenu>

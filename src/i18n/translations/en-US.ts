@@ -72,6 +72,9 @@ const enUS: Record<TranslationKey, string> = {
   analysis_revenue: "Revenue",
   analysis_growth: "Growth",
   analysis_geography: "Geography",
+  operations: "Operations",
+  operations_orders: "Orders",
+  operations_payments: "Payments",
 
   // Clients
   clients: "Clients",
