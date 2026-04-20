@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          alert_type: string
+          client_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          message: string
+          metadata: Json | null
+          occurrence_count: number
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          source: string
+          status: Database["public"]["Enums"]["alert_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alert_type: string
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message: string
+          metadata?: Json | null
+          occurrence_count?: number
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          source: string
+          status?: Database["public"]["Enums"]["alert_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alert_type?: string
+          client_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message?: string
+          metadata?: Json | null
+          occurrence_count?: number
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          source?: string
+          status?: Database["public"]["Enums"]["alert_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asaas_charges: {
         Row: {
           amount: number
@@ -3446,6 +3530,7 @@ export type Database = {
     Functions: {
       accept_waiter_call: { Args: { p_call_id: string }; Returns: Json }
       accept_waiter_invite: { Args: { p_join_code: string }; Returns: Json }
+      auto_resolve_alerts: { Args: never; Returns: number }
       bootstrap_super_admin: { Args: never; Returns: boolean }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       check_order_rate_limit: {
@@ -3506,10 +3591,12 @@ export type Database = {
       create_waiter_order: { Args: { params: Json }; Returns: Json }
       delete_stock_entry: { Args: { p_entry_id: string }; Returns: undefined }
       ensure_consumer_role: { Args: never; Returns: undefined }
+      generate_system_alerts: { Args: never; Returns: Json }
       get_admin_dashboard_metrics: {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_alerts_summary: { Args: never; Returns: Json }
       get_asaas_charges_global: {
         Args: {
           p_asaas_statuses?: string[]
@@ -3730,6 +3817,7 @@ export type Database = {
         }
         Returns: Json
       }
+      trigger_generate_system_alerts: { Args: never; Returns: Json }
       update_stock_entry:
         | {
             Args: {
@@ -3747,12 +3835,29 @@ export type Database = {
             }
             Returns: undefined
           }
+      upsert_alert: {
+        Args: {
+          p_alert_type: string
+          p_client_id?: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_fingerprint: string
+          p_message: string
+          p_metadata?: Json
+          p_severity: Database["public"]["Enums"]["alert_severity"]
+          p_source: string
+          p_title: string
+        }
+        Returns: string
+      }
       validate_qr: {
         Args: { p_staff_id: string; p_token: string }
         Returns: Json
       }
     }
     Enums: {
+      alert_severity: "critical" | "warning" | "info"
+      alert_status: "open" | "resolved" | "auto_resolved" | "dismissed"
       app_role:
         | "owner"
         | "super_admin"
@@ -3923,6 +4028,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["critical", "warning", "info"],
+      alert_status: ["open", "resolved", "auto_resolved", "dismissed"],
       app_role: [
         "owner",
         "super_admin",
