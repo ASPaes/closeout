@@ -67,6 +67,8 @@ const ptBR = {
   analysis_products: "Produtos",
   analysis_behavior: "Comportamento",
   analysis_clients: "Clientes",
+  analysis_revenue: "Receita",
+  analysis_growth: "Crescimento",
 
   // Clients
   clients: "Clientes",
