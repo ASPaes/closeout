@@ -194,6 +194,19 @@ export default function UsersRoles() {
 
   useEffect(() => { fetchData(); }, []);
 
+  useEffect(() => {
+    const fetchKpis = async () => {
+      setLoadingKpis(true);
+      const { data, error } = await (supabase.rpc as any)("get_users_kpis");
+      if (!error && data) {
+        setKpisData(data);
+        setUsersAuthInfo((data as any).users_auth_info || {});
+      }
+      setLoadingKpis(false);
+    };
+    fetchKpis();
+  }, []);
+
   const fetchLiveCheckins = async () => {
     if (!selectedClientAdmin?.clientId) return;
     setLoadingLive(true);
