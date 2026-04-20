@@ -225,9 +225,25 @@ export default function Dashboard() {
                 className="border-border bg-card hover:border-primary/20 transition-colors"
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {card.title}
-                  </CardTitle>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <CardTitle className="text-sm font-medium text-muted-foreground truncate">
+                      {card.title}
+                    </CardTitle>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors shrink-0"
+                          aria-label={`Sobre ${card.title}`}
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-sm">{card.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <card.icon className="h-5 w-5 text-primary" />
                   </div>
