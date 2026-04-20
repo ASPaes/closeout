@@ -51,6 +51,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>("30d");
   const [data, setData] = useState<any>(null);
+  const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,19 +59,21 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     const { start, end } = computePeriod(period);
-    const { data: result, error: rpcError } = await supabase.rpc(
-      "get_admin_dashboard_metrics" as any,
-      {
+    const [metricsRes, healthRes] = await Promise.all([
+      supabase.rpc("get_admin_dashboard_metrics" as any, {
         p_start_date: start.toISOString(),
         p_end_date: end.toISOString(),
-      } as any
-    );
-    if (rpcError) {
-      setError(rpcError.message || "Falha ao carregar métricas do painel.");
-      setLoading(false);
-      return;
+      } as any),
+      supabase.rpc("get_platform_health_summary" as any),
+    ]);
+    if (metricsRes.error) {
+      setError(metricsRes.error.message || "Falha ao carregar métricas do painel.");
+    } else {
+      setData(metricsRes.data);
     }
-    setData(result);
+    if (!healthRes.error) {
+      setHealth(healthRes.data);
+    }
     setLoading(false);
   }, [period]);
 
