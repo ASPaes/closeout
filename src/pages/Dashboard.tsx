@@ -1,10 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, Wallet, Building2, CalendarCheck, AlertCircle, type LucideIcon } from "lucide-react";
+import {
+  TrendingUp,
+  DollarSign,
+  Wallet,
+  Building2,
+  CalendarCheck,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  Info,
+  CheckCircle2,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import {
@@ -27,6 +39,39 @@ const formatInt = (n: number) =>
   new Intl.NumberFormat("pt-BR").format(n ?? 0);
 
 type Period = "today" | "7d" | "30d" | "month";
+
+type AlertSeverity = "critical" | "warning" | "info";
+type LocalAlert = { severity: AlertSeverity; title: string; detail?: string };
+
+function buildLocalAlerts(data: any, health: any): LocalAlert[] {
+  const alerts: LocalAlert[] = [];
+
+  if ((data?.frozen_orders_count ?? 0) > 0) {
+    alerts.push({
+      severity: "critical",
+      title: `${data.frozen_orders_count} pedido(s) travado(s)`,
+      detail: "Status partially_paid há mais de 30 minutos",
+    });
+  }
+
+  if ((health?.payments?.pix_expiring_soon ?? 0) > 0) {
+    alerts.push({
+      severity: "warning",
+      title: `${health.payments.pix_expiring_soon} PIX expirando`,
+      detail: "Próximos 5 minutos",
+    });
+  }
+
+  if (health?.events?.active_count === 0 && health?.events?.upcoming_count === 0) {
+    alerts.push({
+      severity: "info",
+      title: "Nenhum evento ativo",
+      detail: "Sem eventos em andamento ou nas próximas 24h",
+    });
+  }
+
+  return alerts;
+}
 
 function computePeriod(period: Period): { start: Date; end: Date } {
   const end = new Date();
@@ -82,6 +127,8 @@ export default function Dashboard() {
   }, [fetchMetrics]);
 
   const kpis = data?.kpis ?? {};
+
+  const alerts = useMemo(() => buildLocalAlerts(data, health), [data, health]);
 
   const cards: Array<{ title: string; value: string; icon: LucideIcon }> = [
     { title: "MRR Esperado", value: formatBRL(kpis.mrr_expected), icon: TrendingUp },
@@ -309,6 +356,65 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Seção C — Alertas (preview local, será substituído na F5) */}
+      {!loading && (
+        <Card className="border-border bg-card hover:border-primary/20 transition-colors">
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-semibold text-foreground">
+                Alertas
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {alerts.length === 0
+                  ? "Nenhum alerta ativo"
+                  : `${alerts.length} alerta(s) ativo(s)`}
+              </p>
+            </div>
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider shrink-0">
+              preview — sistema completo na fase 5
+            </span>
+          </CardHeader>
+          <CardContent>
+            {alerts.length === 0 ? (
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <span className="text-sm">Tudo sob controle.</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alerts.map((alert, idx) => {
+                  const severityConfig = {
+                    critical: { icon: AlertOctagon, color: "text-red-500", bg: "bg-red-500/10" },
+                    warning: { icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10" },
+                    info: { icon: Info, color: "text-blue-400", bg: "bg-blue-500/10" },
+                  };
+                  const cfg = severityConfig[alert.severity];
+                  const AlertIcon = cfg.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-start gap-3 p-3 rounded-md ${cfg.bg}`}
+                    >
+                      <AlertIcon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {alert.title}
+                        </p>
+                        {alert.detail && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {alert.detail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
