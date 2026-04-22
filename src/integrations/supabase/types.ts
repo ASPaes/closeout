@@ -3596,6 +3596,20 @@ export type Database = {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_alert_detail: { Args: { p_alert_id: string }; Returns: Json }
+      get_alerts_list: {
+        Args: {
+          p_alert_types?: string[]
+          p_client_id?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_severities?: string[]
+          p_sources?: string[]
+          p_status_filter?: string
+        }
+        Returns: Json
+      }
       get_alerts_summary: { Args: never; Returns: Json }
       get_asaas_charges_global: {
         Args: {
@@ -3801,6 +3815,10 @@ export type Database = {
         Returns: Json
       }
       reserve_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
+      resolve_alert: {
+        Args: { p_alert_id: string; p_note?: string }
+        Returns: Json
+      }
       review_waiter_cancellation: {
         Args: { p_decision: string; p_notes: string; p_request_id: string }
         Returns: Json
