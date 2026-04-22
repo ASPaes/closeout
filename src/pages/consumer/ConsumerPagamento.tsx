@@ -1549,7 +1549,7 @@ export default function ConsumerPagamento() {
   ];
 
   const canConfirm =
-    cart.items.length > 0 &&
+    orderItems.length > 0 &&
     (!splitMode || isSplitValid()) &&
     (!(showCardForm || showSplitCardForm) || isNewCardValid()) &&
     (selectedMethod === "cash" && !splitMode ? true : isCpfValid) &&
