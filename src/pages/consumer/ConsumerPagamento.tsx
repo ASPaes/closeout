@@ -1575,7 +1575,7 @@ export default function ConsumerPagamento() {
           {t("consumer_payment_summary")}
         </h3>
         <div className="flex flex-col gap-1.5">
-          {cart.items.map((item) => (
+          {orderItems.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
               <span className="text-muted-foreground truncate mr-2">
                 {item.quantity}x {item.name}
@@ -1588,7 +1588,7 @@ export default function ConsumerPagamento() {
           <div className="mt-2 flex justify-between border-t border-white/[0.06] pt-2">
             <span className="text-sm font-semibold text-foreground">Total</span>
             <span className="text-base font-bold text-primary">
-              R$ {cart.total.toFixed(2)}
+              R$ {orderTotal.toFixed(2)}
             </span>
           </div>
         </div>
