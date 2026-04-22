@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocation } from "@/lib/native-bridge";
 import { logAudit } from "@/lib/audit";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type AsaasCard = {
   id: string;
@@ -792,13 +793,11 @@ export default function ConsumerPagamento() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    try {
-      await supabase
-        .from("orders")
-        .update({ status: "cancelled" as any, cancelled_at: new Date().toISOString(), cancel_reason: "Cancelado pelo consumidor" } as any)
-        .eq("id", orderId);
-    } catch {}
-    setPendingCardPayment(null);
+    const { data, error } = await (supabase.rpc as any)("cancel_consumer_order", { p_order_id: orderId });
+    if (error || !data || (data as any).ok !== true) {
+      toast.error("Erro ao cancelar pedido");
+      return;
+    }
     navigate("/app/carrinho", { replace: true });
   };
 
