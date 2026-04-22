@@ -7,19 +7,72 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { Bell, AlertTriangle, AlertOctagon, CheckCircle2, HelpCircle, RefreshCw } from "lucide-react";
+import { Bell, AlertTriangle, AlertOctagon, CheckCircle2, HelpCircle, RefreshCw, Search, Eye, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const formatInt = (n: number) => new Intl.NumberFormat("pt-BR").format(n ?? 0);
+const formatDateTimeBR = (iso: string | null | undefined) => {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
+const formatRelativeTime = (iso: string | null | undefined): string => {
+  if (!iso) return "-";
+  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `${diffMin}min atrás`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h atrás`;
+  return `${Math.floor(diffH / 24)}d atrás`;
+};
+
+const severityLabels: Record<string, string> = { critical: "Crítico", warning: "Atenção", info: "Info" };
+const severityColors: Record<string, string> = {
+  critical: "bg-red-500/15 text-red-400 border-red-500/30",
+  warning: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  info: "bg-blue-500/15 text-blue-400 border-blue-500/30"
+};
+const statusLabels: Record<string, string> = { open: "Aberto", resolved: "Resolvido", auto_resolved: "Auto-resolvido", dismissed: "Dispensado" };
+const statusColors: Record<string, string> = {
+  open: "bg-primary/15 text-primary border-primary/30",
+  resolved: "bg-green-500/15 text-green-400 border-green-500/30",
+  auto_resolved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  dismissed: "bg-muted text-muted-foreground border-border"
+};
+const alertTypeLabels: Record<string, string> = {
+  cron_pix_offline: "Cron PIX offline",
+  split_divergente: "Split divergente",
+  webhook_asaas_failed: "Webhook Asaas falhou",
+  edge_function_failed: "Edge Function falhou",
+  pix_expire_high: "Taxa alta de PIX expirado",
+  payments_failed_burst: "Pagamentos falhando em série",
+  order_stuck: "Pedido travado",
+  event_no_activity: "Evento sem atividade"
+};
 
 export default function OperacoesAlertas() {
   const [activeTab, setActiveTab] = useState<"open" | "resolved">("open");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
+  const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const [alertDetail, setAlertDetail] = useState<any>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [resolveNote, setResolveNote] = useState("");
+  const [resolving, setResolving] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchText), 500);
+    return () => clearTimeout(t);
+  }, [searchText]);
 
   const fetchAlerts = async () => {
     setLoading(true);
     const { data: respData, error } = await (supabase.rpc as any)("get_alerts_list", {
       p_status_filter: activeTab,
+      p_search: searchDebounced.trim() || null,
       p_page: 1,
       p_page_size: 50,
     });
@@ -27,18 +80,26 @@ export default function OperacoesAlertas() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchAlerts(); }, [activeTab]);
+  useEffect(() => { fetchAlerts(); }, [activeTab, searchDebounced]);
 
-  // Realtime refetch simples
+  // Realtime refetch + toast pra crítico novo
   useEffect(() => {
     const channel = supabase
       .channel("alerts-page")
-      .on("postgres_changes", { event: "*", schema: "public", table: "alerts" },
-        () => fetchAlerts())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "alerts" },
+        (payload: any) => {
+          const newAlert = payload.new;
+          if (newAlert?.severity === "critical" && newAlert?.status === "open") {
+            toast.error(newAlert.title, { description: newAlert.message, duration: 8000 });
+          }
+          fetchAlerts();
+        })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "alerts" }, () => fetchAlerts())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "alerts" }, () => fetchAlerts())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, searchDebounced]);
 
   const handleManualTrigger = async () => {
     const { data: r, error } = await (supabase.rpc as any)("trigger_generate_system_alerts");
@@ -46,6 +107,34 @@ export default function OperacoesAlertas() {
     const count = (r as any)?.fingerprints_generated?.length ?? 0;
     toast.success(`Disparo concluído (${count} alertas avaliados)`);
     fetchAlerts();
+  };
+
+  const loadAlertDetail = async (alertId: string) => {
+    setSelectedAlertId(alertId);
+    setAlertDetail(null);
+    setResolveNote("");
+    setLoadingDetail(true);
+    const { data: d, error } = await (supabase.rpc as any)("get_alert_detail", { p_alert_id: alertId });
+    if (error) { toast.error("Erro: " + error.message); setSelectedAlertId(null); }
+    else setAlertDetail(d);
+    setLoadingDetail(false);
+  };
+
+  const handleResolve = async () => {
+    if (!selectedAlertId) return;
+    setResolving(true);
+    const { error } = await (supabase.rpc as any)("resolve_alert", {
+      p_alert_id: selectedAlertId, p_note: resolveNote.trim() || null
+    });
+    setResolving(false);
+    if (error) { toast.error("Erro ao resolver: " + error.message); return; }
+    toast.success("Alerta resolvido");
+    setSelectedAlertId(null); setAlertDetail(null); fetchAlerts();
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`);
   };
 
   const kpis = [
