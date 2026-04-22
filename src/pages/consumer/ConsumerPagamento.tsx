@@ -743,14 +743,14 @@ export default function ConsumerPagamento() {
 
   // ── Handle confirm ──
   const handleConfirm = async () => {
-    if (!activeEvent || !user || cart.items.length === 0) return;
+    if (!activeEvent || !user || orderItems.length === 0) return;
     if (splitMode && !isSplitValid()) return;
 
     setFlowState("processing");
     setErrorMessage("");
 
     try {
-      const items = cart.items.map((i) => ({
+      const items = orderItems.map((i) => ({
         ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
         quantity: i.quantity,
       }));
