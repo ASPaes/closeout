@@ -893,6 +893,16 @@ export default function ConsumerPagamento() {
     }
   };
 
+  // ── Resume order loading ──
+  if (resumeLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background">
+        <div className="h-20 w-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Carregando pedido...</p>
+      </div>
+    );
+  }
+
   // ── Processing ──
   if (flowState === "processing") {
     return (
