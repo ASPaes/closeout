@@ -250,10 +250,10 @@ export default function ConsumerPagamento() {
 
   // ── Redirect if cart empty ──
   useEffect(() => {
-    if (cart.items.length === 0 && flowState === "select") {
+    if (orderItems.length === 0 && flowState === "select" && !resumeLoading) {
       navigate("/app/cardapio", { replace: true });
     }
-  }, [cart.items.length, flowState, navigate]);
+  }, [orderItems.length, flowState, navigate, resumeLoading]);
 
   // ── Load pending order when ?resume=<orderId> is present ──
   useEffect(() => {
