@@ -177,8 +177,15 @@ export default function ConsumerPagamento() {
   const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const paymentsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  // ── Computed: order source (resume mode vs cart) ──
+  const isResumeMode = !!resumeOrderId && !!resumeOrder;
+  const orderTotal = isResumeMode ? resumeOrder!.total : cart.total;
+  const orderItems = isResumeMode
+    ? resumeOrder!.items.map((i) => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price, type: "product" as const }))
+    : cart.items;
+
   const splitAmount2 = splitMode
-    ? Math.max(0, cart.total - (parseFloat(splitAmount1) || 0))
+    ? Math.max(0, orderTotal - (parseFloat(splitAmount1) || 0))
     : 0;
 
   // ── Check spending limit ──
