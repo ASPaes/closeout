@@ -743,18 +743,14 @@ export default function ConsumerPagamento() {
 
   // ── Handle confirm ──
   const handleConfirm = async () => {
-    if (!activeEvent || !user || orderItems.length === 0) return;
+    if (!user || orderItems.length === 0) return;
+    if (!isResumeMode && !activeEvent) return;
     if (splitMode && !isSplitValid()) return;
 
     setFlowState("processing");
     setErrorMessage("");
 
     try {
-      const items = orderItems.map((i) => ({
-        ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
-        quantity: i.quantity,
-      }));
-
       let payments: { method: string; amount: number }[];
 
       if (splitMode) {
@@ -768,31 +764,82 @@ export default function ConsumerPagamento() {
         ];
       }
 
-      const { data, error } = await supabase.rpc("create_consumer_split_order", {
-        params: {
-          event_id: activeEvent.id,
-          items,
-          payments,
-        },
-      });
+      let orderId: string;
+      let orderNumber: number;
+      let qrToken: string;
+      let total: number;
+      let hasCashPending: boolean;
+      let hasDigitalPending: boolean;
 
-      if (error) throw new Error(error.message);
+      if (isResumeMode) {
+        const pickedSinglePix = !splitMode && selectedMethod === "pix";
+        if (pickedSinglePix) {
+          const { data: existingPix } = await supabase
+            .from("asaas_charges")
+            .select("pix_qr_code, pix_copy_paste, pix_expires_at")
+            .eq("order_id", resumeOrder!.id)
+            .eq("billing_type", "PIX")
+            .eq("asaas_status", "PENDING")
+            .gt("pix_expires_at", new Date().toISOString())
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-      const result = data as any;
-      const orderId = result?.order_id;
-      const orderNumber = result?.order_number;
-      const qrToken = result?.qr_token;
-      const total = result?.total;
-      const hasCashPending = result?.has_cash_pending === true;
-      const hasDigitalPending = result?.has_digital_pending === true;
+          if (existingPix && existingPix.pix_qr_code) {
+            setPixQrCodeBase64(existingPix.pix_qr_code);
+            setPixCopyPaste(existingPix.pix_copy_paste || "");
+            const expiresAt = new Date(existingPix.pix_expires_at);
+            setPixExpiresAt(expiresAt);
+            setPixTimeLeft(Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000)));
+            setPixOrderId(resumeOrder!.id);
+            setFlowState("pix_waiting");
+            subscribeToOrder(resumeOrder!.id);
+            return;
+          }
+        }
+
+        const { data, error } = await (supabase.rpc as any)("resume_order_payment", {
+          p_order_id: resumeOrder!.id,
+          p_payments: payments,
+        });
+
+        if (error) throw new Error(error.message);
+
+        const result = data as any;
+        orderId = result.order_id;
+        orderNumber = result.order_number;
+        qrToken = result.qr_token;
+        total = result.total;
+        hasCashPending = result.has_cash_pending === true;
+        hasDigitalPending = result.has_digital_pending === true;
+      } else {
+        const items = orderItems.map((i: any) => ({
+          ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
+          quantity: i.quantity,
+        }));
+
+        const { data, error } = await supabase.rpc("create_consumer_split_order", {
+          params: { event_id: activeEvent!.id, items, payments },
+        });
+
+        if (error) throw new Error(error.message);
+
+        const result = data as any;
+        orderId = result.order_id;
+        orderNumber = result.order_number;
+        qrToken = result.qr_token;
+        total = result.total;
+        hasCashPending = result.has_cash_pending === true;
+        hasDigitalPending = result.has_digital_pending === true;
+      }
 
       setActiveOrder({
         id: orderId,
         order_number: orderNumber,
-        status: result?.status || "pending",
-        total: total,
+        status: hasCashPending ? "partially_paid" : "pending",
+        total,
         qr_token: qrToken,
-        items: orderItems.map((i) => ({
+        items: orderItems.map((i: any) => ({
           name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
@@ -802,11 +849,11 @@ export default function ConsumerPagamento() {
 
       try {
         await logAudit({
-          action: "CONSUMER_ORDER_CREATED",
+          action: isResumeMode ? "CONSUMER_ORDER_RESUMED" : "CONSUMER_ORDER_CREATED",
           entityType: "order",
           entityId: orderId,
           metadata: {
-            event_id: activeEvent.id,
+            event_id: isResumeMode ? resumeOrder!.event_id : activeEvent!.id,
             payments,
             total,
             items_count: orderItems.length,
@@ -815,7 +862,7 @@ export default function ConsumerPagamento() {
         });
       } catch {}
 
-      clearCart();
+      if (!isResumeMode) clearCart();
 
       if (hasCashPending) {
         setCashPendingInfo({ cashAmount, digitalAmount, orderId });
