@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocation } from "@/lib/native-bridge";
 import { logAudit } from "@/lib/audit";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type AsaasCard = {
   id: string;
