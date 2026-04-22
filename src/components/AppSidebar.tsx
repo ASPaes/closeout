@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 import logoMark from "@/assets/brand/logo-mark.png";
 
-type NavItem = { titleKey: TranslationKey; url: string; icon: any };
+type NavItem = { titleKey: TranslationKey; url: string; icon: any; titleOverride?: string };
 
 const panelItems: NavItem[] = [
   { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
@@ -32,8 +32,8 @@ const analysisItems: NavItem[] = [
 const operationsItems: NavItem[] = [
   { titleKey: "operations_orders", url: "/admin/operacoes/pedidos", icon: Receipt },
   { titleKey: "operations_payments", url: "/admin/operacoes/pagamentos", icon: CreditCard },
-  { titleKey: "operations_alerts" as TranslationKey, url: "/admin/operacoes/alertas", icon: Bell },
-  { titleKey: "operations_health" as TranslationKey, url: "/admin/operacoes/saude", icon: Activity },
+  { titleKey: "dashboard", url: "/admin/operacoes/alertas", icon: Bell, titleOverride: "Alertas" },
+  { titleKey: "dashboard", url: "/admin/operacoes/saude", icon: Activity, titleOverride: "Saúde do Sistema" },
 ];
 
 const managementItems: NavItem[] = [
@@ -70,7 +70,7 @@ function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; colla
         activeClassName="bg-sidebar-accent text-primary font-medium"
       >
         <item.icon className={`h-4 w-4 transition-colors duration-200 ${isActive ? "text-primary" : ""}`} />
-        {!collapsed && <span>{t(item.titleKey)}</span>}
+        {!collapsed && <span>{item.titleOverride ?? t(item.titleKey)}</span>}
       </NavLink>
     </SidebarMenuButton>
   );
@@ -82,7 +82,7 @@ function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; colla
           <Tooltip>
             <TooltipTrigger asChild>{content}</TooltipTrigger>
             <TooltipContent side="right" className="bg-card border-border/60">
-              {t(item.titleKey)}
+              {item.titleOverride ?? t(item.titleKey)}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
