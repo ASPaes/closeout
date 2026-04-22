@@ -121,11 +121,31 @@ export default function OperacoesSaude() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [asaasData, setAsaasData] = useState<any | null>(null);
+  const [asaasLoading, setAsaasLoading] = useState(true);
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchAsaasPing = async () => {
+    setAsaasLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-healthcheck");
+      if (error) {
+        setAsaasData({ status: "error", error: error.message, checked_at: new Date().toISOString() });
+      } else {
+        setAsaasData(data);
+      }
+    } catch (e: any) {
+      setAsaasData({ status: "unreachable", error: e?.message ?? "unknown", checked_at: new Date().toISOString() });
+    }
+    setAsaasLoading(false);
+  };
 
   const fetchHealth = async (isManual = false) => {
     if (isManual) setRefreshing(true);
-    const { data: respData, error } = await (supabase.rpc as any)("get_system_health");
+    const [{ data: respData, error }] = await Promise.all([
+      (supabase.rpc as any)("get_system_health"),
+      fetchAsaasPing(),
+    ]);
     if (error) {
       toast.error("Erro ao carregar saúde: " + error.message);
     } else if (respData) {
