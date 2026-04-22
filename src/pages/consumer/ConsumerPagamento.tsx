@@ -177,8 +177,15 @@ export default function ConsumerPagamento() {
   const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const paymentsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  // ── Computed: order source (resume mode vs cart) ──
+  const isResumeMode = !!resumeOrderId && !!resumeOrder;
+  const orderTotal = isResumeMode ? resumeOrder!.total : cart.total;
+  const orderItems = isResumeMode
+    ? resumeOrder!.items.map((i) => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price, type: "product" as const }))
+    : cart.items;
+
   const splitAmount2 = splitMode
-    ? Math.max(0, cart.total - (parseFloat(splitAmount1) || 0))
+    ? Math.max(0, orderTotal - (parseFloat(splitAmount1) || 0))
     : 0;
 
   // ── Check spending limit ──
@@ -204,14 +211,14 @@ export default function ConsumerPagamento() {
         (s: number, o: any) => s + Number(o.total),
         0
       );
-      const willSpend = alreadySpent + cart.total;
+      const willSpend = alreadySpent + orderTotal;
       if (willSpend > limit) {
         setLimitWarning({ limit, alreadySpent, willSpend });
       } else {
         setLimitWarning(null);
       }
     })();
-  }, [user, activeEvent, cart.total]);
+  }, [user, activeEvent, orderTotal]);
 
   // ── Fetch saved cards (Asaas) ──
   useEffect(() => {
@@ -243,10 +250,10 @@ export default function ConsumerPagamento() {
 
   // ── Redirect if cart empty ──
   useEffect(() => {
-    if (cart.items.length === 0 && flowState === "select") {
+    if (orderItems.length === 0 && flowState === "select" && !resumeLoading) {
       navigate("/app/cardapio", { replace: true });
     }
-  }, [cart.items.length, flowState, navigate]);
+  }, [orderItems.length, flowState, navigate, resumeLoading]);
 
   // ── Load pending order when ?resume=<orderId> is present ──
   useEffect(() => {
@@ -293,9 +300,9 @@ export default function ConsumerPagamento() {
   // ── Split mode init ──
   useEffect(() => {
     if (splitMode && !splitAmount1) {
-      setSplitAmount1((cart.total / 2).toFixed(2));
+      setSplitAmount1((orderTotal / 2).toFixed(2));
     }
-  }, [splitMode, cart.total, splitAmount1]);
+  }, [splitMode, orderTotal, splitAmount1]);
 
   // ── Ensure split methods differ ──
   useEffect(() => {
@@ -383,10 +390,10 @@ export default function ConsumerPagamento() {
     ? (splitMethod1 === "cash" ? parseFloat(splitAmount1) || 0 : 0) +
       (splitMethod2 === "cash" ? splitAmount2 : 0)
     : selectedMethod === "cash"
-    ? cart.total
+    ? orderTotal
     : 0;
 
-  const digitalAmount = cart.total - cashAmount;
+  const digitalAmount = orderTotal - cashAmount;
 
   const isCardMethod = (method: PaymentMethod) =>
     method === "credit_card" || method === "debit_card";
@@ -403,7 +410,7 @@ export default function ConsumerPagamento() {
     const a1 = parseFloat(splitAmount1) || 0;
     if (a1 <= 0 || splitAmount2 <= 0) return false;
     if (splitMethod1 === splitMethod2) return false;
-    if (Math.abs(a1 + splitAmount2 - cart.total) > 0.01) return false;
+    if (Math.abs(a1 + splitAmount2 - orderTotal) > 0.01) return false;
     return true;
   };
 
@@ -736,14 +743,14 @@ export default function ConsumerPagamento() {
 
   // ── Handle confirm ──
   const handleConfirm = async () => {
-    if (!activeEvent || !user || cart.items.length === 0) return;
+    if (!activeEvent || !user || orderItems.length === 0) return;
     if (splitMode && !isSplitValid()) return;
 
     setFlowState("processing");
     setErrorMessage("");
 
     try {
-      const items = cart.items.map((i) => ({
+      const items = orderItems.map((i) => ({
         ...(i.type === "product" ? { product_id: i.id } : { combo_id: i.id }),
         quantity: i.quantity,
       }));
@@ -757,7 +764,7 @@ export default function ConsumerPagamento() {
         ];
       } else {
         payments = [
-          { method: resolvePaymentMethod(selectedMethod), amount: cart.total },
+          { method: resolvePaymentMethod(selectedMethod), amount: orderTotal },
         ];
       }
 
@@ -785,7 +792,7 @@ export default function ConsumerPagamento() {
         status: result?.status || "pending",
         total: total,
         qr_token: qrToken,
-        items: cart.items.map((i) => ({
+        items: orderItems.map((i) => ({
           name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
@@ -802,7 +809,7 @@ export default function ConsumerPagamento() {
             event_id: activeEvent.id,
             payments,
             total,
-            items_count: cart.items.length,
+            items_count: orderItems.length,
             has_cash_pending: hasCashPending,
           },
         });
@@ -837,7 +844,13 @@ export default function ConsumerPagamento() {
     }
   };
 
-  const handleCancel = () => navigate(-1);
+  const handleCancel = () => {
+    if (isResumeMode) {
+      navigate("/app/pedidos", { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
   const handleRetry = () => {
     setFlowState("select");
     setErrorMessage("");
@@ -1536,7 +1549,7 @@ export default function ConsumerPagamento() {
   ];
 
   const canConfirm =
-    cart.items.length > 0 &&
+    orderItems.length > 0 &&
     (!splitMode || isSplitValid()) &&
     (!(showCardForm || showSplitCardForm) || isNewCardValid()) &&
     (selectedMethod === "cash" && !splitMode ? true : isCpfValid) &&
@@ -1562,7 +1575,7 @@ export default function ConsumerPagamento() {
           {t("consumer_payment_summary")}
         </h3>
         <div className="flex flex-col gap-1.5">
-          {cart.items.map((item) => (
+          {orderItems.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
               <span className="text-muted-foreground truncate mr-2">
                 {item.quantity}x {item.name}
@@ -1575,7 +1588,7 @@ export default function ConsumerPagamento() {
           <div className="mt-2 flex justify-between border-t border-white/[0.06] pt-2">
             <span className="text-sm font-semibold text-foreground">Total</span>
             <span className="text-base font-bold text-primary">
-              R$ {cart.total.toFixed(2)}
+              R$ {orderTotal.toFixed(2)}
             </span>
           </div>
         </div>
@@ -1883,7 +1896,7 @@ export default function ConsumerPagamento() {
                 inputMode="decimal"
                 step="0.01"
                 min="0.01"
-                max={cart.total}
+                max={orderTotal}
                 value={splitAmount1}
                 onChange={(e) => setSplitAmount1(e.target.value)}
                 className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]"
@@ -2156,8 +2169,8 @@ export default function ConsumerPagamento() {
         style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
       >
         {hasCash
-          ? `Criar pedido · R$ ${cart.total.toFixed(2)}`
-          : `${t("consumer_payment_confirm")} · R$ ${cart.total.toFixed(2)}`}
+          ? `Criar pedido · R$ ${orderTotal.toFixed(2)}`
+          : `${t("consumer_payment_confirm")} · R$ ${orderTotal.toFixed(2)}`}
       </Button>
     </div>
   );
