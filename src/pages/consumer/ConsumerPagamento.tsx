@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
@@ -95,6 +95,19 @@ export default function ConsumerPagamento() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
+
+  // ── Resume pending order via ?resume=<orderId> ──
+  const [searchParams] = useSearchParams();
+  const resumeOrderId = searchParams.get("resume");
+  const [resumeOrder, setResumeOrder] = useState<{
+    id: string;
+    total: number;
+    event_id: string;
+    client_id: string;
+    order_number: number;
+    items: { name: string; quantity: number; price: number; id: string }[];
+  } | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(!!resumeOrderId);
 
   // ── Saved cards (Asaas) ──
   const [savedCards, setSavedCards] = useState<AsaasCard[]>([]);
@@ -234,6 +247,48 @@ export default function ConsumerPagamento() {
       navigate("/app/cardapio", { replace: true });
     }
   }, [cart.items.length, flowState, navigate]);
+
+  // ── Load pending order when ?resume=<orderId> is present ──
+  useEffect(() => {
+    if (!resumeOrderId || !user) return;
+    const loadResumeOrder = async () => {
+      setResumeLoading(true);
+      try {
+        const { data: order } = await supabase
+          .from("orders")
+          .select("id, total, event_id, client_id, consumer_id, status, order_number")
+          .eq("id", resumeOrderId)
+          .eq("consumer_id", user.id)
+          .eq("status", "pending")
+          .single();
+        if (!order) {
+          toast.error("Pedido não encontrado ou já pago");
+          navigate("/app/pedidos", { replace: true });
+          return;
+        }
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("id, name, quantity, unit_price")
+          .eq("order_id", resumeOrderId);
+        setResumeOrder({
+          id: order.id,
+          total: order.total,
+          event_id: order.event_id,
+          client_id: order.client_id,
+          order_number: order.order_number,
+          items: (items || []).map((i: any) => ({
+            id: i.id, name: i.name, quantity: i.quantity, price: i.unit_price,
+          })),
+        });
+      } catch {
+        toast.error("Erro ao carregar pedido");
+        navigate("/app/pedidos", { replace: true });
+      } finally {
+        setResumeLoading(false);
+      }
+    };
+    loadResumeOrder();
+  }, [resumeOrderId, user, navigate]);
 
   // ── Split mode init ──
   useEffect(() => {
@@ -837,6 +892,16 @@ export default function ConsumerPagamento() {
       setFlowState("card_declined_split");
     }
   };
+
+  // ── Resume order loading ──
+  if (resumeLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-background">
+        <div className="h-20 w-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Carregando pedido...</p>
+      </div>
+    );
+  }
 
   // ── Processing ──
   if (flowState === "processing") {
