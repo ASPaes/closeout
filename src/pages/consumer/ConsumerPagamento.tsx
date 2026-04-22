@@ -211,14 +211,14 @@ export default function ConsumerPagamento() {
         (s: number, o: any) => s + Number(o.total),
         0
       );
-      const willSpend = alreadySpent + cart.total;
+      const willSpend = alreadySpent + orderTotal;
       if (willSpend > limit) {
         setLimitWarning({ limit, alreadySpent, willSpend });
       } else {
         setLimitWarning(null);
       }
     })();
-  }, [user, activeEvent, cart.total]);
+  }, [user, activeEvent, orderTotal]);
 
   // ── Fetch saved cards (Asaas) ──
   useEffect(() => {
