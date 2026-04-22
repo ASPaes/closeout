@@ -844,7 +844,13 @@ export default function ConsumerPagamento() {
     }
   };
 
-  const handleCancel = () => navigate(-1);
+  const handleCancel = () => {
+    if (isResumeMode) {
+      navigate("/app/pedidos", { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
   const handleRetry = () => {
     setFlowState("select");
     setErrorMessage("");
