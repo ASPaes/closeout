@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   CircleDot,
+  ExternalLink,
 } from "lucide-react";
 
 const formatInt = (n: number) => new Intl.NumberFormat("pt-BR").format(n ?? 0);
@@ -83,6 +84,38 @@ const orderStatusLabels: Record<string, string> = {
   ready: "Pronto",
   partially_delivered: "Parc. entregue",
 };
+
+const asaasStatus = (a: any): SemaphoreStatus => {
+  if (!a) return "unknown";
+  if (a.status === "ok") return "ok";
+  if (a.status === "misconfigured") return "warn";
+  return "error";
+};
+
+const asaasStatusLabels: Record<string, string> = {
+  ok: "API respondendo",
+  invalid_key: "Chave inválida",
+  unreachable: "Inalcançável",
+  misconfigured: "Não configurada",
+  error: "Erro",
+  unknown: "Desconhecido",
+};
+
+const KNOWN_EDGE_FUNCTIONS = [
+  { slug: "asaas-create-charge", category: "Asaas" },
+  { slug: "asaas-webhook", category: "Asaas" },
+  { slug: "asaas-expire-pix", category: "Asaas" },
+  { slug: "asaas-create-subaccount", category: "Asaas" },
+  { slug: "asaas-tokenize-card", category: "Asaas" },
+  { slug: "asaas-healthcheck", category: "Asaas" },
+  { slug: "create-super-admin", category: "Auth" },
+  { slug: "create-client-with-manager", category: "Admin" },
+  { slug: "create-invite-link", category: "Auth" },
+  { slug: "accept-invite", category: "Auth" },
+  { slug: "search-product-image", category: "Produtos" },
+  { slug: "upload-product-image", category: "Produtos" },
+  { slug: "attach-searched-product-image", category: "Produtos" },
+];
 
 export default function OperacoesSaude() {
   const [data, setData] = useState<any>(null);
