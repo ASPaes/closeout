@@ -390,10 +390,10 @@ export default function ConsumerPagamento() {
     ? (splitMethod1 === "cash" ? parseFloat(splitAmount1) || 0 : 0) +
       (splitMethod2 === "cash" ? splitAmount2 : 0)
     : selectedMethod === "cash"
-    ? cart.total
+    ? orderTotal
     : 0;
 
-  const digitalAmount = cart.total - cashAmount;
+  const digitalAmount = orderTotal - cashAmount;
 
   const isCardMethod = (method: PaymentMethod) =>
     method === "credit_card" || method === "debit_card";
@@ -410,7 +410,7 @@ export default function ConsumerPagamento() {
     const a1 = parseFloat(splitAmount1) || 0;
     if (a1 <= 0 || splitAmount2 <= 0) return false;
     if (splitMethod1 === splitMethod2) return false;
-    if (Math.abs(a1 + splitAmount2 - cart.total) > 0.01) return false;
+    if (Math.abs(a1 + splitAmount2 - orderTotal) > 0.01) return false;
     return true;
   };
 
