@@ -28,7 +28,7 @@ describe("ConsumerCadastro", () => {
 
   it("mostra step 1 com campos de nome/CPF/telefone", () => {
     render(<ConsumerCadastro />, { wrapper: W });
-    expect(screen.getByPlaceholderText("CPF")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/CPF/)).toBeInTheDocument();
   });
 });
 
