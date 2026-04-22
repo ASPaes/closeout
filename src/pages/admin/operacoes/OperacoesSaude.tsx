@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   CircleDot,
+  ExternalLink,
 } from "lucide-react";
 
 const formatInt = (n: number) => new Intl.NumberFormat("pt-BR").format(n ?? 0);
@@ -84,15 +85,67 @@ const orderStatusLabels: Record<string, string> = {
   partially_delivered: "Parc. entregue",
 };
 
+const asaasStatus = (a: any): SemaphoreStatus => {
+  if (!a) return "unknown";
+  if (a.status === "ok") return "ok";
+  if (a.status === "misconfigured") return "warn";
+  return "error";
+};
+
+const asaasStatusLabels: Record<string, string> = {
+  ok: "API respondendo",
+  invalid_key: "Chave inválida",
+  unreachable: "Inalcançável",
+  misconfigured: "Não configurada",
+  error: "Erro",
+  unknown: "Desconhecido",
+};
+
+const KNOWN_EDGE_FUNCTIONS = [
+  { slug: "asaas-create-charge", category: "Asaas" },
+  { slug: "asaas-webhook", category: "Asaas" },
+  { slug: "asaas-expire-pix", category: "Asaas" },
+  { slug: "asaas-create-subaccount", category: "Asaas" },
+  { slug: "asaas-tokenize-card", category: "Asaas" },
+  { slug: "asaas-healthcheck", category: "Asaas" },
+  { slug: "create-super-admin", category: "Auth" },
+  { slug: "create-client-with-manager", category: "Admin" },
+  { slug: "create-invite-link", category: "Auth" },
+  { slug: "accept-invite", category: "Auth" },
+  { slug: "search-product-image", category: "Produtos" },
+  { slug: "upload-product-image", category: "Produtos" },
+  { slug: "attach-searched-product-image", category: "Produtos" },
+];
+
 export default function OperacoesSaude() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [asaasData, setAsaasData] = useState<any | null>(null);
+  const [asaasLoading, setAsaasLoading] = useState(true);
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchAsaasPing = async () => {
+    setAsaasLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-healthcheck");
+      if (error) {
+        setAsaasData({ status: "error", error: error.message, checked_at: new Date().toISOString() });
+      } else {
+        setAsaasData(data);
+      }
+    } catch (e: any) {
+      setAsaasData({ status: "unreachable", error: e?.message ?? "unknown", checked_at: new Date().toISOString() });
+    }
+    setAsaasLoading(false);
+  };
 
   const fetchHealth = async (isManual = false) => {
     if (isManual) setRefreshing(true);
-    const { data: respData, error } = await (supabase.rpc as any)("get_system_health");
+    const [{ data: respData, error }] = await Promise.all([
+      (supabase.rpc as any)("get_system_health"),
+      fetchAsaasPing(),
+    ]);
     if (error) {
       toast.error("Erro ao carregar saúde: " + error.message);
     } else if (respData) {
@@ -357,6 +410,101 @@ export default function OperacoesSaude() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Asaas API */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Asaas API (Sandbox)</CardTitle>
+                  </div>
+                  {asaasLoading ? (
+                    <Badge variant="outline" className="text-[10px]">Verificando...</Badge>
+                  ) : (
+                    renderSemaphore(asaasStatus(asaasData), "Asaas")
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {asaasLoading ? (
+                  <Skeleton className="h-16 w-full" />
+                ) : !asaasData ? (
+                  <div className="text-sm text-muted-foreground">Sem dados</div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="text-lg font-semibold text-foreground">
+                        {asaasStatusLabels[asaasData.status] ?? asaasData.status}
+                      </div>
+                      {asaasData.latency_ms !== undefined && asaasData.latency_ms !== null && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Latência: {formatInt(asaasData.latency_ms)} ms
+                          {asaasData.http_status > 0 && ` · HTTP ${asaasData.http_status}`}
+                        </div>
+                      )}
+                    </div>
+                    {asaasData.error && (
+                      <div className="text-xs text-red-400 bg-red-500/5 rounded p-2">
+                        {asaasData.error}
+                      </div>
+                    )}
+                    {asaasData.endpoint && (
+                      <div className="text-[10px] font-mono text-muted-foreground truncate">
+                        {asaasData.endpoint}
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Edge Functions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Edge Functions</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-muted/30">
+                    {KNOWN_EDGE_FUNCTIONS.length} registradas
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <div className="text-3xl font-bold text-foreground">
+                    {formatInt(KNOWN_EDGE_FUNCTIONS.length)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">funções do projeto</div>
+                </div>
+                <div className="space-y-2">
+                  {["Asaas", "Auth", "Admin", "Produtos"].map((cat) => {
+                    const fns = KNOWN_EDGE_FUNCTIONS.filter((f) => f.category === cat);
+                    if (fns.length === 0) return null;
+                    return (
+                      <div key={cat}>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                          {cat} ({fns.length})
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {fns.map((fn) => (
+                            <Badge key={fn.slug} variant="outline" className="text-[9px] font-mono">
+                              {fn.slug}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="text-[10px] text-muted-foreground flex items-center gap-1 pt-2 border-t border-border/30">
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Logs e invocações no Supabase Dashboard → Edge Functions</span>
+                </div>
               </CardContent>
             </Card>
           </div>
