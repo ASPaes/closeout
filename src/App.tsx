@@ -26,6 +26,7 @@ import AnaliseGeografia from "@/pages/admin/analise/AnaliseGeografia";
 import OperacoesPedidos from "@/pages/admin/operacoes/OperacoesPedidos";
 import OperacoesPagamentos from "@/pages/admin/operacoes/OperacoesPagamentos";
 import OperacoesAlertas from "@/pages/admin/operacoes/OperacoesAlertas";
+import OperacoesSaude from "@/pages/admin/operacoes/OperacoesSaude";
 import Clients from "@/pages/Clients";
 import Venues from "@/pages/Venues";
 import Events from "@/pages/Events";
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="operacoes/pedidos" element={<OperacoesPedidos />} />
               <Route path="operacoes/pagamentos" element={<OperacoesPagamentos />} />
               <Route path="operacoes/alertas" element={<OperacoesAlertas />} />
+              <Route path="operacoes/saude" element={<OperacoesSaude />} />
               <Route path="clients" element={<Clients />} />
               <Route path="venues" element={<Venues />} />
               <Route path="events" element={<Events />} />
