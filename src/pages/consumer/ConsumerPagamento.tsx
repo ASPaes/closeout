@@ -300,9 +300,9 @@ export default function ConsumerPagamento() {
   // ── Split mode init ──
   useEffect(() => {
     if (splitMode && !splitAmount1) {
-      setSplitAmount1((cart.total / 2).toFixed(2));
+      setSplitAmount1((orderTotal / 2).toFixed(2));
     }
-  }, [splitMode, cart.total, splitAmount1]);
+  }, [splitMode, orderTotal, splitAmount1]);
 
   // ── Ensure split methods differ ──
   useEffect(() => {
