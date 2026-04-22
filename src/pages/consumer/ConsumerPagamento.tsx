@@ -1896,7 +1896,7 @@ export default function ConsumerPagamento() {
                 inputMode="decimal"
                 step="0.01"
                 min="0.01"
-                max={cart.total}
+                max={orderTotal}
                 value={splitAmount1}
                 onChange={(e) => setSplitAmount1(e.target.value)}
                 className="h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]"
