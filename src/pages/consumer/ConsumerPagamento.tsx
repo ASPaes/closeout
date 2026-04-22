@@ -248,6 +248,48 @@ export default function ConsumerPagamento() {
     }
   }, [cart.items.length, flowState, navigate]);
 
+  // ── Load pending order when ?resume=<orderId> is present ──
+  useEffect(() => {
+    if (!resumeOrderId || !user) return;
+    const loadResumeOrder = async () => {
+      setResumeLoading(true);
+      try {
+        const { data: order } = await supabase
+          .from("orders")
+          .select("id, total, event_id, client_id, consumer_id, status, order_number")
+          .eq("id", resumeOrderId)
+          .eq("consumer_id", user.id)
+          .eq("status", "pending")
+          .single();
+        if (!order) {
+          toast.error("Pedido não encontrado ou já pago");
+          navigate("/app/pedidos", { replace: true });
+          return;
+        }
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("id, name, quantity, unit_price")
+          .eq("order_id", resumeOrderId);
+        setResumeOrder({
+          id: order.id,
+          total: order.total,
+          event_id: order.event_id,
+          client_id: order.client_id,
+          order_number: order.order_number,
+          items: (items || []).map((i: any) => ({
+            id: i.id, name: i.name, quantity: i.quantity, price: i.unit_price,
+          })),
+        });
+      } catch {
+        toast.error("Erro ao carregar pedido");
+        navigate("/app/pedidos", { replace: true });
+      } finally {
+        setResumeLoading(false);
+      }
+    };
+    loadResumeOrder();
+  }, [resumeOrderId, user, navigate]);
+
   // ── Split mode init ──
   useEffect(() => {
     if (splitMode && !splitAmount1) {
