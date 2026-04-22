@@ -764,7 +764,7 @@ export default function ConsumerPagamento() {
         ];
       } else {
         payments = [
-          { method: resolvePaymentMethod(selectedMethod), amount: cart.total },
+          { method: resolvePaymentMethod(selectedMethod), amount: orderTotal },
         ];
       }
 
