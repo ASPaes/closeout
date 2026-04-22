@@ -3753,6 +3753,7 @@ export type Database = {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_system_health: { Args: never; Returns: Json }
       get_user_client_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_detail: { Args: { p_user_id: string }; Returns: Json }
       get_user_event_ids: { Args: { _user_id: string }; Returns: string[] }

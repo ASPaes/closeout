@@ -33,6 +33,7 @@ const operationsItems: NavItem[] = [
   { titleKey: "operations_orders", url: "/admin/operacoes/pedidos", icon: Receipt },
   { titleKey: "operations_payments", url: "/admin/operacoes/pagamentos", icon: CreditCard },
   { titleKey: "operations_alerts" as TranslationKey, url: "/admin/operacoes/alertas", icon: Bell },
+  { titleKey: "operations_health" as TranslationKey, url: "/admin/operacoes/saude", icon: Activity },
 ];
 
 const managementItems: NavItem[] = [
