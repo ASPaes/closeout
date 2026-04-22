@@ -792,7 +792,7 @@ export default function ConsumerPagamento() {
         status: result?.status || "pending",
         total: total,
         qr_token: qrToken,
-        items: cart.items.map((i) => ({
+        items: orderItems.map((i) => ({
           name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
@@ -809,7 +809,7 @@ export default function ConsumerPagamento() {
             event_id: activeEvent.id,
             payments,
             total,
-            items_count: cart.items.length,
+            items_count: orderItems.length,
             has_cash_pending: hasCashPending,
           },
         });
