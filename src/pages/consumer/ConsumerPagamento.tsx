@@ -2169,8 +2169,8 @@ export default function ConsumerPagamento() {
         style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
       >
         {hasCash
-          ? `Criar pedido · R$ ${cart.total.toFixed(2)}`
-          : `${t("consumer_payment_confirm")} · R$ ${cart.total.toFixed(2)}`}
+          ? `Criar pedido · R$ ${orderTotal.toFixed(2)}`
+          : `${t("consumer_payment_confirm")} · R$ ${orderTotal.toFixed(2)}`}
       </Button>
     </div>
   );
