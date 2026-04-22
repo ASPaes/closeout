@@ -3774,6 +3774,10 @@ export type Database = {
         Args: { p_alert_id: string; p_note?: string }
         Returns: Json
       }
+      resume_order_payment: {
+        Args: { p_order_id: string; p_payments: Json }
+        Returns: Json
+      }
       review_waiter_cancellation: {
         Args: { p_decision: string; p_notes: string; p_request_id: string }
         Returns: Json
