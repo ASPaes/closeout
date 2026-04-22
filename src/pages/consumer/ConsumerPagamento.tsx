@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
@@ -95,6 +95,19 @@ export default function ConsumerPagamento() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
+
+  // ── Resume pending order via ?resume=<orderId> ──
+  const [searchParams] = useSearchParams();
+  const resumeOrderId = searchParams.get("resume");
+  const [resumeOrder, setResumeOrder] = useState<{
+    id: string;
+    total: number;
+    event_id: string;
+    client_id: string;
+    order_number: number;
+    items: { name: string; quantity: number; price: number; id: string }[];
+  } | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(!!resumeOrderId);
 
   // ── Saved cards (Asaas) ──
   const [savedCards, setSavedCards] = useState<AsaasCard[]>([]);
