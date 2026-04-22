@@ -361,6 +361,20 @@ export default function ConsumerPedidos() {
                   </div>
                 )}
 
+                {/* Pay button for pending orders */}
+                {order.status === "pending" && (
+                  <div className="px-4 pb-3">
+                    <Button
+                      size="sm"
+                      className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/30"
+                      onClick={() => navigate(`/app/pagamento?resume=${order.id}`)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pagar pedido
+                    </Button>
+                  </div>
+                )}
+
                 {/* Expanded details */}
                 {expanded && (
                   <div className="border-t border-white/[0.04] p-4 space-y-4">
