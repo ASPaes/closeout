@@ -2806,42 +2806,6 @@ export type Database = {
           },
         ]
       }
-      user_payment_methods: {
-        Row: {
-          card_brand: string | null
-          card_last_four: string
-          created_at: string | null
-          gateway_token: string
-          id: string
-          is_active: boolean | null
-          is_default: boolean | null
-          method_type: string
-          user_id: string
-        }
-        Insert: {
-          card_brand?: string | null
-          card_last_four: string
-          created_at?: string | null
-          gateway_token: string
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean | null
-          method_type: string
-          user_id: string
-        }
-        Update: {
-          card_brand?: string | null
-          card_last_four?: string
-          created_at?: string | null
-          gateway_token?: string
-          id?: string
-          is_active?: boolean | null
-          is_default?: boolean | null
-          method_type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           client_id: string | null
@@ -3541,19 +3505,10 @@ export type Database = {
         Args: { p_username: string }
         Returns: boolean
       }
-      close_cash_register:
-        | {
-            Args: { p_closing_balance: number; p_register_id: string }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_closing_balance: number
-              p_notes?: string
-              p_register_id: string
-            }
-            Returns: undefined
-          }
+      close_cash_register: {
+        Args: { p_closing_balance: number; p_register_id: string }
+        Returns: Json
+      }
       close_event_cancel_unpaid: { Args: { p_event_id: string }; Returns: Json }
       close_waiter_session: {
         Args: { p_cash_handed_over: number; p_session_id: string }
@@ -3578,7 +3533,6 @@ export type Database = {
         Returns: Json
       }
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
-      create_consumer_order: { Args: { params: Json }; Returns: Json }
       create_consumer_split_order: { Args: { params: Json }; Returns: Json }
       create_cpf_change_request: {
         Args: { p_justification: string; p_requested_cpf: string }
@@ -3837,23 +3791,14 @@ export type Database = {
         Returns: Json
       }
       trigger_generate_system_alerts: { Args: never; Returns: Json }
-      update_stock_entry:
-        | {
-            Args: {
-              p_entry_id: string
-              p_new_quantity: number
-              p_new_reason?: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_entry_id: string
-              p_new_quantity: number
-              p_new_reason?: string
-            }
-            Returns: undefined
-          }
+      update_stock_entry: {
+        Args: {
+          p_entry_id: string
+          p_new_quantity: number
+          p_new_reason?: string
+        }
+        Returns: undefined
+      }
       upsert_alert: {
         Args: {
           p_alert_type: string
