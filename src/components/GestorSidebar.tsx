@@ -12,21 +12,46 @@ import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 import logoMark from "@/assets/brand/logo-mark.png";
 
-const gestorItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
-  { titleKey: "dashboard", url: "/gestor", icon: LayoutDashboard },
-  { titleKey: "gestor_products", url: "/gestor/produtos", icon: Package },
-  { titleKey: "gestor_categories", url: "/gestor/categorias", icon: Tags },
-  { titleKey: "gestor_combos", url: "/gestor/combos", icon: Layers },
-  { titleKey: "gestor_campaigns", url: "/gestor/campanhas", icon: Megaphone },
-  { titleKey: "gestor_stock", url: "/gestor/estoque", icon: Warehouse },
-  { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
-  { titleKey: "gestor_venues", url: "/gestor/locais", icon: MapPin },
-  { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
-  { titleKey: "gusr_title", url: "/gestor/usuarios", icon: Users },
-  { titleKey: "gcx_title", url: "/gestor/caixas", icon: Banknote },
-  { titleKey: "gbar_ops_title", url: "/gestor/bar", icon: Beer },
-  { titleKey: "gestor_waiters", url: "/gestor/garcons", icon: UserCheck },
-  { titleKey: "gestor_invite_team", url: "/gestor/equipe", icon: UserPlus },
+const gestorGroups: { labelKey: TranslationKey; items: { titleKey: TranslationKey; url: string; icon: any }[] }[] = [
+  {
+    labelKey: "nav_group_menu",
+    items: [
+      { titleKey: "dashboard", url: "/gestor", icon: LayoutDashboard },
+    ],
+  },
+  {
+    labelKey: "nav_group_catalog",
+    items: [
+      { titleKey: "gestor_products", url: "/gestor/produtos", icon: Package },
+      { titleKey: "gestor_categories", url: "/gestor/categorias", icon: Tags },
+      { titleKey: "gestor_combos", url: "/gestor/combos", icon: Layers },
+      { titleKey: "gestor_campaigns", url: "/gestor/campanhas", icon: Megaphone },
+      { titleKey: "ctlg_title", url: "/gestor/catalogos", icon: BookOpen },
+      { titleKey: "gestor_stock", url: "/gestor/estoque", icon: Warehouse },
+    ],
+  },
+  {
+    labelKey: "nav_group_operation",
+    items: [
+      { titleKey: "gcx_title", url: "/gestor/caixas", icon: Banknote },
+      { titleKey: "gbar_ops_title", url: "/gestor/bar", icon: Beer },
+      { titleKey: "gestor_waiters", url: "/gestor/garcons", icon: UserCheck },
+    ],
+  },
+  {
+    labelKey: "nav_group_structure",
+    items: [
+      { titleKey: "gestor_venues", url: "/gestor/locais", icon: MapPin },
+      { titleKey: "events", url: "/gestor/eventos", icon: CalendarDays },
+    ],
+  },
+  {
+    labelKey: "nav_group_team",
+    items: [
+      { titleKey: "gusr_title", url: "/gestor/usuarios", icon: Users },
+      { titleKey: "gestor_invite_team", url: "/gestor/equipe", icon: UserPlus },
+    ],
+  },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -43,7 +68,12 @@ const roleLabels: Record<string, string> = {
   consumer: "Consumidor",
 };
 
-function SidebarNavItem({ item, collapsed, isActive, t }: { item: typeof gestorItems[0]; collapsed: boolean; isActive: boolean; t: (key: TranslationKey) => string }) {
+function SidebarNavItem({ item, collapsed, isActive, t }: {
+  item: { titleKey: TranslationKey; url: string; icon: any };
+  collapsed: boolean;
+  isActive: boolean;
+  t: (key: TranslationKey) => string;
+}) {
   const content = (
     <SidebarMenuButton asChild isActive={isActive}>
       <NavLink
@@ -104,16 +134,26 @@ export function GestorSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">{t("navigation")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {gestorItems.map((item) => (
-                <SidebarNavItem key={item.titleKey + item.url} item={item} collapsed={collapsed} isActive={location.pathname === item.url} t={t} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {gestorGroups.map((group) => (
+          <SidebarGroup key={group.labelKey}>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">
+              {t(group.labelKey)}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarNavItem
+                    key={item.titleKey + item.url}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={location.pathname === item.url}
+                    t={t}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         {isSuperAdmin && (
           <SidebarGroup>
