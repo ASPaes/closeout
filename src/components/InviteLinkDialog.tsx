@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Check, Link2 } from "lucide-react";
+import { Copy, Check, Link2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useTranslation } from "@/i18n/use-translation";
@@ -38,6 +38,23 @@ const CLIENT_MANAGER_ALLOWED_ROLES = [
   APP_ROLE.CASHIER,
 ];
 
+const ROLES_REQUIRE_VENUE: string[] = [
+  APP_ROLE.VENUE_MANAGER,
+  APP_ROLE.EVENT_MANAGER,
+  APP_ROLE.STAFF,
+  APP_ROLE.BAR_STAFF,
+  APP_ROLE.WAITER,
+  APP_ROLE.CASHIER,
+];
+
+const ROLES_REQUIRE_EVENT: string[] = [
+  APP_ROLE.EVENT_MANAGER,
+  APP_ROLE.STAFF,
+  APP_ROLE.BAR_STAFF,
+  APP_ROLE.WAITER,
+  APP_ROLE.CASHIER,
+];
+
 export default function InviteLinkDialog({ open, onOpenChange, clients, venues, events, clientManagerMode }: Props) {
   const { t } = useTranslation();
   const [guestName, setGuestName] = useState("");
@@ -53,6 +70,17 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
   const isManagerMode = !!clientManagerMode;
   const effectiveClientId = isManagerMode ? clientManagerMode!.clientId : clientId;
+
+  const requiresVenue = ROLES_REQUIRE_VENUE.includes(role);
+  const requiresEvent = ROLES_REQUIRE_EVENT.includes(role);
+
+  const canGenerate = (() => {
+    if (loading) return false;
+    if (requiresVenue && !effectiveClientId) return false;
+    if (requiresVenue && !venueId) return false;
+    if (requiresEvent && !eventId) return false;
+    return true;
+  })();
 
   const filteredVenues = useMemo(() => {
     if (!effectiveClientId) return [];
@@ -205,7 +233,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
             {effectiveClientId && (
               <div className="space-y-2">
-                <Label>{t("venue_optional_scope")}</Label>
+                <Label>{requiresVenue ? "Local (obrigatório)" : t("venue_optional_scope")}</Label>
                 <Select value={venueId || "__none__"} onValueChange={(v) => { setVenueId(v === "__none__" ? "" : v); setEventId(""); }}>
                   <SelectTrigger><SelectValue placeholder={t("no_scope")} /></SelectTrigger>
                   <SelectContent>
@@ -218,7 +246,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
             {venueId && (
               <div className="space-y-2">
-                <Label>{t("event_optional_scope")}</Label>
+                <Label>{requiresEvent ? "Evento (obrigatório)" : t("event_optional_scope")}</Label>
                 <Select value={eventId || "__none__"} onValueChange={(v) => setEventId(v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder={t("no_scope")} /></SelectTrigger>
                   <SelectContent>
@@ -244,7 +272,24 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
               </Select>
             </div>
 
-            <Button type="button" className="w-full" onClick={handleGenerate} disabled={loading}>
+            {!canGenerate && !loading && (requiresVenue || requiresEvent) && (
+              <p className="text-xs text-destructive flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {!effectiveClientId
+                  ? requiresEvent
+                    ? "Selecione um cliente, local e evento para este papel"
+                    : "Selecione um cliente e local para este papel"
+                  : !venueId
+                    ? requiresEvent
+                      ? "Selecione um local e evento para este papel"
+                      : "Selecione um local para este papel"
+                    : !eventId && requiresEvent
+                      ? "Selecione um evento para este papel"
+                      : ""}
+              </p>
+            )}
+
+            <Button type="button" className="w-full" onClick={handleGenerate} disabled={canGenerate === false}>
               {loading ? t("invite_generating") : t("invite_generate_link")}
             </Button>
           </div>
