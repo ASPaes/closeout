@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Check, Link2 } from "lucide-react";
+import { Copy, Check, Link2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { useTranslation } from "@/i18n/use-translation";
@@ -31,6 +31,23 @@ interface Props {
 /** Roles that a client_manager can invite */
 const CLIENT_MANAGER_ALLOWED_ROLES = [
   APP_ROLE.VENUE_MANAGER,
+  APP_ROLE.EVENT_MANAGER,
+  APP_ROLE.STAFF,
+  APP_ROLE.BAR_STAFF,
+  APP_ROLE.WAITER,
+  APP_ROLE.CASHIER,
+];
+
+const ROLES_REQUIRE_VENUE: string[] = [
+  APP_ROLE.VENUE_MANAGER,
+  APP_ROLE.EVENT_MANAGER,
+  APP_ROLE.STAFF,
+  APP_ROLE.BAR_STAFF,
+  APP_ROLE.WAITER,
+  APP_ROLE.CASHIER,
+];
+
+const ROLES_REQUIRE_EVENT: string[] = [
   APP_ROLE.EVENT_MANAGER,
   APP_ROLE.STAFF,
   APP_ROLE.BAR_STAFF,
