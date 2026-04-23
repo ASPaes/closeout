@@ -233,7 +233,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
             {effectiveClientId && (
               <div className="space-y-2">
-                <Label>{t("venue_optional_scope")}</Label>
+                <Label>{requiresVenue ? "Local (obrigatório)" : t("venue_optional_scope")}</Label>
                 <Select value={venueId || "__none__"} onValueChange={(v) => { setVenueId(v === "__none__" ? "" : v); setEventId(""); }}>
                   <SelectTrigger><SelectValue placeholder={t("no_scope")} /></SelectTrigger>
                   <SelectContent>
@@ -246,7 +246,7 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
 
             {venueId && (
               <div className="space-y-2">
-                <Label>{t("event_optional_scope")}</Label>
+                <Label>{requiresEvent ? "Evento (obrigatório)" : t("event_optional_scope")}</Label>
                 <Select value={eventId || "__none__"} onValueChange={(v) => setEventId(v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder={t("no_scope")} /></SelectTrigger>
                   <SelectContent>
