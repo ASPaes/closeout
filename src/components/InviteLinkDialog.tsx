@@ -272,7 +272,24 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
               </Select>
             </div>
 
-            <Button type="button" className="w-full" onClick={handleGenerate} disabled={loading}>
+            {!canGenerate && !loading && (requiresVenue || requiresEvent) && (
+              <p className="text-xs text-destructive flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {!effectiveClientId
+                  ? requiresEvent
+                    ? "Selecione um cliente, local e evento para este papel"
+                    : "Selecione um cliente e local para este papel"
+                  : !venueId
+                    ? requiresEvent
+                      ? "Selecione um local e evento para este papel"
+                      : "Selecione um local para este papel"
+                    : !eventId && requiresEvent
+                      ? "Selecione um evento para este papel"
+                      : ""}
+              </p>
+            )}
+
+            <Button type="button" className="w-full" onClick={handleGenerate} disabled={canGenerate === false}>
               {loading ? t("invite_generating") : t("invite_generate_link")}
             </Button>
           </div>
