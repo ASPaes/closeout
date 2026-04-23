@@ -58,6 +58,11 @@ const enUS: Record<TranslationKey, string> = {
 
   // Sidebar
   navigation: "Navigation",
+  nav_group_menu: "Menu",
+  nav_group_catalog: "Menu",
+  nav_group_operation: "Operations",
+  nav_group_structure: "Structure",
+  nav_group_team: "Team",
   system: "System",
   admin_panel: "Admin Panel",
   sign_out: "Sign out",

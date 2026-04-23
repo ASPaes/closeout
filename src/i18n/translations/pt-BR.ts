@@ -56,6 +56,11 @@ const ptBR = {
 
   // Sidebar
   navigation: "Navegação",
+  nav_group_menu: "Menu",
+  nav_group_catalog: "Cardápio",
+  nav_group_operation: "Operação",
+  nav_group_structure: "Estrutura",
+  nav_group_team: "Equipe",
   system: "Sistema",
   admin_panel: "Painel Admin",
   sign_out: "Sair",
