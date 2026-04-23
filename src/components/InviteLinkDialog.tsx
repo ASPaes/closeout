@@ -71,6 +71,17 @@ export default function InviteLinkDialog({ open, onOpenChange, clients, venues, 
   const isManagerMode = !!clientManagerMode;
   const effectiveClientId = isManagerMode ? clientManagerMode!.clientId : clientId;
 
+  const requiresVenue = ROLES_REQUIRE_VENUE.includes(role);
+  const requiresEvent = ROLES_REQUIRE_EVENT.includes(role);
+
+  const canGenerate = (() => {
+    if (loading) return false;
+    if (requiresVenue && !effectiveClientId) return false;
+    if (requiresVenue && !venueId) return false;
+    if (requiresEvent && !eventId) return false;
+    return true;
+  })();
+
   const filteredVenues = useMemo(() => {
     if (!effectiveClientId) return [];
     return venues.filter((v) => v.client_id === effectiveClientId);
