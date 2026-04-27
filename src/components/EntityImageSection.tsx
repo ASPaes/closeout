@@ -15,9 +15,12 @@ type SearchResult = {
   sourceUrl: string;
 };
 
-interface ProductImageSectionProps {
-  productId: string | null;
-  productName: string;
+export type EntityImageType = "product" | "combo" | "campaign";
+
+interface EntityImageSectionProps {
+  entityType: EntityImageType;
+  entityId: string | null;
+  entityName: string;
   currentImagePath: string | null;
   imageSource: string | null;
   onImageUpdated: (imagePath: string, imageSource: string) => void;
@@ -29,13 +32,14 @@ function getPublicUrl(imagePath: string) {
   return `${SUPABASE_URL}/storage/v1/object/public/product-images/${imagePath}`;
 }
 
-export function ProductImageSection({
-  productId,
-  productName,
+export function EntityImageSection({
+  entityType,
+  entityId,
+  entityName,
   currentImagePath,
   imageSource,
   onImageUpdated,
-}: ProductImageSectionProps) {
+}: EntityImageSectionProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -45,11 +49,9 @@ export function ProductImageSection({
   const [attaching, setAttaching] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Library suggestion state (pending confirmation)
   const [librarySuggestion, setLibrarySuggestion] = useState<{ imagePath: string; publicUrl: string } | null>(null);
   const [libraryConfirmed, setLibraryConfirmed] = useState(false);
 
-  // Set preview from current image
   useEffect(() => {
     if (currentImagePath) {
       setPreviewUrl(getPublicUrl(currentImagePath));
@@ -61,10 +63,9 @@ export function ProductImageSection({
     }
   }, [currentImagePath, imageSource]);
 
-  // Auto-check library for products without image
   useEffect(() => {
-    if (!productName.trim() || currentImagePath) return;
-    const normalized = normalizeProductName(productName);
+    if (!entityName.trim() || currentImagePath) return;
+    const normalized = normalizeProductName(entityName);
     if (!normalized) return;
 
     const checkLibrary = async () => {
@@ -83,7 +84,7 @@ export function ProductImageSection({
 
     const timer = setTimeout(checkLibrary, 600);
     return () => clearTimeout(timer);
-  }, [productName, currentImagePath]);
+  }, [entityName, currentImagePath]);
 
   const handleAcceptLibrary = () => {
     if (!librarySuggestion) return;
@@ -101,7 +102,7 @@ export function ProductImageSection({
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !productId) return;
+    if (!file || !entityId) return;
 
     const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
@@ -127,7 +128,8 @@ export function ProductImageSection({
 
       const { data, error } = await supabase.functions.invoke("upload-product-image", {
         body: {
-          productId,
+          entityType,
+          entityId,
           fileBase64: base64,
           mimeType: file.type,
           originalFileName: file.name,
@@ -152,7 +154,7 @@ export function ProductImageSection({
   };
 
   const handleSearch = async () => {
-    if (!productName.trim()) {
+    if (!entityName.trim()) {
       toast.error(t("img_search_need_name"));
       return;
     }
@@ -161,7 +163,7 @@ export function ProductImageSection({
     setShowResults(true);
     try {
       const { data, error } = await supabase.functions.invoke("search-product-image", {
-        body: { query: productName.trim() },
+        body: { query: entityName.trim() },
       });
 
       if (error) throw error;
@@ -179,7 +181,7 @@ export function ProductImageSection({
   };
 
   const handleAttach = async (result: SearchResult) => {
-    if (!productId) {
+    if (!entityId) {
       toast.error(t("img_save_product_first"));
       return;
     }
@@ -188,7 +190,8 @@ export function ProductImageSection({
     try {
       const { data, error } = await supabase.functions.invoke("attach-searched-product-image", {
         body: {
-          productId,
+          entityType,
+          entityId,
           imageUrl: result.imageUrl,
           sourceUrl: result.sourceUrl,
         },
@@ -219,12 +222,11 @@ export function ProductImageSection({
       <Separator className="my-2" />
       <p className="text-sm font-semibold text-foreground/80">{t("img_section_title")}</p>
 
-      {/* Preview */}
       {previewUrl ? (
         <div className="relative rounded-lg border border-border/60 overflow-hidden bg-secondary/20">
           <img
             src={previewUrl}
-            alt={productName}
+            alt={entityName}
             className="w-full h-40 object-contain"
             onError={() => { setPreviewUrl(null); setLibrarySuggestion(null); }}
           />
@@ -238,21 +240,11 @@ export function ProductImageSection({
             <div className="absolute bottom-0 left-0 right-0 bg-background/95 border-t border-border/60 px-3 py-2 flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">{t("img_library_found")}</p>
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={handleAcceptLibrary}
-                >
+                <Button type="button" variant="default" size="sm" onClick={handleAcceptLibrary}>
                   <ThumbsUp className="mr-1 h-3 w-3" />
                   {t("img_accept_library")}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRejectLibrary}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={handleRejectLibrary}>
                   <RefreshCw className="mr-1 h-3 w-3" />
                   {t("img_search_another")}
                 </Button>
@@ -267,7 +259,6 @@ export function ProductImageSection({
         </div>
       )}
 
-      {/* Actions */}
       {!showLibraryActions && (
         <div className="flex flex-wrap gap-2">
           <input
@@ -276,14 +267,14 @@ export function ProductImageSection({
             accept="image/png,image/jpeg,image/webp"
             className="hidden"
             onChange={handleFileSelect}
-            disabled={!productId}
+            disabled={!entityId}
           />
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || !productId}
+            disabled={uploading || !entityId}
           >
             {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
             {t("img_upload")}
@@ -293,7 +284,7 @@ export function ProductImageSection({
             variant="outline"
             size="sm"
             onClick={handleSearch}
-            disabled={searching || !productId}
+            disabled={searching || !entityId}
           >
             {searching ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Search className="mr-1 h-3 w-3" />}
             {t("img_search_web")}
@@ -301,11 +292,10 @@ export function ProductImageSection({
         </div>
       )}
 
-      {!productId && (
+      {!entityId && (
         <p className="text-xs text-muted-foreground">{t("img_save_product_first")}</p>
       )}
 
-      {/* Search results grid */}
       {showResults && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">

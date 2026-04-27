@@ -22,6 +22,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { Separator } from "@/components/ui/separator";
+import { EntityImageSection } from "@/components/EntityImageSection";
 
 type Combo = {
   id: string;
@@ -30,6 +31,8 @@ type Combo = {
   description: string | null;
   price: number;
   is_active: boolean;
+  image_path: string | null;
+  image_source: string | null;
   item_count?: number;
 };
 
@@ -45,7 +48,13 @@ type Product = {
   price: number;
 };
 
-const emptyForm = { name: "", description: "", price: "" };
+const emptyForm = {
+  name: "",
+  description: "",
+  price: "",
+  image_path: null as string | null,
+  image_source: null as string | null,
+};
 
 export default function GestorCombos() {
   const { effectiveClientId: clientId } = useGestor();
@@ -64,7 +73,7 @@ export default function GestorCombos() {
 
   const fetchCombos = async () => {
     setLoading(true);
-    let q = supabase.from("combos").select("id, client_id, name, description, price, is_active").order("name");
+    let q = supabase.from("combos").select("id, client_id, name, description, price, is_active, image_path, image_source").order("name");
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
@@ -116,7 +125,13 @@ export default function GestorCombos() {
 
   const openEdit = async (combo: Combo) => {
     setEditing(combo);
-    setForm({ name: combo.name, description: combo.description ?? "", price: String(combo.price) });
+    setForm({
+      name: combo.name,
+      description: combo.description ?? "",
+      price: String(combo.price),
+      image_path: combo.image_path ?? null,
+      image_source: combo.image_source ?? null,
+    });
 
     const { data } = await supabase
       .from("combo_items")
@@ -150,14 +165,27 @@ export default function GestorCombos() {
       if (editing) {
         const { error } = await supabase
           .from("combos")
-          .update({ name, description: form.description.trim() || null, price })
+          .update({
+            name,
+            description: form.description.trim() || null,
+            price,
+            image_path: form.image_path,
+            image_source: form.image_source,
+          } as any)
           .eq("id", editing.id);
         if (error) throw error;
         comboId = editing.id;
       } else {
         const { data, error } = await supabase
           .from("combos")
-          .insert({ name, description: form.description.trim() || null, price, client_id: clientId! })
+          .insert({
+            name,
+            description: form.description.trim() || null,
+            price,
+            client_id: clientId!,
+            image_path: form.image_path,
+            image_source: form.image_source,
+          } as any)
           .select("id")
           .single();
         if (error) throw error;
@@ -378,6 +406,17 @@ export default function GestorCombos() {
             <p className="text-xs text-destructive">{t("combo_validation_price_positive")}</p>
           )}
         </div>
+
+        <EntityImageSection
+          entityType="combo"
+          entityId={editing?.id ?? null}
+          entityName={form.name}
+          currentImagePath={form.image_path}
+          imageSource={form.image_source}
+          onImageUpdated={(path, source) =>
+            setForm({ ...form, image_path: path, image_source: source })
+          }
+        />
 
         <Separator className="my-4" />
 

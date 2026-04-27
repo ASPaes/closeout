@@ -21,7 +21,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { EmptyState } from "@/components/EmptyState";
-import { ProductImageSection } from "@/components/ProductImageSection";
+import { EntityImageSection } from "@/components/EntityImageSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -489,9 +489,10 @@ export default function GestorProdutos() {
         )}
 
         {/* Product Image */}
-        <ProductImageSection
-          productId={editing?.id ?? null}
-          productName={form.name}
+        <EntityImageSection
+          entityType="product"
+          entityId={editing?.id ?? null}
+          entityName={form.name}
           currentImagePath={form.image_path}
           imageSource={form.image_source}
           onImageUpdated={(imagePath, imageSource) =>
