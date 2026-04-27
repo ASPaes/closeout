@@ -407,6 +407,17 @@ export default function GestorCombos() {
           )}
         </div>
 
+        <EntityImageSection
+          entityType="combo"
+          entityId={editing?.id ?? null}
+          entityName={form.name}
+          currentImagePath={form.image_path}
+          imageSource={form.image_source}
+          onImageUpdated={(path, source) =>
+            setForm({ ...form, image_path: path, image_source: source })
+          }
+        />
+
         <Separator className="my-4" />
 
         <div className="space-y-3">
