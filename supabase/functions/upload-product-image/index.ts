@@ -14,6 +14,14 @@ function problem(status: number, title: string, detail: string, requestId: strin
   );
 }
 
+type EntityType = "product" | "combo" | "campaign";
+const VALID_ENTITY_TYPES: EntityType[] = ["product", "combo", "campaign"];
+const TABLE_MAP: Record<EntityType, string> = {
+  product: "products",
+  combo: "combos",
+  campaign: "campaigns",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -33,7 +41,6 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // User client (RLS)
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -43,14 +50,20 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims) {
       return problem(401, "Unauthorized", "Invalid token", requestId);
     }
-    const userId = claimsData.claims.sub as string;
 
     // Parse & validate body
     const body = await req.json();
-    const { productId, fileBase64, mimeType, originalFileName } = body;
+    const { fileBase64, mimeType, originalFileName } = body;
 
-    if (!productId || typeof productId !== "string") {
-      return problem(400, "Bad Request", "productId is required (uuid)", requestId);
+    // Backward compat: productId alone → entityType="product"
+    const entityType: EntityType = body.entityType || "product";
+    const entityId: string = body.entityId || body.productId;
+
+    if (!VALID_ENTITY_TYPES.includes(entityType)) {
+      return problem(400, "Bad Request", `entityType must be one of: ${VALID_ENTITY_TYPES.join(", ")}`, requestId);
+    }
+    if (!entityId || typeof entityId !== "string") {
+      return problem(400, "Bad Request", "entityId (or productId) is required (uuid)", requestId);
     }
     if (!fileBase64 || typeof fileBase64 !== "string") {
       return problem(400, "Bad Request", "fileBase64 is required", requestId);
@@ -60,15 +73,17 @@ Deno.serve(async (req) => {
       return problem(400, "Bad Request", `mimeType must be one of: ${allowedMimes.join(", ")}`, requestId);
     }
 
-    // Fetch product (RLS enforces permission)
-    const { data: product, error: prodError } = await userClient
-      .from("products")
+    const tableName = TABLE_MAP[entityType];
+
+    // Fetch entity (RLS enforces permission)
+    const { data: entity, error: entityError } = await userClient
+      .from(tableName)
       .select("id, name, client_id")
-      .eq("id", productId)
+      .eq("id", entityId)
       .single();
 
-    if (prodError || !product) {
-      return problem(403, "Forbidden", "Product not found or access denied", requestId);
+    if (entityError || !entity) {
+      return problem(403, "Forbidden", `${entityType} not found or access denied`, requestId);
     }
 
     // Decode file
@@ -106,9 +121,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get normalized name
+    // Get normalized name for library deduplication
     const { data: normData } = await adminClient.rpc("normalize_product_name", {
-      input: product.name,
+      input: (entity as any).name,
     });
     const normalizedName = normData as string;
 
@@ -127,26 +142,24 @@ Deno.serve(async (req) => {
 
     if (libError) {
       console.error(`[upload-product-image][${requestId}] library upsert error:`, libError);
-      // Non-fatal: continue to update product
     }
 
-    // Update product
+    // Update entity
     const { error: updateError } = await adminClient
-      .from("products")
+      .from(tableName)
       .update({ image_path: storagePath, image_source: "upload" })
-      .eq("id", productId);
+      .eq("id", entityId);
 
     if (updateError) {
-      console.error(`[upload-product-image][${requestId}] product update error:`, updateError);
+      console.error(`[upload-product-image][${requestId}] ${tableName} update error:`, updateError);
       return problem(500, "Database Error", updateError.message, requestId);
     }
 
-    // Build public URL
     const { data: publicUrlData } = adminClient.storage
       .from("product-images")
       .getPublicUrl(storagePath);
 
-    console.log(`[upload-product-image][${requestId}] success hash=${imageHash}`);
+    console.log(`[upload-product-image][${requestId}] success type=${entityType} hash=${imageHash}`);
 
     return new Response(
       JSON.stringify({

@@ -13,6 +13,14 @@ function problem(status: number, title: string, detail: string, requestId: strin
   );
 }
 
+type EntityType = "product" | "combo" | "campaign";
+const VALID_ENTITY_TYPES: EntityType[] = ["product", "combo", "campaign"];
+const TABLE_MAP: Record<EntityType, string> = {
+  product: "products",
+  combo: "combos",
+  campaign: "campaigns",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -43,24 +51,33 @@ Deno.serve(async (req) => {
 
     // Parse body
     const body = await req.json();
-    const { productId, imageUrl, sourceUrl } = body;
+    const { imageUrl, sourceUrl } = body;
 
-    if (!productId || typeof productId !== "string") {
-      return problem(400, "Bad Request", "productId is required (uuid)", requestId);
+    // Backward compat: productId alone → entityType="product"
+    const entityType: EntityType = body.entityType || "product";
+    const entityId: string = body.entityId || body.productId;
+
+    if (!VALID_ENTITY_TYPES.includes(entityType)) {
+      return problem(400, "Bad Request", `entityType must be one of: ${VALID_ENTITY_TYPES.join(", ")}`, requestId);
+    }
+    if (!entityId || typeof entityId !== "string") {
+      return problem(400, "Bad Request", "entityId (or productId) is required (uuid)", requestId);
     }
     if (!imageUrl || typeof imageUrl !== "string") {
       return problem(400, "Bad Request", "imageUrl is required", requestId);
     }
 
-    // Verify product access via RLS
-    const { data: product, error: prodError } = await userClient
-      .from("products")
+    const tableName = TABLE_MAP[entityType];
+
+    // Verify entity access via RLS
+    const { data: entity, error: entityError } = await userClient
+      .from(tableName)
       .select("id, name, client_id")
-      .eq("id", productId)
+      .eq("id", entityId)
       .single();
 
-    if (prodError || !product) {
-      return problem(403, "Forbidden", "Product not found or access denied", requestId);
+    if (entityError || !entity) {
+      return problem(403, "Forbidden", `${entityType} not found or access denied`, requestId);
     }
 
     // Download image server-side
@@ -100,7 +117,6 @@ Deno.serve(async (req) => {
     const alreadyExists = existingFile && existingFile.length > 0 && existingFile.some((f) => f.name === `${imageHash}.webp`);
 
     if (!alreadyExists) {
-      // Detect content type from response or default
       const contentType = imgResponse.headers.get("content-type") || "image/webp";
 
       const { error: uploadError } = await adminClient.storage
@@ -116,9 +132,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Normalized name
+    // Normalized name for library deduplication
     const { data: normData } = await adminClient.rpc("normalize_product_name", {
-      input: product.name,
+      input: (entity as any).name,
     });
     const normalizedName = normData as string;
 
@@ -139,14 +155,14 @@ Deno.serve(async (req) => {
       console.error(`[attach-searched-product-image][${requestId}] library upsert error:`, libError);
     }
 
-    // Update product
+    // Update entity
     const { error: updateError } = await adminClient
-      .from("products")
+      .from(tableName)
       .update({ image_path: storagePath, image_source: "search" })
-      .eq("id", productId);
+      .eq("id", entityId);
 
     if (updateError) {
-      console.error(`[attach-searched-product-image][${requestId}] product update error:`, updateError);
+      console.error(`[attach-searched-product-image][${requestId}] ${tableName} update error:`, updateError);
       return problem(500, "Database Error", updateError.message, requestId);
     }
 
@@ -154,7 +170,7 @@ Deno.serve(async (req) => {
       .from("product-images")
       .getPublicUrl(storagePath);
 
-    console.log(`[attach-searched-product-image][${requestId}] success hash=${imageHash}`);
+    console.log(`[attach-searched-product-image][${requestId}] success type=${entityType} hash=${imageHash}`);
 
     return new Response(
       JSON.stringify({
