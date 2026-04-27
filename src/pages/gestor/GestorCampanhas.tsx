@@ -27,6 +27,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
 import { Separator } from "@/components/ui/separator";
+import { EntityImageSection } from "@/components/EntityImageSection";
 
 type Campaign = {
   id: string;
@@ -36,6 +37,8 @@ type Campaign = {
   starts_at: string;
   ends_at: string;
   is_active: boolean;
+  image_path: string | null;
+  image_source: string | null;
   item_count?: number;
 };
 
@@ -57,9 +60,18 @@ type CampaignForm = {
   description: string;
   starts_at: Date | undefined;
   ends_at: Date | undefined;
+  image_path: string | null;
+  image_source: string | null;
 };
 
-const emptyForm: CampaignForm = { name: "", description: "", starts_at: undefined, ends_at: undefined };
+const emptyForm: CampaignForm = {
+  name: "",
+  description: "",
+  starts_at: undefined,
+  ends_at: undefined,
+  image_path: null,
+  image_source: null,
+};
 
 export default function GestorCampanhas() {
   const { effectiveClientId: clientId } = useGestor();
@@ -79,7 +91,7 @@ export default function GestorCampanhas() {
 
   const fetchCampaigns = async () => {
     setLoading(true);
-    let q = supabase.from("campaigns").select("id, client_id, name, description, starts_at, ends_at, is_active").order("starts_at", { ascending: false });
+    let q = supabase.from("campaigns").select("id, client_id, name, description, starts_at, ends_at, is_active, image_path, image_source").order("starts_at", { ascending: false });
     if (clientId) q = q.eq("client_id", clientId);
     const { data, error } = await q;
     if (error) toast.error(getPtBrErrorMessage(error));
@@ -140,6 +152,8 @@ export default function GestorCampanhas() {
       description: campaign.description ?? "",
       starts_at: new Date(campaign.starts_at),
       ends_at: new Date(campaign.ends_at),
+      image_path: campaign.image_path ?? null,
+      image_source: campaign.image_source ?? null,
     });
 
     const { data } = await supabase
@@ -202,16 +216,18 @@ export default function GestorCampanhas() {
         description: form.description.trim() || null,
         starts_at: form.starts_at.toISOString(),
         ends_at: form.ends_at.toISOString(),
+        image_path: form.image_path,
+        image_source: form.image_source,
       };
 
       if (editing) {
-        const { error } = await supabase.from("campaigns").update(payload).eq("id", editing.id);
+        const { error } = await supabase.from("campaigns").update(payload as any).eq("id", editing.id);
         if (error) throw error;
         campaignId = editing.id;
       } else {
         const { data, error } = await supabase
           .from("campaigns")
-          .insert({ ...payload, client_id: clientId! })
+          .insert({ ...payload, client_id: clientId! } as any)
           .select("id")
           .single();
         if (error) throw error;
@@ -526,6 +542,17 @@ export default function GestorCampanhas() {
         {form.starts_at && form.ends_at && form.ends_at <= form.starts_at && (
           <p className="text-xs text-destructive">{t("camp_validation_end_after_start")}</p>
         )}
+
+        <EntityImageSection
+          entityType="campaign"
+          entityId={editing?.id ?? null}
+          entityName={form.name}
+          currentImagePath={form.image_path}
+          imageSource={form.image_source}
+          onImageUpdated={(path, source) =>
+            setForm({ ...form, image_path: path, image_source: source })
+          }
+        />
 
         <Separator className="my-4" />
 
