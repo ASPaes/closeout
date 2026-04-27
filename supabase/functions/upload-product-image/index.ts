@@ -46,8 +46,9 @@ Deno.serve(async (req) => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    if (userError || !user) {
       return problem(401, "Unauthorized", "Invalid token", requestId);
     }
 
@@ -95,9 +96,6 @@ Deno.serve(async (req) => {
     const imageHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
     const storagePath = `images/${imageHash}.webp`;
-
-    // Admin client for storage + library writes
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Check if file already exists in storage
     const { data: existingFile } = await adminClient.storage
