@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2 } from "lucide-react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ type Campaign = {
   name: string;
   description: string | null;
   ends_at: string;
+  image_path: string | null;
 };
 
 export default function ConsumerCardapio() {
@@ -46,6 +47,7 @@ export default function ConsumerCardapio() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkinVerified, setCheckinVerified] = useState(false);
+  const [campaignItemsByCampaign, setCampaignItemsByCampaign] = useState<Record<string, Set<string>>>({});
 
   // Block access without active check-in
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function ConsumerCardapio() {
         .select(`
           id, item_type, product_id, combo_id, is_active,
           products:product_id (id, name, description, price, image_path, category_id, is_stock_tracked, categories:category_id (name)),
-          combos:combo_id (id, name, description, price)
+          combos:combo_id (id, name, description, price, image_path)
         `)
         .in("catalog_id", catalogIds)
         .eq("is_active", true);
@@ -107,7 +109,7 @@ export default function ConsumerCardapio() {
       const now = new Date().toISOString();
       const { data: campaignsData } = await supabase
         .from("campaigns")
-        .select("id, name, description, ends_at")
+        .select("id, name, description, ends_at, image_path")
         .eq("client_id", activeEvent.client_id)
         .eq("is_active", true)
         .lte("starts_at", now)
@@ -116,11 +118,12 @@ export default function ConsumerCardapio() {
       setCampaigns(campaignsData || []);
 
       let campaignItemsMap: Record<string, { promo_price: number | null; discount_percent: number | null }> = {};
+      const byCampaign: Record<string, Set<string>> = {};
       if (campaignsData && campaignsData.length > 0) {
         const campaignIds = campaignsData.map((c) => c.id);
         const { data: campItems } = await supabase
           .from("campaign_items")
-          .select("product_id, combo_id, promo_price, discount_percent, item_type")
+          .select("campaign_id, product_id, combo_id, promo_price, discount_percent, item_type")
           .in("campaign_id", campaignIds)
           .eq("is_active", true);
 
@@ -128,9 +131,14 @@ export default function ConsumerCardapio() {
           campItems.forEach((ci) => {
             const key = ci.item_type === "product" ? ci.product_id : ci.combo_id;
             if (key) campaignItemsMap[key] = { promo_price: ci.promo_price, discount_percent: ci.discount_percent };
+            if (key && ci.campaign_id) {
+              if (!byCampaign[ci.campaign_id]) byCampaign[ci.campaign_id] = new Set();
+              byCampaign[ci.campaign_id].add(key);
+            }
           });
         }
       }
+      setCampaignItemsByCampaign(byCampaign);
 
       // Get stock balances
       const { data: stockBalances } = await supabase
@@ -192,7 +200,7 @@ export default function ConsumerCardapio() {
             promo_price: finalPromo,
             discount_percent: promo?.discount_percent || null,
             category_name: "Combos",
-            image_path: null,
+            image_path: c.image_path || null,
             is_stock_tracked: false,
             stock_available: null,
             low_stock_threshold: 5,
@@ -200,7 +208,9 @@ export default function ConsumerCardapio() {
         }
       });
 
-      setCategories(["Todos", ...Array.from(catSet).sort()]);
+      const baseCats = ["Todos"];
+      if ((campaignsData || []).length > 0) baseCats.push("Promoções");
+      setCategories([...baseCats, ...Array.from(catSet).sort()]);
       setProducts(items);
       setLoading(false);
     };
@@ -209,12 +219,24 @@ export default function ConsumerCardapio() {
   }, [activeEvent]);
 
   const filtered = useMemo(() => {
+    // UUID-shaped activeCategory => campaign filter
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeCategory);
+    if (isUuid) {
+      const ids = campaignItemsByCampaign[activeCategory] || new Set();
+      return products.filter((p) => ids.has(p.id) && (!search || p.name.toLowerCase().includes(search.toLowerCase())));
+    }
     return products.filter((p) => {
       const matchCat = activeCategory === "Todos" || p.category_name === activeCategory;
       const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [products, activeCategory, search]);
+  }, [products, activeCategory, search, campaignItemsByCampaign]);
+
+  const showingPromotions = activeCategory === "Promoções";
+  const selectedCampaign = useMemo(
+    () => campaigns.find((c) => c.id === activeCategory) || null,
+    [campaigns, activeCategory]
+  );
 
   const cartItemMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -280,9 +302,29 @@ export default function ConsumerCardapio() {
           {campaigns.map((c) => (
             <div
               key={c.id}
-              className="shrink-0 w-[260px] snap-start rounded-2xl p-4 border border-primary/20"
-              style={{ background: "linear-gradient(135deg, hsl(24 100% 50% / 0.15), hsl(24 100% 50% / 0.05))" }}
+              onClick={() => setActiveCategory(c.id)}
+              className={cn(
+                "relative shrink-0 w-[260px] snap-start rounded-2xl border border-primary/20 overflow-hidden cursor-pointer active:scale-[0.98] transition-transform",
+                c.image_path ? "h-[140px]" : "p-4"
+              )}
+              style={
+                c.image_path
+                  ? undefined
+                  : { background: "linear-gradient(135deg, hsl(24 100% 50% / 0.15), hsl(24 100% 50% / 0.05))" }
+              }
             >
+              {c.image_path && (
+                <>
+                  <img
+                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${c.image_path}`}
+                    alt={c.name}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                </>
+              )}
+              <div className={cn("relative", c.image_path && "absolute inset-0 p-4 flex flex-col justify-end")}>
               <div className="flex items-center gap-1.5 mb-1">
                 <Flame className="h-4 w-4 text-primary" />
                 <span className="text-xs font-semibold text-primary uppercase tracking-wide">
@@ -291,11 +333,12 @@ export default function ConsumerCardapio() {
               </div>
               <p className="text-sm font-bold text-foreground line-clamp-1">{c.name}</p>
               {c.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{c.description}</p>
+                <p className={cn("text-xs mt-0.5 line-clamp-1", c.image_path ? "text-white/80" : "text-muted-foreground")}>{c.description}</p>
               )}
-              <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+              <p className={cn("text-[11px] mt-1.5", c.image_path ? "text-white/60" : "text-muted-foreground/70")}>
                 {t("consumer_promo_until")} {new Date(c.ends_at).toLocaleDateString("pt-BR")}
               </p>
+              </div>
             </div>
           ))}
         </div>
@@ -320,15 +363,30 @@ export default function ConsumerCardapio() {
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95",
+                "shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95 inline-flex items-center gap-1",
                 activeCategory === cat
                   ? "bg-primary text-primary-foreground shadow-[0_0_16px_hsl(24,100%,50%,0.25)]"
                   : "bg-white/[0.06] border border-white/[0.08] text-muted-foreground"
               )}
             >
+              {cat === "Promoções" && <Flame className="h-3.5 w-3.5" />}
               {cat}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Selected campaign header (back button) */}
+      {selectedCampaign && (
+        <div className="flex items-center justify-between rounded-2xl bg-white/[0.04] border border-white/[0.08] px-3 py-2">
+          <button
+            onClick={() => setActiveCategory("Promoções")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("consumer_promo_label")}
+          </button>
+          <span className="text-sm font-semibold text-foreground line-clamp-1 ml-3">{selectedCampaign.name}</span>
         </div>
       )}
 
@@ -348,15 +406,60 @@ export default function ConsumerCardapio() {
         </div>
       )}
 
+      {/* Promotions list */}
+      {!loading && showingPromotions && (
+        <div className="grid grid-cols-1 gap-3">
+          {campaigns.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+              <p className="text-muted-foreground text-sm">{t("consumer_no_products")}</p>
+            </div>
+          )}
+          {campaigns.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setActiveCategory(c.id)}
+              className="flex flex-col rounded-2xl bg-white/[0.04] border border-white/[0.08] overflow-hidden text-left active:scale-[0.99] transition-transform"
+            >
+              <div className="relative w-full aspect-[16/9] overflow-hidden">
+                {c.image_path ? (
+                  <img
+                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${c.image_path}`}
+                    alt={c.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div
+                    className="h-full w-full flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, hsl(24 100% 50% / 0.25), hsl(24 100% 50% / 0.08))" }}
+                  >
+                    <Flame className="h-10 w-10 text-primary" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1 p-3">
+                <h3 className="text-base font-bold text-foreground line-clamp-1">{c.name}</h3>
+                {c.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>
+                )}
+                <span className="mt-1 inline-flex self-start items-center rounded-full bg-primary/15 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                  {t("consumer_promo_until")} {new Date(c.ends_at).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && filtered.length === 0 && (
+      {!loading && !showingPromotions && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
           <p className="text-muted-foreground text-sm">{t("consumer_no_products")}</p>
         </div>
       )}
 
       {/* Product list */}
-      {!loading && (
+      {!loading && !showingPromotions && (
         <div className="grid grid-cols-2 gap-3">
           {filtered.map((product) => {
             const qty = cartItemMap[product.id] || 0;
