@@ -527,6 +527,8 @@ export type Database = {
           description: string | null
           ends_at: string
           id: string
+          image_path: string | null
+          image_source: string | null
           is_active: boolean
           name: string
           starts_at: string
@@ -538,6 +540,8 @@ export type Database = {
           description?: string | null
           ends_at: string
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           name: string
           starts_at: string
@@ -549,6 +553,8 @@ export type Database = {
           description?: string | null
           ends_at?: string
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           name?: string
           starts_at?: string
@@ -1154,6 +1160,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_path: string | null
+          image_source: string | null
           is_active: boolean
           name: string
           price: number
@@ -1164,6 +1172,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           name: string
           price: number
@@ -1174,6 +1184,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_path?: string | null
+          image_source?: string | null
           is_active?: boolean
           name?: string
           price?: number
