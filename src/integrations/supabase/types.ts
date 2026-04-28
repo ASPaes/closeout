@@ -399,6 +399,97 @@ export type Database = {
         }
         Relationships: []
       }
+      bar_station_members: {
+        Row: {
+          bar_station_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          bar_station_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          bar_station_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_station_members_bar_station_id_fkey"
+            columns: ["bar_station_id"]
+            isOneToOne: false
+            referencedRelation: "bar_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bar_stations: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          join_code: string
+          name: string
+          status: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          join_code?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          join_code?: string
+          name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_stations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bar_stations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bar_stations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bar_stations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       billing_rules: {
         Row: {
           activation_amount: number | null
@@ -1927,6 +2018,7 @@ export type Database = {
           created_at: string
           delivered_at: string | null
           delivered_by_staff_id: string | null
+          delivered_by_station_id: string | null
           event_id: string
           id: string
           is_split_payment: boolean
@@ -1953,6 +2045,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           delivered_by_staff_id?: string | null
+          delivered_by_station_id?: string | null
           event_id: string
           id?: string
           is_split_payment?: boolean
@@ -1979,6 +2072,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           delivered_by_staff_id?: string | null
+          delivered_by_station_id?: string | null
           event_id?: string
           id?: string
           is_split_payment?: boolean
@@ -2009,6 +2103,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_delivered_by_station_id_fkey"
+            columns: ["delivered_by_station_id"]
+            isOneToOne: false
+            referencedRelation: "bar_stations"
             referencedColumns: ["id"]
           },
           {
@@ -3230,6 +3331,7 @@ export type Database = {
           id: string
           join_code: string
           status: string
+          updated_at: string | null
           used_at: string | null
           used_by: string | null
           waiter_name: string
@@ -3242,6 +3344,7 @@ export type Database = {
           id?: string
           join_code: string
           status?: string
+          updated_at?: string | null
           used_at?: string | null
           used_by?: string | null
           waiter_name: string
@@ -3254,6 +3357,7 @@ export type Database = {
           id?: string
           join_code?: string
           status?: string
+          updated_at?: string | null
           used_at?: string | null
           used_by?: string | null
           waiter_name?: string
@@ -3651,6 +3755,15 @@ export type Database = {
           p_start_date?: string
         }
         Returns: Json
+      }
+      get_bar_station_metrics: {
+        Args: { p_event_id: string }
+        Returns: {
+          delivered_count: number
+          member_names: string[]
+          station_id: string
+          station_name: string
+        }[]
       }
       get_behavior_metrics: {
         Args: { p_end_date?: string; p_start_date?: string }
