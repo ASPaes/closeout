@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Beer, ShoppingCart, CheckCircle2, Package,
-  AlertTriangle, CalendarDays, Loader2, Ban,
+  AlertTriangle, CalendarDays, Loader2, Ban, Copy,
 } from "lucide-react";
 
 type EventRow = { id: string; name: string; start_at: string | null };
@@ -27,6 +27,13 @@ type Counts = {
   delivered: number;
   ready: number;
   late: number;
+};
+
+type StationRow = {
+  id: string;
+  name: string;
+  join_code: string;
+  bar_station_members: { name: string }[] | null;
 };
 
 export default function GestorBarOperacao() {
@@ -39,6 +46,9 @@ export default function GestorBarOperacao() {
   const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
   const [, setLateOrdersOpen] = useState(false);
   const [bulkCancelling, setBulkCancelling] = useState(false);
+  const [stations, setStations] = useState<StationRow[]>([]);
+  const [stationDeliveries, setStationDeliveries] = useState<Map<string, number>>(new Map());
+  const [, setLoadingStations] = useState(false);
 
   // Load events for current client
   useEffect(() => {
@@ -52,8 +62,8 @@ export default function GestorBarOperacao() {
       .then(({ data }) => setEvents((data as EventRow[]) ?? []));
   }, [effectiveClientId]);
 
-  // Fetch counts for selected event
-  const fetchCounts = useCallback(async () => {
+  // Fetch counts + stations + deliveries per station
+  const refetchAll = useCallback(async () => {
     if (!selectedEventId) return;
     const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
 
@@ -88,9 +98,35 @@ export default function GestorBarOperacao() {
       ready: readyRes.count ?? 0,
       late: lateRes.count ?? 0,
     });
+
+    // Stations
+    setLoadingStations(true);
+    const { data: stationsData } = await supabase
+      .from("bar_stations")
+      .select("id, name, join_code, bar_station_members(name)")
+      .eq("event_id", selectedEventId)
+      .eq("status", "active")
+      .order("created_at");
+    const stationList = (stationsData as StationRow[]) ?? [];
+    setStations(stationList);
+
+    // Per-station delivery counts
+    const counts = await Promise.all(
+      stationList.map((s) =>
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", selectedEventId)
+          .eq("status", "delivered")
+          .eq("delivered_by_station_id", s.id)
+          .then((r) => [s.id, r.count ?? 0] as [string, number])
+      )
+    );
+    setStationDeliveries(new Map(counts));
+    setLoadingStations(false);
   }, [selectedEventId]);
 
-  useEffect(() => { fetchCounts(); }, [fetchCounts]);
+  useEffect(() => { refetchAll(); }, [refetchAll]);
 
   // Realtime
   useEffect(() => {
@@ -102,17 +138,32 @@ export default function GestorBarOperacao() {
         schema: "public",
         table: "orders",
         filter: `event_id=eq.${selectedEventId}`,
-      }, () => { fetchCounts(); })
+      }, () => { refetchAll(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [selectedEventId, fetchCounts]);
+  }, [selectedEventId, refetchAll]);
+
+  // Realtime for stations
+  useEffect(() => {
+    if (!selectedEventId) return;
+    const channel = supabase
+      .channel(`gestor-bar-stations-${selectedEventId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "bar_stations",
+        filter: `event_id=eq.${selectedEventId}`,
+      }, () => { refetchAll(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedEventId, refetchAll]);
 
   // Refresh late count every minute (time-based threshold)
   useEffect(() => {
     if (!selectedEventId) return;
-    const interval = setInterval(fetchCounts, 60_000);
+    const interval = setInterval(refetchAll, 60_000);
     return () => clearInterval(interval);
-  }, [selectedEventId, fetchCounts]);
+  }, [selectedEventId, refetchAll]);
 
   // Bulk cancel open QRs (preserved from previous version)
   const handleBulkCancelQRs = async () => {
@@ -165,7 +216,7 @@ export default function GestorBarOperacao() {
       });
 
       toast.success(`${qrsToCancel.length} QR(s) cancelado(s) com sucesso`);
-      fetchCounts();
+      refetchAll();
     } catch (err) {
       console.error(err);
       toast.error("Erro ao cancelar QRs em lote");
@@ -175,6 +226,12 @@ export default function GestorBarOperacao() {
   };
 
   const lateActive = counts.late > 0;
+
+  const copyStationLink = (joinCode: string) => {
+    const url = `${window.location.origin}/bar?station=${joinCode}`;
+    navigator.clipboard.writeText(url);
+    toast.success(t("gbar_link_copied" as any));
+  };
 
   return (
     <div className="space-y-6">
@@ -273,6 +330,56 @@ export default function GestorBarOperacao() {
               <div className={`text-2xl font-bold ${lateActive ? "text-destructive" : ""}`}>{counts.late}</div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Bars section */}
+      {selectedEventId && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">{t("gbar_bars_section" as any)}</h2>
+          {stations.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground border border-border/60 rounded-lg">
+              <p className="text-sm">{t("gbar_no_bars" as any)}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {stations.map((station) => {
+                const delivered = stationDeliveries.get(station.id) ?? 0;
+                const members = (station.bar_station_members ?? []).map((m) => m.name).join(", ");
+                return (
+                  <Card
+                    key={station.id}
+                    className="border-border/60 hover:bg-muted/30 transition-colors relative"
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-lg font-bold truncate">{station.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {members || t("gbar_no_operators" as any)}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => copyStationLink(station.join_code)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className={`text-3xl font-bold ${delivered > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                        {delivered}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{t("gbar_delivered_by_bar" as any)}</div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

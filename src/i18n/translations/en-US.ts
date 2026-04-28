@@ -1026,6 +1026,11 @@ const enUS: Record<TranslationKey, string> = {
   gbar_delivered: "Delivered",
   gbar_ready_pickup: "Ready for Pickup",
   gbar_late_orders: "Late Orders",
+  gbar_bars_section: "Bars",
+  gbar_no_bars: "No bars created for this event",
+  gbar_delivered_by_bar: "orders delivered",
+  gbar_no_operators: "No registered operators",
+  gbar_link_copied: "Link copied!",
 
   // Consumer App
   consumer_tab_events: "Events",
