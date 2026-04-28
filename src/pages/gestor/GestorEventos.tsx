@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users, FileText } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users, FileText, Megaphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -45,6 +45,15 @@ type EventCatalogLink = {
   catalog_name: string;
   is_active: boolean;
   active_item_count: number;
+};
+
+type EventCampaignLink = {
+  id: string;
+  campaign_id: string;
+  campaign_name: string;
+  campaign_period: string;
+  is_active: boolean;
+  item_count: number;
 };
 
 const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"] as const;
@@ -88,6 +97,10 @@ export default function GestorEventos() {
   const [eventCatalogs, setEventCatalogs] = useState<EventCatalogLink[]>([]);
   const [allCatalogs, setAllCatalogs] = useState<{ id: string; name: string }[]>([]);
   const [linkCatalogId, setLinkCatalogId] = useState("");
+  // Campaigns tab
+  const [eventCampaigns, setEventCampaigns] = useState<EventCampaignLink[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<{ id: string; name: string; starts_at: string; ends_at: string }[]>([]);
+  const [linkCampaignId, setLinkCampaignId] = useState("");
   const [pendingImages, setPendingImages] = useState<{ id: string; file: File }[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -185,11 +198,54 @@ export default function GestorEventos() {
     setLinkCatalogId("");
   };
 
+  // ---- Load event campaigns ----
+  const loadEventCampaigns = async (eventId: string) => {
+    const [linksRes, campaignsRes] = await Promise.all([
+      supabase.from("event_campaigns").select("id, campaign_id, is_active").eq("event_id", eventId),
+      supabase.from("campaigns").select("id, name, starts_at, ends_at").eq("client_id", clientId!).eq("is_active", true).order("name"),
+    ]);
+
+    const camps = campaignsRes.data ?? [];
+    setAllCampaigns(camps);
+    const campMap = new Map(camps.map((c) => [c.id, c]));
+
+    // Count active items per campaign
+    const itemCountMap = new Map<string, number>();
+    if (camps.length > 0) {
+      const { data: items } = await supabase
+        .from("campaign_items")
+        .select("campaign_id")
+        .eq("is_active", true)
+        .in("campaign_id", camps.map((c) => c.id));
+      (items ?? []).forEach((i: any) => {
+        itemCountMap.set(i.campaign_id, (itemCountMap.get(i.campaign_id) ?? 0) + 1);
+      });
+    }
+
+    const fmt = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+
+    const links = (linksRes.data ?? []).map((l) => {
+      const c = campMap.get(l.campaign_id);
+      return {
+        id: l.id,
+        campaign_id: l.campaign_id,
+        campaign_name: c?.name ?? "—",
+        campaign_period: c ? `${fmt(c.starts_at)} - ${fmt(c.ends_at)}` : "—",
+        is_active: l.is_active,
+        item_count: itemCountMap.get(l.campaign_id) ?? 0,
+      };
+    });
+
+    setEventCampaigns(links);
+    setLinkCampaignId("");
+  };
+
   // ---- Open modal ----
   const openCreate = async () => {
     setEditingId(null);
     setName(""); setDescription(""); setVenueId(""); setStartAt(""); setEndAt(""); setStatus("draft");
     setSettingsId(null); setFormTab("general"); setEventCatalogs([]); setAllCatalogs([]);
+    setEventCampaigns([]); setAllCampaigns([]);
     setPendingImages([]);
     setSandboxMode(true);
     const defaults = await loadDefaults();
@@ -230,6 +286,7 @@ export default function GestorEventos() {
     }
 
     await loadEventCatalogs(ev.id);
+    await loadEventCampaigns(ev.id);
     setModalOpen(true);
   };
 
@@ -300,6 +357,28 @@ export default function GestorEventos() {
     await loadEventCatalogs(editingId);
   };
 
+  // ---- Campaign linking ----
+  const linkCampaign = async () => {
+    if (!linkCampaignId || !editingId) return;
+    const { error } = await supabase.from("event_campaigns").insert({ event_id: editingId, client_id: clientId!, campaign_id: linkCampaignId, is_active: true });
+    if (error) { toast.error(t("gevt_save_error")); return; }
+    toast.success(t("ctlg_linked"));
+    await loadEventCampaigns(editingId);
+  };
+
+  const unlinkCampaign = async (linkId: string) => {
+    if (!editingId) return;
+    await supabase.from("event_campaigns").delete().eq("id", linkId);
+    toast.success(t("ctlg_unlinked"));
+    await loadEventCampaigns(editingId);
+  };
+
+  const toggleCampaignActive = async (link: EventCampaignLink) => {
+    if (!editingId) return;
+    await supabase.from("event_campaigns").update({ is_active: !link.is_active } as any).eq("id", link.id);
+    await loadEventCampaigns(editingId);
+  };
+
   // ---- Status actions ----
   const changeStatus = async (ev: Event, newStatus: string) => {
     // When completing an event, cancel unpaid orders first
@@ -351,6 +430,9 @@ export default function GestorEventos() {
   // Already linked catalog IDs
   const linkedCatalogIds = new Set(eventCatalogs.map((ec) => ec.catalog_id));
   const availableCatalogs = allCatalogs.filter((c) => !linkedCatalogIds.has(c.id));
+
+  const linkedCampaignIds = new Set(eventCampaigns.map((ec) => ec.campaign_id));
+  const availableCampaigns = allCampaigns.filter((c) => !linkedCampaignIds.has(c.id));
 
   const columns: DataTableColumn<Event>[] = [
     {
@@ -412,11 +494,12 @@ export default function GestorEventos() {
 
       <ModalForm open={modalOpen} onOpenChange={setModalOpen} title={editingId ? t("edit_event") : t("new_event")} onSubmit={handleSave} saving={saving} disabled={venues.length === 0 && !editingId}>
         <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
-          <TabsList className={`grid w-full ${editingId ? "grid-cols-4" : "grid-cols-3"}`}>
+          <TabsList className={`grid w-full ${editingId ? "grid-cols-5" : "grid-cols-3"}`}>
             <TabsTrigger value="general">{t("gevt_tab_general")}</TabsTrigger>
             <TabsTrigger value="settings">{t("gevt_tab_settings")}</TabsTrigger>
             <TabsTrigger value="images">{t("event_images_tab")}</TabsTrigger>
             {editingId && <TabsTrigger value="catalogs">{t("ctlg_title")}</TabsTrigger>}
+            {editingId && <TabsTrigger value="campaigns">Campanhas</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="general" className="space-y-4 mt-4">
@@ -546,6 +629,55 @@ export default function GestorEventos() {
                       <div className="flex items-center gap-2">
                         <Switch checked={ec.is_active} onCheckedChange={() => toggleCatalogActive(ec)} />
                         <Button type="button" size="sm" variant="ghost" onClick={() => unlinkCatalog(ec.id)} title={t("ctlg_unlink")}>
+                          <Unlink className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          )}
+
+          {editingId && (
+            <TabsContent value="campaigns" className="space-y-4 mt-4">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Vincular campanha</Label>
+                  <Select value={linkCampaignId} onValueChange={setLinkCampaignId}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Selecione uma campanha" /></SelectTrigger>
+                    <SelectContent>
+                      {availableCampaigns.map((c) => {
+                        const fmt = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+                        return (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} ({fmt(c.starts_at)} - {fmt(c.ends_at)})
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" size="sm" onClick={linkCampaign} disabled={!linkCampaignId} className="h-9">
+                  <Link2 className="h-4 w-4 mr-1" /> Vincular
+                </Button>
+              </div>
+
+              {eventCampaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma campanha vinculada</p>
+              ) : (
+                <div className="space-y-1">
+                  {eventCampaigns.map((ec) => (
+                    <div key={ec.id} className="flex items-center justify-between rounded-md border border-border/40 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Megaphone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{ec.campaign_name}</span>
+                        <Badge variant="outline" className="text-[10px]">{ec.campaign_period}</Badge>
+                        <Badge variant="secondary" className="text-[10px]">{ec.item_count} itens</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={ec.is_active} onCheckedChange={() => toggleCampaignActive(ec)} />
+                        <Button type="button" size="sm" variant="ghost" onClick={() => unlinkCampaign(ec.id)} title="Desvincular">
                           <Unlink className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
