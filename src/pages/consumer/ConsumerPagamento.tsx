@@ -1502,7 +1502,18 @@ export default function ConsumerPagamento() {
 
           <Button
             onClick={handleFinalizePendingCard}
-            disabled={!isCpfValid || (!selectedSavedCardId && !isNewCardValid())}
+            disabled={
+              !isCpfValid ||
+              (!selectedSavedCardId && !(
+                cardHolderName.trim().length >= 2 &&
+                cardNumber.replace(/\D/g, "").length >= 13 &&
+                cardExpMonth.length === 2 &&
+                parseInt(cardExpMonth) >= 1 &&
+                parseInt(cardExpMonth) <= 12 &&
+                cardExpYear.length === 2 &&
+                cardCvv.length >= 3
+              ))
+            }
             className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full"
             style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
           >
