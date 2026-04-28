@@ -1325,6 +1325,69 @@ export type Database = {
           },
         ]
       }
+      event_campaigns: {
+        Row: {
+          campaign_id: string
+          client_id: string
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          campaign_id: string
+          client_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          campaign_id?: string
+          client_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_campaigns_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       event_catalogs: {
         Row: {
           catalog_id: string
