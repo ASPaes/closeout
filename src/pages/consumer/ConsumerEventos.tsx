@@ -554,44 +554,6 @@ export default function ConsumerEventos() {
 
       {!loading && (
         <>
-          {/* Campaigns carousel */}
-          {campaigns.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold text-foreground">{t("consumer_promos_highlight")}</h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 snap-x snap-mandatory">
-                {campaigns.map((camp) => (
-                  <div
-                    key={camp.id}
-                    className="shrink-0 w-[280px] snap-start rounded-2xl p-4 relative overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, hsl(24 100% 50% / 0.85), hsl(24 80% 35% / 0.9))",
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-                    <div className="relative z-10">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                        {t("consumer_promo_label")}
-                      </p>
-                      <h3 className="mt-1 text-lg font-bold text-white leading-snug line-clamp-2">
-                        {camp.name}
-                      </h3>
-                      {camp.description && (
-                        <p className="mt-1 text-xs text-white/70 line-clamp-2">{camp.description}</p>
-                      )}
-                      <p className="mt-2 text-[10px] text-white/50">
-                        {t("consumer_promo_until")}{" "}
-                        {format(new Date(camp.ends_at), "dd MMM", { locale: ptBR })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Seção "Perto de você" — só com GPS ativo e eventos <= 25km */}
           {userLoc && nearbyEvents.length > 0 && (
             <div className="flex flex-col gap-3">
