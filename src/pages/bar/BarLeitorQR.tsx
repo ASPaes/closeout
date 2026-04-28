@@ -66,7 +66,7 @@ function getOrderItemId(item: OrderItem) {
 
 export default function BarLeitorQR() {
   const { t } = useTranslation();
-  const { eventId } = useBar();
+  const { eventId, stationId } = useBar();
   const { user } = useAuth();
 
   const [viewState, setViewState] = useState<ViewState>("scanner");
@@ -161,6 +161,14 @@ export default function BarLeitorQR() {
 
       const deliveryRes = data as unknown as DeliveryResult;
       setFullyDelivered(deliveryRes.fully_delivered);
+
+      if (stationId) {
+        await supabase
+          .from("orders")
+          .update({ delivered_by_station_id: stationId } as any)
+          .eq("id", result.order.id);
+      }
+
       setViewState("done");
 
       if (deliveryRes.fully_delivered) {
