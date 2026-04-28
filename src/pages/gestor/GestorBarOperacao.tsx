@@ -10,6 +10,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -17,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Beer, ShoppingCart, CheckCircle2, Package,
-  AlertTriangle, CalendarDays, Loader2, Ban, Copy,
+  AlertTriangle, CalendarDays, Loader2, Ban, Copy, Plus, X, Check,
 } from "lucide-react";
 
 type EventRow = { id: string; name: string; start_at: string | null };
@@ -49,6 +53,15 @@ export default function GestorBarOperacao() {
   const [stations, setStations] = useState<StationRow[]>([]);
   const [stationDeliveries, setStationDeliveries] = useState<Map<string, number>>(new Map());
   const [, setLoadingStations] = useState(false);
+
+  // Create bar dialog
+  const [createBarOpen, setCreateBarOpen] = useState(false);
+  const [barName, setBarName] = useState("");
+  const [memberNames, setMemberNames] = useState<string[]>([]);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createdStation, setCreatedStation] = useState<{ name: string; join_code: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Load events for current client
   useEffect(() => {
@@ -233,6 +246,68 @@ export default function GestorBarOperacao() {
     toast.success(t("gbar_link_copied" as any));
   };
 
+  const resetCreateDialog = () => {
+    setBarName("");
+    setMemberNames([]);
+    setNewMemberName("");
+    setCreating(false);
+    setCreatedStation(null);
+    setLinkCopied(false);
+  };
+
+  const handleCloseCreateDialog = (open: boolean) => {
+    setCreateBarOpen(open);
+    if (!open) resetCreateDialog();
+  };
+
+  const handleAddMember = () => {
+    const name = newMemberName.trim();
+    if (!name) return;
+    setMemberNames((prev) => [...prev, name]);
+    setNewMemberName("");
+  };
+
+  const handleCreateBar = async () => {
+    if (!barName.trim() || !selectedEventId || !effectiveClientId || !session?.user?.id) return;
+    setCreating(true);
+    try {
+      const { data: station, error } = await supabase
+        .from("bar_stations")
+        .insert({
+          name: barName.trim(),
+          event_id: selectedEventId,
+          client_id: effectiveClientId,
+          created_by: session.user.id,
+        } as any)
+        .select("id, name, join_code")
+        .single();
+      if (error || !station) throw error;
+
+      if (memberNames.length > 0) {
+        await supabase.from("bar_station_members").insert(
+          memberNames.map((name) => ({ bar_station_id: station.id, name })) as any
+        );
+      }
+
+      setCreatedStation({ name: station.name, join_code: station.join_code });
+      toast.success(t("gbar_bar_created_success" as any));
+      refetchAll();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao criar bar");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCopyCreatedLink = () => {
+    if (!createdStation) return;
+    const url = `${window.location.origin}/bar?station=${createdStation.join_code}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -240,7 +315,14 @@ export default function GestorBarOperacao() {
         subtitle={t("gbar_ops_desc" as any)}
         icon={Beer}
         actions={
-          <AlertDialog>
+          <div className="flex items-center gap-2">
+            {selectedEventId && (
+              <Button variant="default" size="sm" onClick={() => setCreateBarOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t("gbar_create_bar" as any)}
+              </Button>
+            )}
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" disabled={bulkCancelling}>
                 {bulkCancelling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Ban className="h-4 w-4 mr-2" />}
@@ -259,7 +341,8 @@ export default function GestorBarOperacao() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+            </AlertDialog>
+          </div>
         }
       />
 
@@ -382,6 +465,103 @@ export default function GestorBarOperacao() {
           )}
         </div>
       )}
+
+      {/* Create Bar Dialog */}
+      <Dialog open={createBarOpen} onOpenChange={handleCloseCreateDialog}>
+        <DialogContent>
+          {!createdStation ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("gbar_create_bar" as any)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("gbar_bar_name" as any)}</Label>
+                  <Input
+                    className="h-12"
+                    value={barName}
+                    onChange={(e) => setBarName(e.target.value)}
+                    placeholder={t("gbar_bar_name_placeholder" as any)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("gbar_operators_optional" as any)}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      className="h-12"
+                      value={newMemberName}
+                      onChange={(e) => setNewMemberName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddMember();
+                        }
+                      }}
+                      placeholder={t("gbar_operator_name_placeholder" as any)}
+                    />
+                    <Button type="button" variant="secondary" className="h-12" onClick={handleAddMember}>
+                      {t("gbar_add" as any)}
+                    </Button>
+                  </div>
+                  {memberNames.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {memberNames.map((name, idx) => (
+                        <Badge key={idx} variant="secondary" className="gap-1 pr-1">
+                          {name}
+                          <button
+                            type="button"
+                            onClick={() => setMemberNames((prev) => prev.filter((_, i) => i !== idx))}
+                            className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  className="h-12 w-full"
+                  disabled={!barName.trim() || creating}
+                  onClick={handleCreateBar}
+                >
+                  {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  {t("gbar_create_bar" as any)}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("gbar_bar_created" as any)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">{t("gbar_bar_created_desc" as any)}</p>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    className="h-12 font-mono text-xs"
+                    value={`${window.location.origin}/bar?station=${createdStation.join_code}`}
+                  />
+                  <Button type="button" variant="secondary" className="h-12" onClick={handleCopyCreatedLink}>
+                    {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" className="h-12" onClick={resetCreateDialog}>
+                  {t("gbar_create_another" as any)}
+                </Button>
+                <Button className="h-12" onClick={() => handleCloseCreateDialog(false)}>
+                  {t("close" as any)}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
