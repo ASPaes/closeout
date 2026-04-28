@@ -369,6 +369,7 @@ export default function ConsumerPagamento() {
         if (pendingCard && pendingCard.length > 0 && approvedOther && approvedOther.length > 0) {
           setPendingCardPayment({ payRow: pendingCard[0], orderId });
           setFlowState("card_retry_pending");
+          if (!selectedSavedCardId) setUseNewCard(true);
         }
       }
     };
@@ -939,6 +940,7 @@ export default function ConsumerPagamento() {
     setCardCvv("");
     setDeclinedMessage("");
     setFlowState("card_retry_pending");
+    if (!selectedSavedCardId) setUseNewCard(true);
   };
 
   const handleFinalizePendingCard = async () => {
