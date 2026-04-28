@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "closeout_bar_event_id";
+const STATION_STORAGE_KEY = "closeout_bar_station_id";
 
 type EventOption = { id: string; name: string };
 
@@ -15,6 +16,8 @@ type BarContextType = {
   setEventId: (id: string | null) => void;
   loadingEvents: boolean;
   pendingOrdersCount: number;
+  stationId: string | null;
+  stationName: string | null;
 };
 
 const BarContext = createContext<BarContextType>({
@@ -26,6 +29,8 @@ const BarContext = createContext<BarContextType>({
   setEventId: () => {},
   loadingEvents: false,
   pendingOrdersCount: 0,
+  stationId: null,
+  stationName: null,
 });
 
 export function BarProvider({ children }: { children: ReactNode }) {
@@ -34,6 +39,8 @@ export function BarProvider({ children }: { children: ReactNode }) {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [eventName, setEventName] = useState<string | null>(null);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [stationId, setStationId] = useState<string | null>(null);
+  const [stationName, setStationName] = useState<string | null>(null);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -139,6 +146,62 @@ export function BarProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Resolve bar station from URL query param or localStorage (run once on mount)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const stationCode = params.get("station");
+
+      if (stationCode) {
+        const { data } = await supabase
+          .from("bar_stations")
+          .select("id, name, event_id")
+          .eq("join_code", stationCode)
+          .eq("status", "active")
+          .single();
+        if (cancelled) return;
+        if (data) {
+          setStationId(data.id);
+          setStationName(data.name);
+          localStorage.setItem(STATION_STORAGE_KEY, data.id);
+          if (data.event_id && data.event_id !== selectedEventId) {
+            setSelectedEventId(data.event_id);
+            localStorage.setItem(STORAGE_KEY, data.event_id);
+          }
+        }
+        // Clean query param without reload
+        params.delete("station");
+        const newSearch = params.toString();
+        const newUrl =
+          window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
+        window.history.replaceState({}, "", newUrl);
+        return;
+      }
+
+      // No query param: try restoring from localStorage
+      const storedId = localStorage.getItem(STATION_STORAGE_KEY);
+      if (!storedId) return;
+      const { data } = await supabase
+        .from("bar_stations")
+        .select("id, name")
+        .eq("id", storedId)
+        .eq("status", "active")
+        .single();
+      if (cancelled) return;
+      if (data) {
+        setStationId(data.id);
+        setStationName(data.name);
+      } else {
+        localStorage.removeItem(STATION_STORAGE_KEY);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <BarContext.Provider
       value={{
@@ -150,6 +213,8 @@ export function BarProvider({ children }: { children: ReactNode }) {
         setEventId,
         loadingEvents,
         pendingOrdersCount,
+        stationId,
+        stationName,
       }}
     >
       {children}
