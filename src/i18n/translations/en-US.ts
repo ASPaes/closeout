@@ -1041,6 +1041,9 @@ const enUS: Record<TranslationKey, string> = {
   gbar_bar_created_desc: "Share the link below with the operators:",
   gbar_create_another: "Create another bar",
   gbar_bar_created_success: "Bar created successfully!",
+  gbar_late_title: "Orders over 35 minutes",
+  gbar_late_empty: "No late orders. All clear!",
+  gbar_minutes_ago: "min ago",
 
   // Consumer App
   consumer_tab_events: "Events",
