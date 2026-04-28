@@ -70,6 +70,20 @@ type EnrichedEvent = EventRow & {
 
 type DateFilter = "all" | "today" | "week" | "month" | "custom";
 
+function sortByDateThenDistance(a: EnrichedEvent, b: EnrichedEvent): number {
+  const dateA = a.start_at ? new Date(a.start_at) : null;
+  const dateB = b.start_at ? new Date(b.start_at) : null;
+  if (!dateA && !dateB) return 0;
+  if (!dateA) return 1;
+  if (!dateB) return -1;
+  const dayA = new Date(dateA.getFullYear(), dateA.getMonth(), dateA.getDate()).getTime();
+  const dayB = new Date(dateB.getFullYear(), dateB.getMonth(), dateB.getDate()).getTime();
+  if (dayA !== dayB) return dayA - dayB;
+  const distA = a.distance ?? Infinity;
+  const distB = b.distance ?? Infinity;
+  return distA - distB;
+}
+
 export default function ConsumerEventos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -101,7 +115,7 @@ export default function ConsumerEventos() {
     const { data: eventsData } = await supabase
       .from("events")
       .select("id, name, description, start_at, end_at, status, client_id, venue_id")
-      .in("status", ["active", "completed"]);
+      .eq("status", "active");
 
     // Fetch venues for those events
     const venueIds = [...new Set((eventsData || []).map((e) => e.venue_id))];
@@ -177,7 +191,17 @@ export default function ConsumerEventos() {
       };
     });
 
-    setEvents(enriched);
+    const nowDate = new Date();
+    const futureOnly = enriched.filter((ev) => {
+      const endRef = ev.end_at
+        ? new Date(ev.end_at)
+        : ev.start_at
+        ? new Date(ev.start_at)
+        : null;
+      if (!endRef) return true;
+      return endRef >= nowDate;
+    });
+    setEvents(futureOnly);
   }, []);
 
   const initialize = useCallback(async () => {
@@ -278,23 +302,14 @@ export default function ConsumerEventos() {
     if (!userLoc) return [];
     return events
       .filter((e) => e.distance != null && e.distance <= 25)
-      .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+      .sort(sortByDateThenDistance);
   }, [events, userLoc]);
 
   // Sort filtered for "Todos os eventos" section — exclui os já exibidos em "Perto de você"
   const sortedFiltered = useMemo(() => {
     const nearbyIds = new Set(nearbyEvents.map((e) => e.id));
     const arr = filtered.filter((e) => !nearbyIds.has(e.id));
-    if (userLoc) {
-      arr.sort((a, b) => {
-        if (a.distance != null && b.distance != null) return a.distance - b.distance;
-        if (a.distance != null) return -1;
-        if (b.distance != null) return 1;
-        return (a.start_at || "").localeCompare(b.start_at || "");
-      });
-    } else {
-      arr.sort((a, b) => (a.start_at || "").localeCompare(b.start_at || ""));
-    }
+    arr.sort(sortByDateThenDistance);
     return arr;
   }, [filtered, userLoc, nearbyEvents]);
 
