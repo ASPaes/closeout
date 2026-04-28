@@ -40,6 +40,27 @@ type StationRow = {
   bar_station_members: { name: string }[] | null;
 };
 
+type LateOrder = {
+  id: string;
+  order_number: number | null;
+  status: string;
+  total: number;
+  paid_at: string;
+  origin: string | null;
+};
+
+const ORIGIN_LABELS: Record<string, string> = {
+  consumer_app: "App",
+  waiter_app: "Garçom",
+  cashier: "Caixa",
+};
+
+const formatCurrency = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const minutesSince = (dateStr: string) =>
+  Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
+
 export default function GestorBarOperacao() {
   const { t } = useTranslation();
   const { effectiveClientId } = useGestor();
@@ -48,7 +69,8 @@ export default function GestorBarOperacao() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
-  const [, setLateOrdersOpen] = useState(false);
+  const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
+  const [lateOrders, setLateOrders] = useState<LateOrder[]>([]);
   const [bulkCancelling, setBulkCancelling] = useState(false);
   const [stations, setStations] = useState<StationRow[]>([]);
   const [stationDeliveries, setStationDeliveries] = useState<Map<string, number>>(new Map());
@@ -308,6 +330,21 @@ export default function GestorBarOperacao() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  // Fetch late orders when dialog opens
+  useEffect(() => {
+    if (!lateOrdersOpen || !selectedEventId) return;
+    const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
+    supabase
+      .from("orders")
+      .select("id, order_number, status, total, paid_at, origin")
+      .eq("event_id", selectedEventId)
+      .not("status", "in", "(delivered,cancelled)")
+      .not("paid_at", "is", null)
+      .lt("paid_at", lateThreshold)
+      .order("paid_at", { ascending: true })
+      .then(({ data }) => setLateOrders((data as LateOrder[]) ?? []));
+  }, [lateOrdersOpen, selectedEventId]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -465,6 +502,45 @@ export default function GestorBarOperacao() {
           )}
         </div>
       )}
+
+      {/* Late Orders Dialog */}
+      <Dialog open={lateOrdersOpen} onOpenChange={setLateOrdersOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {t("gbar_late_title" as any)}
+            </DialogTitle>
+          </DialogHeader>
+          {lateOrders.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              {t("gbar_late_empty" as any)}
+            </div>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {lateOrders.map((o) => (
+                <div
+                  key={o.id}
+                  className="flex justify-between items-center border border-border/60 rounded-lg p-3"
+                >
+                  <div>
+                    <div className="text-primary font-bold">#{o.order_number ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {ORIGIN_LABELS[o.origin ?? ""] ?? o.origin ?? "—"}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">{formatCurrency(Number(o.total) || 0)}</div>
+                    <div className="text-xs text-destructive">
+                      {minutesSince(o.paid_at)} {t("gbar_minutes_ago" as any)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create Bar Dialog */}
       <Dialog open={createBarOpen} onOpenChange={handleCloseCreateDialog}>

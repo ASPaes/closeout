@@ -1039,6 +1039,9 @@ const ptBR = {
   gbar_bar_created_desc: "Compartilhe o link abaixo com os operadores:",
   gbar_create_another: "Criar outro bar",
   gbar_bar_created_success: "Bar criado com sucesso!",
+  gbar_late_title: "Pedidos com mais de 35 minutos",
+  gbar_late_empty: "Nenhum pedido atrasado. Tudo em dia!",
+  gbar_minutes_ago: "min atrás",
 
   // Consumer App
   consumer_tab_events: "Eventos",
