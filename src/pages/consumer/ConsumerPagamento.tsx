@@ -172,7 +172,7 @@ export default function ConsumerPagamento() {
   const [declinedOrderId, setDeclinedOrderId] = useState<string | null>(null);
 
   // ── Split card pending ──
-  const [pendingCardPayment, setPendingCardPayment] = useState<{ payRow: any; orderId: string } | null>(null);
+  const [pendingCardPayment, setPendingCardPayment] = useState<{ payRow: any; orderId: string; eventId: string; clientId: string } | null>(null);
 
   const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const paymentsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -345,7 +345,7 @@ export default function ConsumerPagamento() {
     const checkPending = async () => {
       const { data: pendingOrders } = await supabase
         .from("orders")
-        .select("id, status")
+        .select("id, status, event_id, client_id")
         .eq("consumer_id", user.id)
         .in("status", ["pending", "partially_paid"])
         .order("created_at", { ascending: false })
@@ -367,7 +367,12 @@ export default function ConsumerPagamento() {
           .eq("status", "approved");
 
         if (pendingCard && pendingCard.length > 0 && approvedOther && approvedOther.length > 0) {
-          setPendingCardPayment({ payRow: pendingCard[0], orderId });
+          setPendingCardPayment({
+            payRow: pendingCard[0],
+            orderId,
+            eventId: (pendingOrders[0] as any).event_id,
+            clientId: (pendingOrders[0] as any).client_id,
+          });
           setFlowState("card_retry_pending");
           if (!selectedSavedCardId) setUseNewCard(true);
         }
@@ -488,15 +493,15 @@ export default function ConsumerPagamento() {
   );
 
   // ── Charge card function ──
-  const chargeCard = useCallback(async (payRow: any, orderId: string) => {
+  const chargeCard = useCallback(async (payRow: any, orderId: string, overrideEventId?: string, overrideClientId?: string) => {
     try {
       const method = payRow.payment_method;
       const body: any = {
         payment_id: payRow.id,
         order_id: orderId,
         amount: Number(payRow.amount),
-        event_id: isResumeMode ? resumeOrder!.event_id : activeEvent?.id,
-        client_id: isResumeMode ? resumeOrder!.client_id : activeEvent?.client_id,
+        event_id: overrideEventId || (isResumeMode ? resumeOrder?.event_id : activeEvent?.id),
+        client_id: overrideClientId || (isResumeMode ? resumeOrder?.client_id : activeEvent?.client_id),
         billing_type: method === "credit_card" ? "CREDIT_CARD" : "DEBIT_CARD",
         payment_cpf: paymentCpf,
         payment_postal_code: useOtherAddress ? otherCep : profile?.postal_code || "",
@@ -612,7 +617,7 @@ export default function ConsumerPagamento() {
               setPendingCardPayment((prev) => {
                 if (prev) {
                   setFlowState("charging_card");
-                  chargeCard(prev.payRow, prev.orderId);
+                  chargeCard(prev.payRow, prev.orderId, prev.eventId, prev.clientId);
                 }
                 return prev;
               });
@@ -653,6 +658,8 @@ export default function ConsumerPagamento() {
       setPendingCardPayment({
         payRow: cardPayments[0],
         orderId,
+        eventId: isResumeMode ? resumeOrder!.event_id : (activeEvent?.id as string),
+        clientId: isResumeMode ? resumeOrder!.client_id : (activeEvent?.client_id as string),
       });
 
       if (pixPayments.length > 0) {
@@ -947,7 +954,12 @@ export default function ConsumerPagamento() {
     if (!pendingCardPayment) return;
     setFlowState("charging_card");
     try {
-      await chargeCard(pendingCardPayment.payRow, pendingCardPayment.orderId);
+      await chargeCard(
+        pendingCardPayment.payRow,
+        pendingCardPayment.orderId,
+        pendingCardPayment.eventId,
+        pendingCardPayment.clientId,
+      );
     } catch (err: any) {
       setDeclinedMessage(err.message || "Erro ao cobrar cartão");
       setDeclinedOrderId(pendingCardPayment.orderId);
