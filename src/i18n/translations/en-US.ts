@@ -1031,6 +1031,16 @@ const enUS: Record<TranslationKey, string> = {
   gbar_delivered_by_bar: "orders delivered",
   gbar_no_operators: "No registered operators",
   gbar_link_copied: "Link copied!",
+  gbar_create_bar: "Create Bar",
+  gbar_bar_name: "Bar name",
+  gbar_bar_name_placeholder: "E.g.: Bar 1, VIP Bar...",
+  gbar_operators_optional: "Operators (optional)",
+  gbar_operator_name_placeholder: "Operator name",
+  gbar_add: "Add",
+  gbar_bar_created: "Bar created!",
+  gbar_bar_created_desc: "Share the link below with the operators:",
+  gbar_create_another: "Create another bar",
+  gbar_bar_created_success: "Bar created successfully!",
 
   // Consumer App
   consumer_tab_events: "Events",
