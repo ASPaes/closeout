@@ -169,10 +169,13 @@ export default function ConsumerCardapio() {
       // Build product list
       const items: CatalogProduct[] = [];
       const catSet = new Set<string>();
+      const seenIds = new Set<string>();
 
       catalogItems?.forEach((ci: any) => {
         if (ci.item_type === "product" && ci.products) {
           const p = ci.products;
+          if (seenIds.has(p.id)) return;
+          seenIds.add(p.id);
           const catName = p.categories?.name || null;
           if (catName) catSet.add(catName);
           const promo = campaignItemsMap[p.id];
@@ -199,6 +202,8 @@ export default function ConsumerCardapio() {
           });
         } else if (ci.item_type === "combo" && ci.combos) {
           const c = ci.combos;
+          if (seenIds.has(c.id)) return;
+          seenIds.add(c.id);
           const promo = campaignItemsMap[c.id];
           let finalPromo = promo?.promo_price || null;
           if (!finalPromo && promo?.discount_percent) {
