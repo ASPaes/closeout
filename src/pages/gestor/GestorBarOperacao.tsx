@@ -40,6 +40,27 @@ type StationRow = {
   bar_station_members: { name: string }[] | null;
 };
 
+type LateOrder = {
+  id: string;
+  order_number: number | null;
+  status: string;
+  total: number;
+  paid_at: string;
+  origin: string | null;
+};
+
+const ORIGIN_LABELS: Record<string, string> = {
+  consumer_app: "App",
+  waiter_app: "Garçom",
+  cashier: "Caixa",
+};
+
+const formatCurrency = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const minutesSince = (dateStr: string) =>
+  Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
+
 export default function GestorBarOperacao() {
   const { t } = useTranslation();
   const { effectiveClientId } = useGestor();
@@ -48,7 +69,8 @@ export default function GestorBarOperacao() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
-  const [, setLateOrdersOpen] = useState(false);
+  const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
+  const [lateOrders, setLateOrders] = useState<LateOrder[]>([]);
   const [bulkCancelling, setBulkCancelling] = useState(false);
   const [stations, setStations] = useState<StationRow[]>([]);
   const [stationDeliveries, setStationDeliveries] = useState<Map<string, number>>(new Map());
@@ -307,6 +329,21 @@ export default function GestorBarOperacao() {
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
+
+  // Fetch late orders when dialog opens
+  useEffect(() => {
+    if (!lateOrdersOpen || !selectedEventId) return;
+    const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
+    supabase
+      .from("orders")
+      .select("id, order_number, status, total, paid_at, origin")
+      .eq("event_id", selectedEventId)
+      .not("status", "in", "(delivered,cancelled)")
+      .not("paid_at", "is", null)
+      .lt("paid_at", lateThreshold)
+      .order("paid_at", { ascending: true })
+      .then(({ data }) => setLateOrders((data as LateOrder[]) ?? []));
+  }, [lateOrdersOpen, selectedEventId]);
 
   return (
     <div className="space-y-6">
