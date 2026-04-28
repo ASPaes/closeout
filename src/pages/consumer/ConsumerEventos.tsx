@@ -7,7 +7,6 @@ import {
   Search,
   Loader2,
   RefreshCw,
-  Sparkles,
   ChevronDown,
   CalendarDays,
 } from "lucide-react";
@@ -63,16 +62,6 @@ type VenueRow = {
   longitude: number | null;
 };
 
-type CampaignRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  client_id: string;
-  starts_at: string;
-  ends_at: string;
-  is_active: boolean;
-};
-
 type EnrichedEvent = EventRow & {
   venue?: VenueRow;
   distance?: number;
@@ -92,7 +81,6 @@ export default function ConsumerEventos() {
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsAttempted, setGpsAttempted] = useState(false);
   const [events, setEvents] = useState<EnrichedEvent[]>([]);
-  const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [search, setSearch] = useState("");
 
   // Filters
@@ -126,22 +114,40 @@ export default function ConsumerEventos() {
       venues = (venuesData || []) as VenueRow[];
     }
 
-    // Fetch active campaigns
     const now = new Date().toISOString();
-    const { data: campsData } = await supabase
-      .from("campaigns")
-      .select("id, name, description, client_id, starts_at, ends_at, is_active")
-      .eq("is_active", true)
-      .lte("starts_at", now)
-      .gte("ends_at", now);
-
-    const activeCampaigns = (campsData || []) as CampaignRow[];
-    setCampaigns(activeCampaigns);
-
-    const campaignClientIds = new Set(activeCampaigns.map((c) => c.client_id));
 
     // Fetch cover images (sort_order=0)
     const eventIds = (eventsData || []).map((e) => e.id);
+
+    // Compute which events have at least one active linked campaign via event_campaigns
+    const eventsWithPromo = new Set<string>();
+    if (eventIds.length > 0) {
+      const { data: eventCampaignLinks } = await supabase
+        .from("event_campaigns")
+        .select("event_id, campaign_id")
+        .in("event_id", eventIds)
+        .eq("is_active", true);
+
+      const linkedCampaignIds = [
+        ...new Set((eventCampaignLinks || []).map((ec: any) => ec.campaign_id)),
+      ];
+
+      if (linkedCampaignIds.length > 0) {
+        const { data: activeCampsData } = await supabase
+          .from("campaigns")
+          .select("id")
+          .in("id", linkedCampaignIds)
+          .eq("is_active", true)
+          .lte("starts_at", now)
+          .gte("ends_at", now);
+
+        const activeCampIds = new Set((activeCampsData || []).map((c: any) => c.id));
+        (eventCampaignLinks || []).forEach((ec: any) => {
+          if (activeCampIds.has(ec.campaign_id)) eventsWithPromo.add(ec.event_id);
+        });
+      }
+    }
+
     const coverMap: Record<string, string> = {};
     if (eventIds.length > 0) {
       const { data: imgData } = await supabase
@@ -166,7 +172,7 @@ export default function ConsumerEventos() {
         ...ev,
         venue,
         distance,
-        hasPromo: ev.client_id ? campaignClientIds.has(ev.client_id) : false,
+        hasPromo: eventsWithPromo.has(ev.id),
         cover_url: coverMap[ev.id] || null,
       };
     });
@@ -548,44 +554,6 @@ export default function ConsumerEventos() {
 
       {!loading && (
         <>
-          {/* Campaigns carousel */}
-          {campaigns.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold text-foreground">{t("consumer_promos_highlight")}</h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 snap-x snap-mandatory">
-                {campaigns.map((camp) => (
-                  <div
-                    key={camp.id}
-                    className="shrink-0 w-[280px] snap-start rounded-2xl p-4 relative overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, hsl(24 100% 50% / 0.85), hsl(24 80% 35% / 0.9))",
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-                    <div className="relative z-10">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                        {t("consumer_promo_label")}
-                      </p>
-                      <h3 className="mt-1 text-lg font-bold text-white leading-snug line-clamp-2">
-                        {camp.name}
-                      </h3>
-                      {camp.description && (
-                        <p className="mt-1 text-xs text-white/70 line-clamp-2">{camp.description}</p>
-                      )}
-                      <p className="mt-2 text-[10px] text-white/50">
-                        {t("consumer_promo_until")}{" "}
-                        {format(new Date(camp.ends_at), "dd MMM", { locale: ptBR })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Seção "Perto de você" — só com GPS ativo e eventos <= 25km */}
           {userLoc && nearbyEvents.length > 0 && (
             <div className="flex flex-col gap-3">
