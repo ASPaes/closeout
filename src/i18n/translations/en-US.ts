@@ -1020,6 +1020,12 @@ const enUS: Record<TranslationKey, string> = {
   gbar_search: "Search by order number...",
   gbar_origin: "Origin",
   gbar_no_orders: "No orders found",
+  gbar_select_event: "Select an event",
+  gbar_select_event_empty: "Select an event to view bar operations",
+  gbar_total_orders: "Total Orders",
+  gbar_delivered: "Delivered",
+  gbar_ready_pickup: "Ready for Pickup",
+  gbar_late_orders: "Late Orders",
 
   // Consumer App
   consumer_tab_events: "Events",
