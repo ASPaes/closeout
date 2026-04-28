@@ -105,21 +105,34 @@ export default function ConsumerCardapio() {
         .in("catalog_id", catalogIds)
         .eq("is_active", true);
 
-      // Get active campaigns for promo prices
+      // Get active campaigns for promo prices — only those linked to this event
       const now = new Date().toISOString();
-      const { data: campaignsData } = await supabase
-        .from("campaigns")
-        .select("id, name, description, ends_at, image_path")
-        .eq("client_id", activeEvent.client_id)
-        .eq("is_active", true)
-        .lte("starts_at", now)
-        .gte("ends_at", now);
+      const { data: eventCampaignLinks } = await supabase
+        .from("event_campaigns")
+        .select("campaign_id")
+        .eq("event_id", activeEvent.id)
+        .eq("is_active", true);
 
-      setCampaigns(campaignsData || []);
-
+      let campaignsData: Campaign[] | null = null;
       let campaignItemsMap: Record<string, { promo_price: number | null; discount_percent: number | null }> = {};
       const byCampaign: Record<string, Set<string>> = {};
-      if (campaignsData && campaignsData.length > 0) {
+
+      if (!eventCampaignLinks || eventCampaignLinks.length === 0) {
+        setCampaigns([]);
+      } else {
+        const linkedCampaignIds = eventCampaignLinks.map((ec) => ec.campaign_id);
+        const { data } = await supabase
+          .from("campaigns")
+          .select("id, name, description, ends_at, image_path")
+          .in("id", linkedCampaignIds)
+          .eq("is_active", true)
+          .lte("starts_at", now)
+          .gte("ends_at", now);
+
+        campaignsData = data;
+        setCampaigns(campaignsData || []);
+
+        if (campaignsData && campaignsData.length > 0) {
         const campaignIds = campaignsData.map((c) => c.id);
         const { data: campItems } = await supabase
           .from("campaign_items")
@@ -136,6 +149,7 @@ export default function ConsumerCardapio() {
               byCampaign[ci.campaign_id].add(key);
             }
           });
+        }
         }
       }
       setCampaignItemsByCampaign(byCampaign);
