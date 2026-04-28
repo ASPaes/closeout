@@ -1330,7 +1330,7 @@ export default function ConsumerPagamento() {
   if (flowState === "card_retry_pending") {
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
-        <div className="flex flex-col gap-5 px-6 py-8 max-w-[480px] mx-auto">
+        <div className="flex flex-col gap-5 px-6 py-8 pb-28 max-w-[480px] mx-auto">
           <div className="flex flex-col items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
               <AlertTriangle className="h-8 w-8 text-amber-400" />
