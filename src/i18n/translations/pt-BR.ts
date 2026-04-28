@@ -1029,6 +1029,16 @@ const ptBR = {
   gbar_delivered_by_bar: "pedidos entregues",
   gbar_no_operators: "Sem operadores cadastrados",
   gbar_link_copied: "Link copiado!",
+  gbar_create_bar: "Criar Bar",
+  gbar_bar_name: "Nome do bar",
+  gbar_bar_name_placeholder: "Ex: Bar 1, Bar VIP...",
+  gbar_operators_optional: "Operadores (opcional)",
+  gbar_operator_name_placeholder: "Nome do operador",
+  gbar_add: "Adicionar",
+  gbar_bar_created: "Bar criado!",
+  gbar_bar_created_desc: "Compartilhe o link abaixo com os operadores:",
+  gbar_create_another: "Criar outro bar",
+  gbar_bar_created_success: "Bar criado com sucesso!",
 
   // Consumer App
   consumer_tab_events: "Eventos",
