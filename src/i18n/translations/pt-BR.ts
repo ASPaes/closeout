@@ -1018,6 +1018,12 @@ const ptBR = {
   gbar_search: "Buscar por número do pedido...",
   gbar_origin: "Origem",
   gbar_no_orders: "Nenhum pedido encontrado",
+  gbar_select_event: "Selecione um evento",
+  gbar_select_event_empty: "Selecione um evento para visualizar a operação dos bares",
+  gbar_total_orders: "Total de Pedidos",
+  gbar_delivered: "Entregues",
+  gbar_ready_pickup: "Prontos para Retirada",
+  gbar_late_orders: "Pedidos Atrasados",
 
   // Consumer App
   consumer_tab_events: "Eventos",
