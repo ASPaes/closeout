@@ -1024,6 +1024,11 @@ const ptBR = {
   gbar_delivered: "Entregues",
   gbar_ready_pickup: "Prontos para Retirada",
   gbar_late_orders: "Pedidos Atrasados",
+  gbar_bars_section: "Bares",
+  gbar_no_bars: "Nenhum bar criado para este evento",
+  gbar_delivered_by_bar: "pedidos entregues",
+  gbar_no_operators: "Sem operadores cadastrados",
+  gbar_link_copied: "Link copiado!",
 
   // Consumer App
   consumer_tab_events: "Eventos",
