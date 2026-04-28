@@ -940,14 +940,13 @@ export default function ConsumerPagamento() {
 
   const handleRetryCardSplit = () => {
     setSelectedSavedCardId(null);
-    setUseNewCard(false);
     setCardNumber("");
     setCardExpMonth("");
     setCardExpYear("");
     setCardCvv("");
     setDeclinedMessage("");
     setFlowState("card_retry_pending");
-    if (!selectedSavedCardId) setUseNewCard(true);
+    setUseNewCard(true);
   };
 
   const handleFinalizePendingCard = async () => {
