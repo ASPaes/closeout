@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Line, Bar, XAxis, YAxis, CartesianGrid, ComposedChart } from "recharts";
 import { Users, Activity, Repeat, HelpCircle, Info, UserCheck } from "lucide-react";
@@ -25,24 +25,6 @@ const getCohortColor = (pct: number) => {
   if (pct >= 0.1) return "text-orange-400";
   return "text-muted-foreground";
 };
-
-type Period = "today" | "7d" | "30d" | "month";
-
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
 
 type KpiTooltipProps = { title: string; tooltip: string; value: string; Icon: any };
 function KpiCard({ title, tooltip, value, Icon }: KpiTooltipProps) {
@@ -74,14 +56,19 @@ function KpiCard({ title, tooltip, value, Icon }: KpiTooltipProps) {
 }
 
 export default function AnaliseComportamento() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    const { start, end } = computePeriod(period);
+    const { start, end } = dateRange;
     const { data: rpcData, error: rpcError } = await supabase.rpc("get_behavior_metrics" as any, {
       p_start_date: start.toISOString(),
       p_end_date: end.toISOString(),
@@ -98,7 +85,7 @@ export default function AnaliseComportamento() {
 
   useEffect(() => {
     fetchData();
-  }, [period]);
+  }, [dateRange]);
 
   const kpis = data?.kpis ?? {};
 
@@ -119,17 +106,7 @@ export default function AnaliseComportamento() {
               <span className="text-xs">Ativo = consumidor que criou pelo menos 1 pedido no período</span>
             </Badge>
           </div>
-          <ToggleGroup
-            type="single"
-            value={period}
-            onValueChange={(v) => v && setPeriod(v as Period)}
-            className="justify-start"
-          >
-            <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d">7 dias</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
-            <ToggleGroupItem value="month">Mês atual</ToggleGroupItem>
-          </ToggleGroup>
+          <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
         </div>
 
         {/* Error */}

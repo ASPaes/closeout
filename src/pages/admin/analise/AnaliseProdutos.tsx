@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Package, DollarSign, Hash, TrendingUp, HelpCircle, Boxes } from "lucide-react";
 
@@ -16,24 +16,6 @@ const formatPct = (n: number) =>
   `${((n ?? 0) * 100).toFixed(1)}%`;
 
 const typeLabels: Record<string, string> = { product: "Produto", combo: "Combo" };
-
-type Period = "today" | "7d" | "30d" | "month";
-
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else if (period === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
 
 interface KpiCardProps {
   title: string;
@@ -77,7 +59,12 @@ function KpiCard({ title, value, icon: Icon, tooltip }: KpiCardProps) {
 }
 
 export default function AnaliseProdutos() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [clientId, setClientId] = useState<string | null>(null);
   const [data, setData] = useState<any | null>(null);
   const [clientsList, setClientsList] = useState<Array<{ id: string; name: string }>>([]);
@@ -91,7 +78,7 @@ export default function AnaliseProdutos() {
 
   const fetchData = async () => {
     setLoading(true);
-    const { start, end } = computePeriod(period);
+    const { start, end } = dateRange;
     const { data: rpcData, error: rpcError } = await supabase.rpc("get_products_analytics" as any, {
       p_start_date: start.toISOString(),
       p_end_date: end.toISOString(),
@@ -103,7 +90,7 @@ export default function AnaliseProdutos() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [period, clientId]);
+  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [dateRange, clientId]);
 
   const kpis = data?.kpis ?? {};
   const topProducts: any[] = data?.top_products ?? [];
@@ -124,17 +111,7 @@ export default function AnaliseProdutos() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2">
-            <ToggleGroup
-              type="single"
-              value={period}
-              onValueChange={(v) => v && setPeriod(v as Period)}
-              className="justify-start"
-            >
-              <ToggleGroupItem value="today" size="sm">Hoje</ToggleGroupItem>
-              <ToggleGroupItem value="7d" size="sm">7 dias</ToggleGroupItem>
-              <ToggleGroupItem value="30d" size="sm">30 dias</ToggleGroupItem>
-              <ToggleGroupItem value="month" size="sm">Mês atual</ToggleGroupItem>
-            </ToggleGroup>
+            <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
 
             <Select
               value={clientId ?? "all"}
