@@ -126,6 +126,7 @@ export default function ConsumerPagamento() {
   // ── Payment CPF ──
   const [paymentCpf, setPaymentCpf] = useState("");
   const [paymentCpfError, setPaymentCpfError] = useState("");
+  const [cpfLocked, setCpfLocked] = useState(true);
 
   // ── Address toggle ──
   const [useOtherAddress, setUseOtherAddress] = useState(false);
@@ -240,6 +241,7 @@ export default function ConsumerPagamento() {
     if (!profile) return;
     const profileCpf = profile.last_payment_cpf || profile.cpf || "";
     setPaymentCpf(onlyDigits(profileCpf));
+    setCpfLocked(true);
     if (profile.name) setCardHolderName(profile.name);
   }, [profile]);
 
@@ -1363,22 +1365,41 @@ export default function ConsumerPagamento() {
           </div>
 
           {/* CPF */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">CPF do pagador</label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="CPF (apenas números)"
-              value={paymentCpf}
-              onChange={(e) => handlePaymentCpfChange(e.target.value)}
-              onBlur={handlePaymentCpfBlur}
-              maxLength={11}
-              className={cn(
-                "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
-                paymentCpfError && "border-destructive"
-              )}
-              style={{ fontSize: "16px" }}
-            />
+            {cpfLocked && paymentCpf.length === 11 ? (
+              <div className="flex items-center justify-between h-12 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                <div className="flex items-center gap-2">
+                  <span className="text-base text-foreground" style={{ fontSize: "16px" }}>
+                    {paymentCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}
+                  </span>
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCpfLocked(false)}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  Alterar
+                </button>
+              </div>
+            ) : (
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="CPF (apenas números)"
+                value={paymentCpf}
+                onChange={(e) => handlePaymentCpfChange(e.target.value)}
+                onBlur={handlePaymentCpfBlur}
+                maxLength={11}
+                className={cn(
+                  "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+                  paymentCpfError && "border-destructive"
+                )}
+                style={{ fontSize: "16px" }}
+                autoFocus
+              />
+            )}
             {paymentCpfError && <p className="text-xs text-destructive">{paymentCpfError}</p>}
           </div>
 
@@ -1673,22 +1694,41 @@ export default function ConsumerPagamento() {
 
       {/* CPF do pagador — shown for digital methods */}
       {needsDigital && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="text-xs text-muted-foreground">CPF do pagador</label>
-          <Input
-            type="text"
-            inputMode="numeric"
-            placeholder="CPF (apenas números)"
-            value={paymentCpf}
-            onChange={(e) => handlePaymentCpfChange(e.target.value)}
-            onBlur={handlePaymentCpfBlur}
-            maxLength={11}
-            className={cn(
-              "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
-              paymentCpfError && "border-destructive"
-            )}
-            style={{ fontSize: "16px" }}
-          />
+          {cpfLocked && paymentCpf.length === 11 ? (
+            <div className="flex items-center justify-between h-12 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <span className="text-base text-foreground" style={{ fontSize: "16px" }}>
+                  {paymentCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}
+                </span>
+                <CheckCircle2 className="h-4 w-4 text-success" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setCpfLocked(false)}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                Alterar
+              </button>
+            </div>
+          ) : (
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="CPF (apenas números)"
+              value={paymentCpf}
+              onChange={(e) => handlePaymentCpfChange(e.target.value)}
+              onBlur={handlePaymentCpfBlur}
+              maxLength={11}
+              className={cn(
+                "h-12 text-base rounded-xl bg-white/[0.04] border-white/[0.08]",
+                paymentCpfError && "border-destructive"
+              )}
+              style={{ fontSize: "16px" }}
+              autoFocus
+            />
+          )}
           {paymentCpfError && <p className="text-xs text-destructive">{paymentCpfError}</p>}
         </div>
       )}
