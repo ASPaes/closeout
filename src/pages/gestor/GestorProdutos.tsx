@@ -67,6 +67,7 @@ const emptyForm = {
   stock_unit: "", base_unit: "", base_per_stock_unit: "",
   image_path: "" as string | null, image_source: "" as string | null,
   brand: "",
+  uses_ingredients: false,
 };
 
 export default function GestorProdutos() {
@@ -139,7 +140,12 @@ export default function GestorProdutos() {
   }), [products, search, filterCat]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setSheetOpen(true); };
-  const openEdit = (p: Product) => {
+  const openEdit = async (p: Product) => {
+    const { count } = await supabase
+      .from("product_recipes")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", p.id)
+      .eq("is_active", true);
     setEditing(p);
     setForm({
       name: p.name, description: p.description ?? "", price: String(p.price),
@@ -149,6 +155,7 @@ export default function GestorProdutos() {
       base_per_stock_unit: p.base_per_stock_unit != null ? String(p.base_per_stock_unit) : "",
       image_path: p.image_path ?? null, image_source: p.image_source ?? null,
       brand: p.brand ?? "",
+      uses_ingredients: (count || 0) > 0,
     });
     setSheetOpen(true);
   };
@@ -437,7 +444,11 @@ export default function GestorProdutos() {
         </div>
         <div className="flex items-center justify-between">
           <Label>{t("prod_stock_tracked")}</Label>
-          <Switch checked={form.is_stock_tracked} onCheckedChange={(v) => setForm({ ...form, is_stock_tracked: v })} />
+          <Switch checked={form.is_stock_tracked} onCheckedChange={(v) => setForm({ ...form, is_stock_tracked: v, uses_ingredients: v ? false : form.uses_ingredients })} />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label>Usa insumos</Label>
+          <Switch checked={form.uses_ingredients} onCheckedChange={(v) => setForm({ ...form, uses_ingredients: v, is_stock_tracked: v ? false : form.is_stock_tracked })} />
         </div>
         <div className="flex items-center justify-between">
           <Label>{t("prod_ingredient")}</Label>
