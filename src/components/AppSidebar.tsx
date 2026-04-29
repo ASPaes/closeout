@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target, Banknote, TrendingUp, Globe, Receipt, CreditCard, Bell } from "lucide-react";
+import { LayoutDashboard, Building2, MapPin, CalendarDays, Users, LogOut, Settings, ArrowRightLeft, DollarSign, FileText, Package, Activity, Target, Banknote, TrendingUp, Globe, Receipt, CreditCard, Bell, Lock } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 import logoMark from "@/assets/brand/logo-mark.png";
 
-type NavItem = { titleKey: TranslationKey; url: string; icon: any; titleOverride?: string };
+type NavItem = { titleKey: TranslationKey; url: string; icon: any; titleOverride?: string; locked?: boolean };
 
 const panelItems: NavItem[] = [
   { titleKey: "dashboard", url: "/admin", icon: LayoutDashboard },
@@ -24,8 +24,8 @@ const analysisItems: NavItem[] = [
   { titleKey: "analysis_products", url: "/admin/analise/produtos", icon: Package },
   { titleKey: "analysis_behavior", url: "/admin/analise/comportamento", icon: Activity },
   { titleKey: "analysis_clients", url: "/admin/analise/clientes", icon: Target },
-  { titleKey: "analysis_revenue", url: "/admin/analise/receita", icon: Banknote },
-  { titleKey: "analysis_growth", url: "/admin/analise/crescimento", icon: TrendingUp },
+  { titleKey: "analysis_revenue", url: "/admin/analise/receita", icon: Banknote, locked: true },
+  { titleKey: "analysis_growth", url: "/admin/analise/crescimento", icon: TrendingUp, locked: true },
   { titleKey: "analysis_geography", url: "/admin/analise/geografia", icon: Globe },
 ];
 
@@ -61,6 +61,47 @@ const roleLabels: Record<string, string> = {
 };
 
 function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; collapsed: boolean; isActive: boolean; t: (key: TranslationKey) => string }) {
+  const label = item.titleOverride ?? t(item.titleKey);
+
+  if (item.locked) {
+    const lockedContent = (
+      <SidebarMenuButton asChild>
+        <div
+          className="flex items-center gap-2 opacity-40 cursor-not-allowed select-none"
+          aria-disabled="true"
+          onClick={(e) => e.preventDefault()}
+        >
+          <Lock className="h-4 w-4" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 truncate">{label}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                Em breve
+              </span>
+            </>
+          )}
+        </div>
+      </SidebarMenuButton>
+    );
+
+    if (collapsed) {
+      return (
+        <SidebarMenuItem>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>{lockedContent}</TooltipTrigger>
+              <TooltipContent side="right" className="bg-card border-border/60">
+                {label} — Em breve
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </SidebarMenuItem>
+      );
+    }
+
+    return <SidebarMenuItem>{lockedContent}</SidebarMenuItem>;
+  }
+
   const content = (
     <SidebarMenuButton asChild isActive={isActive}>
       <NavLink
@@ -70,7 +111,7 @@ function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; colla
         activeClassName="bg-sidebar-accent text-primary font-medium"
       >
         <item.icon className={`h-4 w-4 transition-colors duration-200 ${isActive ? "text-primary" : ""}`} />
-        {!collapsed && <span>{item.titleOverride ?? t(item.titleKey)}</span>}
+        {!collapsed && <span>{label}</span>}
       </NavLink>
     </SidebarMenuButton>
   );
@@ -82,7 +123,7 @@ function SidebarNavItem({ item, collapsed, isActive, t }: { item: NavItem; colla
           <Tooltip>
             <TooltipTrigger asChild>{content}</TooltipTrigger>
             <TooltipContent side="right" className="bg-card border-border/60">
-              {item.titleOverride ?? t(item.titleKey)}
+              {label}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
