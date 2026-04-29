@@ -138,7 +138,7 @@ export default function AnaliseClientes() {
                 title="Com Vendas"
                 value={formatInt(kpis.clients_ativos ?? 0)}
                 Icon={UserCheck}
-                tooltip="Clientes que receberam ao menos 1 pagamento aprovado nos últimos 30 dias. Mede atividade operacional real."
+                tooltip="Clientes que receberam ao menos 1 pagamento aprovado no período selecionado. Mede atividade operacional real."
               />
               <KpiCard
                 title="Sem Vendas"
@@ -150,7 +150,7 @@ export default function AnaliseClientes() {
                 title="Em Risco"
                 value={formatInt(kpis.clients_em_risco ?? 0)}
                 Icon={AlertTriangle}
-                tooltip="Clientes que tinham atividade 30-60 dias atrás mas pararam de vender nos últimos 30 dias. Sinal precoce de churn."
+                tooltip="Clientes que tinham atividade no período anterior equivalente mas sem vendas no período selecionado. Sinal precoce de churn."
               />
               <KpiCard
                 title="LTV Médio"
