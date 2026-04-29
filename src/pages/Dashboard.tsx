@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
@@ -46,8 +46,6 @@ const formatBRL = (n: number) =>
 const formatInt = (n: number) =>
   new Intl.NumberFormat("pt-BR").format(n ?? 0);
 
-type Period = "today" | "7d" | "30d" | "month";
-
 type AlertSeverity = "critical" | "warning" | "info";
 type LocalAlert = { severity: AlertSeverity; title: string; detail?: string };
 
@@ -81,28 +79,17 @@ function buildLocalAlerts(data: any, health: any): LocalAlert[] {
   return alerts;
 }
 
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
-
 export default function Dashboard() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { profile } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [data, setData] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -118,7 +105,7 @@ export default function Dashboard() {
   const fetchMetrics = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { start, end } = computePeriod(period);
+    const { start, end } = dateRange;
     const [metricsRes, healthRes] = await Promise.all([
       supabase.rpc("get_admin_dashboard_metrics" as any, {
         p_start_date: start.toISOString(),
@@ -135,7 +122,7 @@ export default function Dashboard() {
       setHealth(healthRes.data);
     }
     setLoading(false);
-  }, [period]);
+  }, [dateRange]);
 
   useEffect(() => {
     fetchMetrics();
@@ -235,18 +222,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-foreground">Painel Executivo</h1>
           <p className="text-sm text-muted-foreground mt-1">Visão geral da plataforma</p>
         </div>
-        <ToggleGroup
-          type="single"
-          value={period}
-          onValueChange={(v) => v && setPeriod(v as Period)}
-          variant="outline"
-          size="sm"
-        >
-          <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-          <ToggleGroupItem value="7d">7 dias</ToggleGroupItem>
-          <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
-          <ToggleGroupItem value="month">Mês atual</ToggleGroupItem>
-        </ToggleGroup>
+        <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
       </div>
 
       {error && (
