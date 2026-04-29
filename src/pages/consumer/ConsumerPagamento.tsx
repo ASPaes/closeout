@@ -1817,8 +1817,13 @@ export default function ConsumerPagamento() {
               selected={selectedMethod === m.method && !selectedSavedCardId}
               onSelect={() => {
                 setSelectedMethod(m.method);
-                setSelectedSavedCardId(null);
-                setUseNewCard(false);
+                if ((m.method === "credit_card" || m.method === "debit_card") && savedCards.length > 0) {
+                  setSelectedSavedCardId(savedCards[0].id);
+                  setUseNewCard(false);
+                } else {
+                  setSelectedSavedCardId(null);
+                  setUseNewCard(false);
+                }
               }}
             />
           ))}
