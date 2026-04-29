@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { MapPin, Building2, Trophy, PieChart, HelpCircle, Calendar, Info } from "lucide-react";
 
@@ -50,24 +50,6 @@ const formatDateBR = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 };
-
-type Period = "today" | "7d" | "30d" | "month";
-
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else if (period === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
 
 interface KpiCardProps {
   title: string;
@@ -117,7 +99,12 @@ function KpiCard({ title, value, subtitle, badge, icon: Icon, tooltip }: KpiCard
 }
 
 export default function AnaliseGeografia() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +113,7 @@ export default function AnaliseGeografia() {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      const { start, end } = computePeriod(period);
+      const { start, end } = dateRange;
       const { data: rpcData, error: rpcError } = await supabase.rpc("get_geography_metrics" as any, {
         p_start_date: start.toISOString(),
         p_end_date: end.toISOString(),
@@ -140,7 +127,7 @@ export default function AnaliseGeografia() {
       setLoading(false);
     };
     fetchData();
-  }, [period]);
+  }, [dateRange]);
 
   const stateGmvMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -184,17 +171,7 @@ export default function AnaliseGeografia() {
               </span>
             </div>
           </div>
-          <ToggleGroup
-            type="single"
-            value={period}
-            onValueChange={(v) => v && setPeriod(v as Period)}
-            className="shrink-0"
-          >
-            <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d">7d</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30d</ToggleGroupItem>
-            <ToggleGroupItem value="month">Mês</ToggleGroupItem>
-          </ToggleGroup>
+          <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
         </div>
 
         {error && (

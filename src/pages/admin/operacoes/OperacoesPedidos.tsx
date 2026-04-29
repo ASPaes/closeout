@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, ChevronLeft, ChevronRight, HelpCircle, Receipt, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
@@ -68,24 +68,6 @@ const ALL_STATUSES = [
   "ready", "partially_delivered", "delivered", "cancelled",
 ];
 
-type Period = "today" | "7d" | "30d" | "month";
-
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else if (period === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
-
 function KpiCard({ title, value, icon, tooltip, iconClassName }: { title: string; value: string; icon: React.ReactNode; tooltip: string; iconClassName?: string }) {
   return (
     <Card>
@@ -111,7 +93,12 @@ function KpiCard({ title, value, icon, tooltip, iconClassName }: { title: string
 }
 
 export default function OperacoesPedidos() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [statuses, setStatuses] = useState<string[]>([]);
   const [clientId, setClientId] = useState<string | null>(null);
   const [eventId, setEventId] = useState<string | null>(null);
@@ -153,13 +140,13 @@ export default function OperacoesPedidos() {
   }, [eventsList, clientId]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [period, statuses, clientId, eventId, originFilter, searchDebounced]);
+  useEffect(() => { setPage(1); }, [dateRange, statuses, clientId, eventId, originFilter, searchDebounced]);
 
   // Main fetch
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const { start, end } = computePeriod(period);
+      const { start, end } = dateRange;
       const { data, error } = await supabase.rpc("get_orders_global" as any, {
         p_start_date: start.toISOString(),
         p_end_date: end.toISOString(),
@@ -175,7 +162,7 @@ export default function OperacoesPedidos() {
       setData(data); setError(null); setLoading(false);
     };
     fetchData();
-  }, [period, statuses, clientId, eventId, originFilter, searchDebounced, page]);
+  }, [dateRange, statuses, clientId, eventId, originFilter, searchDebounced, page]);
 
   const loadOrderDetail = async (orderId: string) => {
     setSelectedOrderId(orderId);
@@ -199,12 +186,7 @@ export default function OperacoesPedidos() {
               Lista global de pedidos com filtros e drill-down
             </p>
           </div>
-          <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as Period)} className="shrink-0">
-            <ToggleGroupItem value="today" className="text-xs">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d" className="text-xs">7d</ToggleGroupItem>
-            <ToggleGroupItem value="30d" className="text-xs">30d</ToggleGroupItem>
-            <ToggleGroupItem value="month" className="text-xs">Mês</ToggleGroupItem>
-          </ToggleGroup>
+          <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
         </div>
 
         {/* Filtros */}

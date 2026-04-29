@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Building2, UserCheck, UserX, AlertTriangle, Coins, Trophy, HelpCircle } from "lucide-react";
@@ -24,24 +24,6 @@ const monthLabel = (m: string) => {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   return `${months[parseInt(mo, 10) - 1]}/${y.slice(2)}`;
 };
-
-type Period = "today" | "7d" | "30d" | "month";
-
-function computePeriod(period: Period): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end };
-}
 
 type KpiCardProps = {
   title: string;
@@ -85,14 +67,19 @@ function KpiCard({ title, tooltip, value, Icon, badge }: KpiCardProps) {
 }
 
 export default function AnaliseClientes() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    const { start, end } = computePeriod(period);
+    const { start, end } = dateRange;
     const { data: rpcData, error: rpcError } = await supabase.rpc("get_client_value_metrics" as any, {
       p_start_date: start.toISOString(),
       p_end_date: end.toISOString(),
@@ -109,7 +96,7 @@ export default function AnaliseClientes() {
 
   useEffect(() => {
     fetchData();
-  }, [period]);
+  }, [dateRange]);
 
   const kpis = data?.kpis ?? {};
 
@@ -124,17 +111,7 @@ export default function AnaliseClientes() {
               Análise de valor e performance dos clientes da plataforma
             </p>
           </div>
-          <ToggleGroup
-            type="single"
-            value={period}
-            onValueChange={(v) => v && setPeriod(v as Period)}
-            className="justify-start"
-          >
-            <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d">7 dias</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
-            <ToggleGroupItem value="month">Mês atual</ToggleGroupItem>
-          </ToggleGroup>
+          <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
         </div>
 
         {/* Error */}

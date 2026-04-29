@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChevronLeft, ChevronRight, HelpCircle, AlertTriangle, CreditCard, CheckCircle2, XCircle, Zap } from "lucide-react";
 
@@ -65,22 +65,6 @@ const divergenceLabels: Record<string, string> = {
 const ALL_PAY_STATUSES = ["created", "processing", "approved", "failed", "cancelled", "refunded", "expired"];
 const ALL_ASAAS_STATUSES = ["PENDING", "RECEIVED", "CONFIRMED", "OVERDUE", "REFUNDED"];
 const ALL_BILLING_TYPES = ["PIX", "CREDIT_CARD", "DEBIT_CARD"];
-
-const computePeriod = (period: string) => {
-  const end = new Date();
-  const start = new Date();
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "7d") {
-    start.setDate(end.getDate() - 7);
-  } else if (period === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  } else {
-    start.setDate(end.getDate() - 30);
-  }
-  return { start, end };
-};
 
 interface ChipsProps {
   options: { value: string; label: string }[];
@@ -148,7 +132,12 @@ const KpiCard = ({ title, value, icon, tooltip }: KpiProps) => (
 
 export default function OperacoesPagamentos() {
   const [activeTab, setActiveTab] = useState<"payments" | "charges">("payments");
-  const [period, setPeriod] = useState("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [clientId, setClientId] = useState<string | null>(null);
   const [clientsList, setClientsList] = useState<Array<{ id: string; name: string }>>([]);
 
@@ -179,15 +168,15 @@ export default function OperacoesPagamentos() {
   }, []);
 
   // Reset paginations
-  useEffect(() => { setPayPage(1); }, [period, clientId, payStatuses, payMethod, payOnlyDivergent]);
-  useEffect(() => { setChPage(1); }, [period, clientId, chAsaasStatuses, chBillingTypes]);
+  useEffect(() => { setPayPage(1); }, [dateRange, clientId, payStatuses, payMethod, payOnlyDivergent]);
+  useEffect(() => { setChPage(1); }, [dateRange, clientId, chAsaasStatuses, chBillingTypes]);
 
   // Fetch payments
   useEffect(() => {
     if (activeTab !== "payments") return;
     const fetchData = async () => {
       setPayLoading(true);
-      const { start, end } = computePeriod(period);
+      const { start, end } = dateRange;
       const { data, error } = await supabase.rpc("get_payments_global" as any, {
         p_start_date: start.toISOString(),
         p_end_date: end.toISOString(),
@@ -202,14 +191,14 @@ export default function OperacoesPagamentos() {
       setPayData(data); setPayError(null); setPayLoading(false);
     };
     fetchData();
-  }, [activeTab, period, clientId, payStatuses, payMethod, payOnlyDivergent, payPage]);
+  }, [activeTab, dateRange, clientId, payStatuses, payMethod, payOnlyDivergent, payPage]);
 
   // Fetch charges
   useEffect(() => {
     if (activeTab !== "charges") return;
     const fetchData = async () => {
       setChLoading(true);
-      const { start, end } = computePeriod(period);
+      const { start, end } = dateRange;
       const { data, error } = await supabase.rpc("get_asaas_charges_global" as any, {
         p_start_date: start.toISOString(),
         p_end_date: end.toISOString(),
@@ -223,7 +212,7 @@ export default function OperacoesPagamentos() {
       setChData(data); setChError(null); setChLoading(false);
     };
     fetchData();
-  }, [activeTab, period, clientId, chAsaasStatuses, chBillingTypes, chPage]);
+  }, [activeTab, dateRange, clientId, chAsaasStatuses, chBillingTypes, chPage]);
 
   const paySummary = payData?.summary ?? {};
   const chSummary = chData?.summary ?? {};
@@ -240,12 +229,7 @@ export default function OperacoesPagamentos() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v)} variant="outline" size="sm">
-              <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-              <ToggleGroupItem value="7d">7d</ToggleGroupItem>
-              <ToggleGroupItem value="30d">30d</ToggleGroupItem>
-              <ToggleGroupItem value="month">Mês</ToggleGroupItem>
-            </ToggleGroup>
+            <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
             <Select value={clientId ?? "all"} onValueChange={(v) => setClientId(v === "all" ? null : v)}>
               <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
