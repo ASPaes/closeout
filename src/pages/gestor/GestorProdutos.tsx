@@ -83,6 +83,9 @@ export default function GestorProdutos() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Inline recipes state for "uses_ingredients" toggle
+  const [formRecipes, setFormRecipes] = useState<{ ingredient_product_id: string; quantity_base: string; base_unit: string }[]>([]);
+
   // Recipe state
   const [recipeProduct, setRecipeProduct] = useState<Product | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -139,13 +142,27 @@ export default function GestorProdutos() {
     return true;
   }), [products, search, filterCat]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setFormRecipes([]); setSheetOpen(true); };
   const openEdit = async (p: Product) => {
     const { count } = await supabase
       .from("product_recipes")
       .select("id", { count: "exact", head: true })
       .eq("product_id", p.id)
       .eq("is_active", true);
+    if ((count || 0) > 0) {
+      const { data: existingRecipes } = await supabase
+        .from("product_recipes")
+        .select("ingredient_product_id, quantity_base, base_unit")
+        .eq("product_id", p.id)
+        .eq("is_active", true);
+      setFormRecipes((existingRecipes || []).map((r: any) => ({
+        ingredient_product_id: r.ingredient_product_id,
+        quantity_base: String(r.quantity_base),
+        base_unit: r.base_unit,
+      })));
+    } else {
+      setFormRecipes([]);
+    }
     setEditing(p);
     setForm({
       name: p.name, description: p.description ?? "", price: String(p.price),
@@ -196,10 +213,45 @@ export default function GestorProdutos() {
       if (editing) {
         const { error } = await supabase.from("products").update(payload as any).eq("id", editing.id);
         if (error) throw error;
+        if (form.uses_ingredients) {
+          await supabase.from("product_recipes").delete().eq("product_id", editing.id);
+          const validRecipes = formRecipes.filter(r => r.ingredient_product_id && parseFloat(r.quantity_base) > 0 && r.base_unit);
+          if (validRecipes.length > 0) {
+            await supabase.from("product_recipes").insert(
+              validRecipes.map(r => ({
+                product_id: editing.id,
+                ingredient_product_id: r.ingredient_product_id,
+                quantity_base: parseFloat(r.quantity_base),
+                base_unit: r.base_unit,
+                client_id: clientId,
+              })) as any
+            );
+          }
+        } else {
+          await supabase.from("product_recipes").delete().eq("product_id", editing.id);
+        }
         toast.success(t("product_updated"));
       } else {
-        const { error } = await supabase.from("products").insert([{ ...payload, client_id: clientId } as any]);
+        const { data: insertedProduct, error } = await supabase
+          .from("products")
+          .insert([{ ...payload, client_id: clientId } as any])
+          .select("id")
+          .single();
         if (error) throw error;
+        if (form.uses_ingredients && insertedProduct) {
+          const validRecipes = formRecipes.filter(r => r.ingredient_product_id && parseFloat(r.quantity_base) > 0 && r.base_unit);
+          if (validRecipes.length > 0) {
+            await supabase.from("product_recipes").insert(
+              validRecipes.map(r => ({
+                product_id: (insertedProduct as any).id,
+                ingredient_product_id: r.ingredient_product_id,
+                quantity_base: parseFloat(r.quantity_base),
+                base_unit: r.base_unit,
+                client_id: clientId,
+              })) as any
+            );
+          }
+        }
         toast.success(t("product_created"));
       }
       setSheetOpen(false);
