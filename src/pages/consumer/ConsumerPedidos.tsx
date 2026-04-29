@@ -55,14 +55,14 @@ const statusConfig: Record<string, { label: string; variant: "active" | "inactiv
 
 const filters = [
   { key: "all", label: "Todos" },
-  { key: "active", label: "Ativos" },
+  { key: "pending", label: "Pendentes" },
   { key: "done", label: "Concluídos" },
   { key: "cancelled", label: "Cancelados" },
 ];
 const filterMap: Record<string, string[]> = {
   all: [],
-  active: ["processing_payment", "partially_paid", "pending", "paid", "preparing", "ready", "partially_delivered"],
-  done: ["delivered"],
+  pending: ["pending", "processing_payment", "partially_paid"],
+  done: ["paid", "preparing", "ready", "partially_delivered", "delivered"],
   cancelled: ["cancelled"],
 };
 
