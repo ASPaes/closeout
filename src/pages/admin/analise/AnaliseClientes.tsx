@@ -254,7 +254,7 @@ export default function AnaliseClientes() {
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
                 Clientes em Risco
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Tiveram vendas 30-60d atrás, zero nos últimos 30d</p>
+              <p className="text-xs text-muted-foreground mt-1">Tiveram vendas no período anterior mas sem atividade no período selecionado</p>
             </CardHeader>
             <CardContent>
               {loading || !data ? (
