@@ -191,17 +191,7 @@ export default function ConsumerEventos() {
       };
     });
 
-    const nowDate = new Date();
-    const futureOnly = enriched.filter((ev) => {
-      const endRef = ev.end_at
-        ? new Date(ev.end_at)
-        : ev.start_at
-        ? new Date(ev.start_at)
-        : null;
-      if (!endRef) return true;
-      return endRef >= nowDate;
-    });
-    setEvents(futureOnly);
+    setEvents(enriched);
   }, []);
 
   const initialize = useCallback(async () => {
