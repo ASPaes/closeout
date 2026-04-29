@@ -337,6 +337,95 @@ export default function ConsumerQR() {
     fetchActiveOrders();
   }, [paramOrderId, user, activeEvent]);
 
+  // Realtime: orders changes for active orders list
+  useEffect(() => {
+    if (paramOrderId || !user || !activeEvent) return;
+    const channel = supabase
+      .channel("consumer-active-orders-" + activeEvent.id)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `event_id=eq.${activeEvent.id}`,
+        },
+        async (payload) => {
+          const changed = payload.new as any;
+          if (!changed || changed.consumer_id !== user.id) return;
+          const activeStatuses = ["paid", "preparing", "ready", "partially_delivered"];
+          if (!activeStatuses.includes(changed.status)) {
+            setActiveOrders((prev) => prev.filter((o) => o.id !== changed.id));
+            return;
+          }
+          const { data: items } = await supabase
+            .from("order_items")
+            .select("order_id, name, quantity, delivered_quantity")
+            .eq("order_id", changed.id);
+          const { data: qr } = await supabase
+            .from("qr_tokens")
+            .select("token")
+            .eq("order_id", changed.id)
+            .eq("status", "valid")
+            .limit(1);
+          const updatedOrder = {
+            id: changed.id,
+            order_number: changed.order_number,
+            status: changed.status,
+            total: changed.total,
+            created_at: changed.created_at,
+            items: items || [],
+            qr_token: qr?.[0]?.token || "",
+          };
+          setActiveOrders((prev) => {
+            const exists = prev.find((o) => o.id === changed.id);
+            if (exists) {
+              return prev.map((o) => (o.id === changed.id ? updatedOrder : o));
+            } else {
+              return [updatedOrder, ...prev];
+            }
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [paramOrderId, user, activeEvent]);
+
+  // Realtime: order_items updates for active orders list
+  useEffect(() => {
+    if (paramOrderId || !user || activeOrders.length === 0) return;
+    const orderIds = activeOrders.map((o) => o.id);
+    const channel = supabase
+      .channel("consumer-active-items-" + activeOrders.map((o) => o.id).join("-").slice(0, 50))
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "order_items",
+        },
+        async (payload) => {
+          const changed = payload.new as any;
+          if (!changed || !orderIds.includes(changed.order_id)) return;
+          const { data: freshItems } = await supabase
+            .from("order_items")
+            .select("order_id, name, quantity, delivered_quantity")
+            .eq("order_id", changed.order_id);
+          setActiveOrders((prev) =>
+            prev.map((o) =>
+              o.id === changed.order_id ? { ...o, items: freshItems || o.items } : o
+            )
+          );
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [paramOrderId, user, activeOrders.length]);
+
   // Delivery stats
   const totalQty = displayItems.reduce((s, i) => s + i.quantity, 0);
   const deliveredQty = displayItems.reduce((s, i) => s + (i.delivered_quantity || 0), 0);
