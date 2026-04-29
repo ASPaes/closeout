@@ -8,7 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Building2, UserCheck, UserX, AlertTriangle, TrendingUp, Coins, PieChart, Trophy, HelpCircle } from "lucide-react";
+import { Building2, UserCheck, UserX, AlertTriangle, Coins, Trophy, HelpCircle } from "lucide-react";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -189,18 +189,6 @@ export default function AnaliseClientes() {
                     </Badge>
                   ) : undefined
                 }
-              />
-              <KpiCard
-                title="ARPU Período"
-                value={formatBRL(kpis.arpu_periodo ?? 0)}
-                Icon={TrendingUp}
-                tooltip="Average Revenue Per User. Fees do período ÷ quantidade de clients únicos com pagamento. Mede receita média por cliente ativo."
-              />
-              <KpiCard
-                title="Concentração Top 3"
-                value={formatPct(kpis.concentracao_top3 ?? 0)}
-                Icon={PieChart}
-                tooltip="Percentual do GMV do período que vem dos 3 maiores clientes. Quanto maior, mais dependência de poucos clientes (risco)."
               />
             </>
           )}
