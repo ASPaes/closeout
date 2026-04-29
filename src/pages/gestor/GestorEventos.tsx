@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users, FileText, Megaphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Event = {
   id: string;
@@ -485,6 +487,25 @@ export default function GestorEventos() {
     },
   ];
 
+  const formatDateTime = (val: string) => {
+    if (!val) return "";
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const parseDateParts = (val: string) => {
+    if (!val) return { date: undefined as Date | undefined, hour: "12", minute: "00" };
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return { date: undefined as Date | undefined, hour: "12", minute: "00" };
+    return { date: d, hour: String(d.getHours()).padStart(2, "0"), minute: String(d.getMinutes()).padStart(2, "0") };
+  };
+
+  const buildDateTimeString = (date: Date, hour: string, minute: string): string => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${hour}:${minute}`;
+  };
+
   return (
     <GestorClientGuard>
     <div className="space-y-6">
@@ -537,14 +558,78 @@ export default function GestorEventos() {
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>{t("start")}</Label>
-                <Input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("end")}</Label>
-                <Input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
-              </div>
+              {[
+                { label: t("start"), value: startAt, onChange: setStartAt },
+                { label: t("end"), value: endAt, onChange: setEndAt },
+              ].map(({ label, value, onChange }) => {
+                const parts = parseDateParts(value);
+                return (
+                  <div key={label} className="space-y-2">
+                    <Label>{label}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-12 w-full justify-start rounded-xl text-left font-normal"
+                        >
+                          <CalendarDays className="mr-2 h-4 w-4 opacity-70" />
+                          {value ? formatDateTime(value) : <span className="text-muted-foreground">Selecione data e hora</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <div className="p-3 space-y-3">
+                          <Calendar
+                            mode="single"
+                            selected={parts.date}
+                            onSelect={(date) => {
+                              if (date) {
+                                onChange(buildDateTimeString(date, parts.hour, parts.minute));
+                              }
+                            }}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                          <div className="flex items-center gap-2 border-t pt-3">
+                            <Label className="text-xs text-muted-foreground">Horário</Label>
+                            <Select
+                              value={parts.hour}
+                              onValueChange={(h) => {
+                                if (parts.date) onChange(buildDateTimeString(parts.date, h, parts.minute));
+                              }}
+                            >
+                              <SelectTrigger className="h-10 w-20 rounded-lg">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map((h) => (
+                                  <SelectItem key={h} value={h}>{h}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span className="text-muted-foreground">:</span>
+                            <Select
+                              value={parts.minute}
+                              onValueChange={(m) => {
+                                if (parts.date) onChange(buildDateTimeString(parts.date, parts.hour, m));
+                              }}
+                            >
+                              <SelectTrigger className="h-10 w-20 rounded-lg">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                );
+              })}
             </div>
             {editingId && (
               <div className="space-y-2">
