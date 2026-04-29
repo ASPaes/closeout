@@ -83,6 +83,9 @@ export default function GestorProdutos() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Inline recipes state for "uses_ingredients" toggle
+  const [formRecipes, setFormRecipes] = useState<{ ingredient_product_id: string; quantity_base: string; base_unit: string }[]>([]);
+
   // Recipe state
   const [recipeProduct, setRecipeProduct] = useState<Product | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -139,13 +142,27 @@ export default function GestorProdutos() {
     return true;
   }), [products, search, filterCat]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setSheetOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setFormRecipes([]); setSheetOpen(true); };
   const openEdit = async (p: Product) => {
     const { count } = await supabase
       .from("product_recipes")
       .select("id", { count: "exact", head: true })
       .eq("product_id", p.id)
       .eq("is_active", true);
+    if ((count || 0) > 0) {
+      const { data: existingRecipes } = await supabase
+        .from("product_recipes")
+        .select("ingredient_product_id, quantity_base, base_unit")
+        .eq("product_id", p.id)
+        .eq("is_active", true);
+      setFormRecipes((existingRecipes || []).map((r: any) => ({
+        ingredient_product_id: r.ingredient_product_id,
+        quantity_base: String(r.quantity_base),
+        base_unit: r.base_unit,
+      })));
+    } else {
+      setFormRecipes([]);
+    }
     setEditing(p);
     setForm({
       name: p.name, description: p.description ?? "", price: String(p.price),
@@ -196,10 +213,45 @@ export default function GestorProdutos() {
       if (editing) {
         const { error } = await supabase.from("products").update(payload as any).eq("id", editing.id);
         if (error) throw error;
+        if (form.uses_ingredients) {
+          await supabase.from("product_recipes").delete().eq("product_id", editing.id);
+          const validRecipes = formRecipes.filter(r => r.ingredient_product_id && parseFloat(r.quantity_base) > 0 && r.base_unit);
+          if (validRecipes.length > 0) {
+            await supabase.from("product_recipes").insert(
+              validRecipes.map(r => ({
+                product_id: editing.id,
+                ingredient_product_id: r.ingredient_product_id,
+                quantity_base: parseFloat(r.quantity_base),
+                base_unit: r.base_unit,
+                client_id: clientId,
+              })) as any
+            );
+          }
+        } else {
+          await supabase.from("product_recipes").delete().eq("product_id", editing.id);
+        }
         toast.success(t("product_updated"));
       } else {
-        const { error } = await supabase.from("products").insert([{ ...payload, client_id: clientId } as any]);
+        const { data: insertedProduct, error } = await supabase
+          .from("products")
+          .insert([{ ...payload, client_id: clientId } as any])
+          .select("id")
+          .single();
         if (error) throw error;
+        if (form.uses_ingredients && insertedProduct) {
+          const validRecipes = formRecipes.filter(r => r.ingredient_product_id && parseFloat(r.quantity_base) > 0 && r.base_unit);
+          if (validRecipes.length > 0) {
+            await supabase.from("product_recipes").insert(
+              validRecipes.map(r => ({
+                product_id: (insertedProduct as any).id,
+                ingredient_product_id: r.ingredient_product_id,
+                quantity_base: parseFloat(r.quantity_base),
+                base_unit: r.base_unit,
+                client_id: clientId,
+              })) as any
+            );
+          }
+        }
         toast.success(t("product_created"));
       }
       setSheetOpen(false);
@@ -450,6 +502,63 @@ export default function GestorProdutos() {
           <Label>Usa insumos</Label>
           <Switch checked={form.uses_ingredients} onCheckedChange={(v) => setForm({ ...form, uses_ingredients: v, is_stock_tracked: v ? false : form.is_stock_tracked })} />
         </div>
+
+        {form.uses_ingredients && (
+          <div className="space-y-3 rounded-lg border border-border/60 p-3 bg-secondary/20">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Insumos da receita</Label>
+              <Button type="button" variant="outline" size="sm" onClick={() => setFormRecipes([...formRecipes, { ingredient_product_id: "", quantity_base: "", base_unit: "" }])}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+              </Button>
+            </div>
+            {formRecipes.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum insumo adicionado. Clique em "Adicionar" para vincular ingredientes.</p>
+            )}
+            {formRecipes.map((recipe, idx) => (
+              <div key={idx} className="flex items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Ingrediente</Label>
+                  <Select value={recipe.ingredient_product_id || "_none"} onValueChange={(v) => {
+                    const updated = [...formRecipes];
+                    updated[idx].ingredient_product_id = v === "_none" ? "" : v;
+                    const ing = ingredients.find(i => i.id === v);
+                    if (ing?.base_unit) updated[idx].base_unit = ing.base_unit;
+                    setFormRecipes(updated);
+                  }}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">—</SelectItem>
+                      {ingredients.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.name} {i.base_unit ? `(${i.base_unit})` : ""}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-24 space-y-1">
+                  <Label className="text-xs">Qtd</Label>
+                  <Input type="number" min="0.01" step="any" value={recipe.quantity_base}
+                    onChange={(e) => { const u = [...formRecipes]; u[idx].quantity_base = e.target.value; setFormRecipes(u); }} />
+                </div>
+                <div className="w-24 space-y-1">
+                  <Label className="text-xs">Unidade</Label>
+                  <Select value={recipe.base_unit || "_none"} onValueChange={(v) => {
+                    const u = [...formRecipes]; u[idx].base_unit = v === "_none" ? "" : v; setFormRecipes(u);
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">—</SelectItem>
+                      {BASE_UNITS.map(u => <SelectItem key={u.value} value={u.value}>{t(u.label)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" variant="ghost" size="icon" className="shrink-0 hover:text-destructive"
+                  onClick={() => setFormRecipes(formRecipes.filter((_, i) => i !== idx))}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <Label>{t("prod_ingredient")}</Label>
           <Switch checked={form.is_ingredient} onCheckedChange={(v) => setForm({ ...form, is_ingredient: v })} />
