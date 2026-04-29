@@ -203,7 +203,7 @@ export default function Dashboard() {
       value: formatInt(kpis.active_events_now),
       icon: CalendarCheck,
       tooltip:
-        "Eventos em andamento neste exato momento — com status 'active' e horário atual entre start_at e end_at. Não depende do período selecionado.",
+        "Eventos com status 'active' na plataforma. Inclui eventos que o gestor ainda não finalizou. Não depende do período selecionado.",
     },
     {
       title: "Alertas Abertos",
