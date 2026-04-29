@@ -54,7 +54,7 @@ export function AdminPeriodFilter({ onRangeChange }: Props) {
   const customLabel =
     customRange?.from && customRange?.to
       ? `${formatDate(customRange.from)} — ${formatDate(customRange.to)}`
-      : "Personalizado";
+      : null;
 
   const isCustom = preset === "custom";
 
@@ -88,7 +88,7 @@ export function AdminPeriodFilter({ onRangeChange }: Props) {
             )}
           >
             <CalendarDays className="h-4 w-4" />
-            {customLabel}
+            {customLabel && <span>{customLabel}</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
