@@ -53,34 +53,32 @@ type KpiCardProps = {
 
 function KpiCard({ title, tooltip, value, Icon, badge }: KpiCardProps) {
   return (
-    <Card className="hover:border-primary/20 transition-colors">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
-                <p className="text-sm">{tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
+    <Card className="hover:border-primary/20 transition-colors group">
+      <CardContent className="pt-5 pb-4 px-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+            <Icon className="h-[18px] w-[18px] text-primary" />
           </div>
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Icon className="h-4 w-4 text-primary" />
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground cursor-help transition-colors" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p className="text-sm">{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-      </CardHeader>
-      <CardContent>
-        {badge ? (
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <div className="text-2xl font-bold text-foreground">{value}</div>
-            {badge}
-          </div>
-        ) : (
-          <div className="text-2xl font-bold text-foreground">{value}</div>
-        )}
+        <div className="space-y-0.5">
+          {badge ? (
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
+              {badge}
+            </div>
+          ) : (
+            <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
+          )}
+          <p className="text-xs text-muted-foreground/70">{title}</p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -148,7 +146,7 @@ export default function AnaliseClientes() {
         )}
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {loading || !data ? (
             Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-28" />)
           ) : (
