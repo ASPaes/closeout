@@ -191,7 +191,12 @@ export default function ConsumerEventos() {
       };
     });
 
-    setEvents(enriched);
+    const nowDate = new Date();
+    const filtered = enriched.filter((ev) => {
+      if (!ev.end_at) return true;
+      return new Date(ev.end_at) >= nowDate;
+    });
+    setEvents(filtered);
   }, []);
 
   const initialize = useCallback(async () => {
