@@ -74,6 +74,13 @@ const METHOD_ICONS: Record<string, React.ElementType> = {
   cash: Banknote,
 };
 
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  paid: { label: "Confirmado", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30" },
+  preparing: { label: "Em Preparo", color: "text-amber-400 bg-amber-400/10 border-amber-400/30" },
+  ready: { label: "Pronto!", color: "text-green-400 bg-green-400/10 border-green-400/30" },
+  partially_delivered: { label: "Entrega Parcial", color: "text-orange-400 bg-orange-400/10 border-orange-400/30" },
+};
+
 export default function ConsumerQR() {
   const { t } = useTranslation();
   const navigate = useNavigate();
