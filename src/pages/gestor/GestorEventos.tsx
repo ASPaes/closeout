@@ -58,6 +58,12 @@ type EventCampaignLink = {
 
 const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"] as const;
 
+const toLocalInput = (iso: string): string => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function GestorEventos() {
   const { t } = useTranslation();
   const { effectiveClientId: clientId } = useGestor();
@@ -259,8 +265,8 @@ export default function GestorEventos() {
   const openEdit = async (ev: Event) => {
     setEditingId(ev.id);
     setName(ev.name); setDescription(ev.description ?? ""); setVenueId(ev.venue_id);
-    setStartAt(ev.start_at ? ev.start_at.slice(0, 16) : "");
-    setEndAt(ev.end_at ? ev.end_at.slice(0, 16) : "");
+    setStartAt(ev.start_at ? toLocalInput(ev.start_at) : "");
+    setEndAt(ev.end_at ? toLocalInput(ev.end_at) : "");
     setStatus(ev.status); setFormTab("general");
     setSandboxMode(ev.payment_sandbox_mode);
 
