@@ -708,6 +708,12 @@ export default function ConsumerPagamento() {
 
     // CENÁRIO 2: Só cartão (sem split)
     if (cardPayments.length > 0 && pixPayments.length === 0) {
+      setPendingCardPayment({
+        payRow: cardPayments[0],
+        orderId,
+        eventId: isResumeMode ? resumeOrder!.event_id : (activeEvent?.id as string),
+        clientId: isResumeMode ? resumeOrder!.client_id : (activeEvent?.client_id as string),
+      });
       await chargeCard(cardPayments[0], orderId);
       return;
     }
