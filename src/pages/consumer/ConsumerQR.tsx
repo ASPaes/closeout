@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper,
   ShoppingBag, QrCode, Check, Clock, CreditCard, Smartphone, Banknote,
-  Loader2, XCircle,
+  Loader2, XCircle, ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumer } from "@/contexts/ConsumerContext";
@@ -311,6 +311,17 @@ export default function ConsumerQR() {
   if (isDelivered) {
     return (
       <div className="flex flex-col items-center gap-6 py-4">
+        {paramOrderId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/app/qr")}
+            className="self-start -ml-2 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        )}
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10 border border-success/30">
           <PartyPopper className="h-10 w-10 text-success" />
         </div>
@@ -345,6 +356,17 @@ export default function ConsumerQR() {
   if (isCancelled) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+        {paramOrderId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/app/qr")}
+            className="self-start -ml-2 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        )}
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 border border-destructive/30">
           <XCircle className="h-8 w-8 text-destructive" />
         </div>
@@ -368,6 +390,17 @@ export default function ConsumerQR() {
   if (isProcessing) {
     return (
       <div className="flex flex-col items-center gap-5 pb-4">
+        {paramOrderId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/app/qr")}
+            className="self-start -ml-2 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        )}
         {/* Order number */}
         <div className="text-center">
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
@@ -430,6 +463,17 @@ export default function ConsumerQR() {
   // ── Active order with QR ──
   return (
     <div className="flex flex-col items-center gap-5 pb-4">
+      {paramOrderId && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/app/qr")}
+          className="self-start -ml-2 gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+      )}
       {/* Partially paid banner */}
       {isPartiallyPaid && (
         <div className="w-full rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-center animate-pulse">
