@@ -128,7 +128,7 @@ export default function ConsumerPedidos() {
         });
       });
 
-      const mapped = data.map((o: any) => ({
+      setOrders(data.map((o: any) => ({
         id: o.id,
         order_number: o.order_number,
         status: o.status,
@@ -146,23 +146,7 @@ export default function ConsumerPedidos() {
         items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, delivered_quantity: i.delivered_quantity || 0 })),
         has_qr: qrOrderIds.has(o.id),
         payments: paymentsByOrder[o.id] || [],
-      }));
-
-      const STATUS_PRIORITY: Record<string, number> = {
-        ready: 0,
-        partially_delivered: 1,
-        preparing: 2,
-        paid: 3,
-        delivered: 4,
-        cancelled: 5,
-      };
-      const sorted = mapped.sort((a, b) => {
-        const pa = STATUS_PRIORITY[a.status] ?? 3;
-        const pb = STATUS_PRIORITY[b.status] ?? 3;
-        if (pa !== pb) return pa - pb;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-      setOrders(sorted);
+      })));
     }
     setLoading(false);
     setRefreshing(false);
