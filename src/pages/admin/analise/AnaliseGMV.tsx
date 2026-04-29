@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import {
   Select,
   SelectTrigger,
@@ -46,26 +46,7 @@ const methodLabels: Record<string, string> = {
 };
 const methodLabel = (m: string) => methodLabels[m] ?? m;
 
-type Period = "today" | "7d" | "30d" | "month";
 type Granularity = "day" | "hour";
-
-function computePeriod(period: Period): { start: Date; end: Date; granularity: Granularity } {
-  const end = new Date();
-  const start = new Date();
-  let granularity: Granularity = "day";
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-    granularity = "hour";
-  } else if (period === "7d") {
-    start.setDate(start.getDate() - 7);
-  } else if (period === "30d") {
-    start.setDate(start.getDate() - 30);
-  } else if (period === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-  return { start, end, granularity };
-}
 
 function formatBucket(bucket: string, granularity: Granularity): string {
   const d = new Date(bucket);
@@ -75,15 +56,8 @@ function formatBucket(bucket: string, granularity: Granularity): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function periodSubtitle(period: Period, granularity: Granularity): string {
-  const granLabel = granularity === "hour" ? "por hora" : "por dia";
-  const map: Record<Period, string> = {
-    today: "Hoje",
-    "7d": "Últimos 7 dias",
-    "30d": "Últimos 30 dias",
-    month: "Mês atual",
-  };
-  return `${map[period]}, ${granLabel}`;
+function periodSubtitle(granularity: Granularity): string {
+  return granularity === "hour" ? "Período selecionado, por hora" : "Período selecionado, por dia";
 }
 
 interface ClientItem {
@@ -97,7 +71,12 @@ interface VenueItem {
 }
 
 export default function AnaliseGMV() {
-  const [period, setPeriod] = useState<Period>("30d");
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end };
+  });
   const [clientId, setClientId] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -130,14 +109,17 @@ export default function AnaliseGMV() {
     return venuesList.filter((v) => v.client_id === clientId);
   }, [venuesList, clientId]);
 
-  const { granularity } = useMemo(() => computePeriod(period), [period]);
+  const granularity = useMemo<Granularity>(() => {
+    const diffMs = dateRange.end.getTime() - dateRange.start.getTime();
+    return diffMs <= 86400000 ? "hour" : "day";
+  }, [dateRange]);
 
   // Busca dados quando filtros mudam
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
-      const { start, end, granularity } = computePeriod(period);
+      const { start, end } = dateRange;
       const { data: rpcData, error: rpcError } = await supabase.rpc(
         "get_gmv_metrics" as any,
         {
@@ -163,7 +145,7 @@ export default function AnaliseGMV() {
     return () => {
       cancelled = true;
     };
-  }, [period, clientId, venueId, paymentMethod, reloadKey]);
+  }, [dateRange, clientId, venueId, paymentMethod, reloadKey, granularity]);
 
   const chartData = useMemo(() => {
     if (!data?.timeseries) return [];
@@ -191,18 +173,7 @@ export default function AnaliseGMV() {
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:flex-wrap">
-          <ToggleGroup
-            type="single"
-            value={period}
-            onValueChange={(v) => v && setPeriod(v as Period)}
-            variant="outline"
-            size="sm"
-          >
-            <ToggleGroupItem value="today">Hoje</ToggleGroupItem>
-            <ToggleGroupItem value="7d">7 dias</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 dias</ToggleGroupItem>
-            <ToggleGroupItem value="month">Mês atual</ToggleGroupItem>
-          </ToggleGroup>
+          <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
 
           <Select
             value={clientId ?? "all"}
@@ -324,7 +295,7 @@ export default function AnaliseGMV() {
           <div>
             <CardTitle>Evolução do GMV</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {periodSubtitle(period, granularity)}
+              {periodSubtitle(granularity)}
             </p>
           </div>
           <Badge variant="outline" className="text-[10px] uppercase tracking-wider shrink-0">
