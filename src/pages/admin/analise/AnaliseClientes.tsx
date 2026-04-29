@@ -144,7 +144,7 @@ export default function AnaliseClientes() {
                 title="Sem Vendas"
                 value={formatInt(kpis.clients_inativos ?? 0)}
                 Icon={UserX}
-                tooltip="Clientes ativos no sistema mas sem nenhum pagamento nos últimos 30 dias."
+                tooltip="Clientes ativos no sistema mas sem nenhum pagamento no período selecionado."
               />
               <KpiCard
                 title="Em Risco"
