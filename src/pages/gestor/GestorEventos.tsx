@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { CalendarDays, Plus, Settings2, Play, CheckCircle2, XCircle, BookOpen, Link2, Unlink, MapPin, Users, FileText, Megaphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Event = {
   id: string;
