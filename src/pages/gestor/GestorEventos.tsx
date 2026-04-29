@@ -487,6 +487,25 @@ export default function GestorEventos() {
     },
   ];
 
+  const formatDateTime = (val: string) => {
+    if (!val) return "";
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const parseDateParts = (val: string) => {
+    if (!val) return { date: undefined as Date | undefined, hour: "12", minute: "00" };
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return { date: undefined as Date | undefined, hour: "12", minute: "00" };
+    return { date: d, hour: String(d.getHours()).padStart(2, "0"), minute: String(d.getMinutes()).padStart(2, "0") };
+  };
+
+  const buildDateTimeString = (date: Date, hour: string, minute: string): string => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${hour}:${minute}`;
+  };
+
   return (
     <GestorClientGuard>
     <div className="space-y-6">
