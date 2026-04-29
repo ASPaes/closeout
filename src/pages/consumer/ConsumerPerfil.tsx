@@ -6,19 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LogOut,
-  Calendar,
   CreditCard,
-  Clock,
-  CheckCircle2,
-  ChefHat,
-  Package,
-  XCircle,
-  Banknote,
-  Smartphone,
-  DollarSign,
-  Inbox,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -27,23 +16,9 @@ import { ProfileStatsRow } from "@/components/consumer/ProfileStatsRow";
 import { ProfileDetailSheet } from "@/components/consumer/ProfileDetailSheet";
 import { PrivacyCard } from "@/components/consumer/PrivacyCard";
 import { ProfileActionCards } from "@/components/consumer/ProfileActionCards";
-import { ProfileSegmentedTabs } from "@/components/consumer/ProfileSegmentedTabs";
 import { SavedCardsSection } from "@/components/consumer/SavedCardsSection";
 import { EditProfileDialog } from "@/components/consumer/EditProfileDialog";
 import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
-
-/* ── status mappings ── */
-const statusIcons: Record<string, React.ElementType> = {
-  pending: Clock, paid: CheckCircle2, preparing: ChefHat,
-  ready: Package, delivered: CheckCircle2, cancelled: XCircle,
-};
-const statusLabels: Record<string, string> = {
-  pending: "Pendente", paid: "Confirmado", preparing: "Em Preparo",
-  ready: "Pronto", delivered: "Entregue", cancelled: "Cancelado",
-};
-const paymentIcons: Record<string, React.ElementType> = {
-  pix: Smartphone, credit: CreditCard, debit: CreditCard, cash: Banknote,
-};
 
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
