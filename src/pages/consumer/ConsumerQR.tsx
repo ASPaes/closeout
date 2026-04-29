@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   CheckCircle2, ChefHat, Package, PackageCheck, PartyPopper,
   ShoppingBag, QrCode, Check, Clock, CreditCard, Smartphone, Banknote,
-  Loader2, XCircle, ArrowLeft,
+  Loader2, XCircle, ArrowLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumer } from "@/contexts/ConsumerContext";
@@ -79,7 +79,7 @@ export default function ConsumerQR() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const { activeOrder, loadingOrder, refreshActiveOrder } = useConsumer();
+  const { activeOrder, loadingOrder, refreshActiveOrder, activeEvent } = useConsumer();
 
   const paramOrderId = searchParams.get("order");
 
@@ -91,6 +91,9 @@ export default function ConsumerQR() {
   const [pixCharge, setPixCharge] = useState<{ qr_code: string; expires_at: string } | null>(null);
   const [pixCountdown, setPixCountdown] = useState<string>("");
   const prevStatusRef = useRef<string | null>(null);
+
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
 
   const fetchOrderItems = useCallback(async (orderId: string): Promise<OrderItem[]> => {
     const { data } = await supabase
@@ -271,9 +274,155 @@ export default function ConsumerQR() {
     setLivePayments(null);
   }, [displayOrder?.id]);
 
+  // Fetch active orders list when no specific order in URL
+  useEffect(() => {
+    if (paramOrderId || !user || !activeEvent) return;
+    setLoadingList(true);
+    const fetchActiveOrders = async () => {
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total, created_at")
+        .eq("consumer_id", user.id)
+        .eq("event_id", activeEvent.id)
+        .in("status", ["paid", "preparing", "ready", "partially_delivered"])
+        .order("created_at", { ascending: false });
+
+      if (!orders || orders.length === 0) {
+        setActiveOrders([]);
+        setLoadingList(false);
+        return;
+      }
+
+      const orderIds = orders.map((o) => o.id);
+
+      const [itemsRes, qrRes] = await Promise.all([
+        supabase
+          .from("order_items")
+          .select("order_id, name, quantity, delivered_quantity")
+          .in("order_id", orderIds),
+        supabase
+          .from("qr_tokens")
+          .select("order_id, token")
+          .in("order_id", orderIds)
+          .eq("status", "valid"),
+      ]);
+
+      const itemsMap: Record<string, any[]> = {};
+      (itemsRes.data || []).forEach((item: any) => {
+        if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+        itemsMap[item.order_id].push(item);
+      });
+
+      const qrMap: Record<string, string> = {};
+      (qrRes.data || []).forEach((qr: any) => {
+        qrMap[qr.order_id] = qr.token;
+      });
+
+      const enriched = orders.map((o) => ({
+        ...o,
+        items: itemsMap[o.id] || [],
+        qr_token: qrMap[o.id] || "",
+      }));
+
+      setActiveOrders(enriched);
+      setLoadingList(false);
+    };
+    fetchActiveOrders();
+  }, [paramOrderId, user, activeEvent]);
+
   // Delivery stats
   const totalQty = displayItems.reduce((s, i) => s + i.quantity, 0);
   const deliveredQty = displayItems.reduce((s, i) => s + (i.delivered_quantity || 0), 0);
+
+  // ── List mode (no specific order in URL) ──
+  if (!paramOrderId) {
+    if (loadingList) {
+      return (
+        <div className="flex flex-col gap-4 py-4">
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
+      );
+    }
+
+    if (activeOrders.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.04] border border-white/[0.06]">
+            <QrCode className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Nenhum pedido ativo</h2>
+            <p className="text-sm text-muted-foreground mt-1">Seus pedidos pagos aparecerão aqui</p>
+          </div>
+          <Button
+            onClick={() => navigate("/app")}
+            className="rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Fazer pedido
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3 py-4">
+        <h1 className="text-xl font-extrabold text-foreground px-1">Pedidos Ativos</h1>
+        {activeOrders.map((order) => {
+          const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.paid;
+          const isReady = order.status === "ready";
+
+          return (
+            <button
+              key={order.id}
+              onClick={() => navigate(`/app/qr?order=${order.id}`)}
+              className={cn(
+                "w-full text-left rounded-2xl border p-4 transition-all active:scale-[0.98]",
+                isReady
+                  ? "border-green-400/40 bg-green-400/5 shadow-[0_0_20px_hsl(145,100%,39%,0.1)]"
+                  : "border-border/60 bg-card hover:bg-muted/30"
+              )}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-base font-extrabold text-primary">
+                  #{String(order.order_number).padStart(3, "0")}
+                </span>
+                <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full border", cfg.color)}>
+                  {cfg.label}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1 mb-3">
+                {order.items.map((item: any, idx: number) => {
+                  const isDelivered = (item.delivered_quantity || 0) >= item.quantity;
+                  return (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className={cn("text-foreground/80", isDelivered && "line-through text-muted-foreground")}>
+                        {item.quantity}x {item.name}
+                      </span>
+                      {isDelivered && <Check className="h-4 w-4 text-success shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                <span className="text-base font-bold text-foreground">
+                  R$ {Number(order.total).toFixed(2)}
+                </span>
+                <div className="flex items-center gap-1 text-xs font-medium text-primary">
+                  <QrCode className="h-3.5 w-3.5" />
+                  Ver QR Code
+                  <ChevronRight className="h-4 w-4" />
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   // ── Loading ──
   if (isLoading) {
@@ -286,7 +435,7 @@ export default function ConsumerQR() {
     );
   }
 
-  // ── No order ──
+  // ── Order not found (paramOrderId set but order missing) ──
   if (!displayOrder) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
@@ -294,7 +443,7 @@ export default function ConsumerQR() {
           <QrCode className="h-8 w-8 text-muted-foreground" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-foreground">{t("consumer_qr_no_order")}</h2>
+          <h2 className="text-lg font-bold text-foreground">Pedido não encontrado</h2>
           <p className="text-sm text-muted-foreground mt-1">{t("consumer_qr_no_order_desc")}</p>
         </div>
         <Button
