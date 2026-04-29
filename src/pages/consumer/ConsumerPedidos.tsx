@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox,
-  Receipt, DollarSign, ChevronDown, QrCode, CreditCard, Smartphone,
+  CalendarX, ChevronDown, QrCode, CreditCard, Smartphone,
   Banknote, ArrowDown, Split, Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -89,7 +89,7 @@ function formatTime(iso: string | null) {
 export default function ConsumerPedidos() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { activeOrder } = useConsumer();
+  const { activeOrder, activeEvent } = useConsumer();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,11 +99,12 @@ export default function ConsumerPedidos() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchOrders = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user || !activeEvent) { setLoading(false); return; }
     const { data } = await supabase
       .from("orders")
       .select("id, order_number, status, total, created_at, event_id, payment_method, is_split_payment, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
       .eq("consumer_id", user.id)
+      .eq("event_id", activeEvent?.id || "")
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -149,13 +150,11 @@ export default function ConsumerPedidos() {
     }
     setLoading(false);
     setRefreshing(false);
-  }, [user]);
+  }, [user, activeEvent?.id]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
-
-  const totalSpent = orders.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
 
   const statusPriority: Record<string, number> = {
     ready: 0,
@@ -186,27 +185,21 @@ export default function ConsumerPedidos() {
     <div className="flex flex-col gap-5 pb-20">
       {/* Title */}
       <h1 className="text-[28px] font-extrabold text-foreground leading-tight tracking-tight">
-        {t("consumer_orders_title")}
+        {activeEvent ? activeEvent.name : t("consumer_orders_title")}
       </h1>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Receipt className="h-4 w-4" />
-            <span className="text-xs font-medium">Total Pedidos</span>
+      {!activeEvent ? (
+        <div className="flex flex-col items-center py-16 text-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/[0.04]">
+            <CalendarX className="h-8 w-8 text-muted-foreground/40" />
           </div>
-          <span className="text-2xl font-bold text-foreground">{orders.length}</span>
-        </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-xs font-medium">Total Gasto</span>
+          <div>
+            <p className="text-base font-semibold text-foreground">Nenhum evento ativo</p>
+            <p className="text-sm text-muted-foreground mt-1">Faça check-in em um evento para ver seus pedidos</p>
           </div>
-          <span className="text-2xl font-bold text-primary">R$ {totalSpent.toFixed(2)}</span>
         </div>
-      </div>
-
+      ) : (
+      <>
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
@@ -470,6 +463,8 @@ export default function ConsumerPedidos() {
             );
           })}
         </div>
+      )}
+      </>
       )}
     </div>
   );
