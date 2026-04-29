@@ -330,15 +330,9 @@ export default function Dashboard() {
                 Tendência de Receita
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                GMV e taxas capturadas por dia — sempre últimos 30 dias
+                GMV e taxas capturadas por dia no período selecionado
               </p>
             </div>
-            <Badge
-              variant="outline"
-              className="text-[10px] uppercase tracking-wider shrink-0"
-            >
-              Independente do filtro
-            </Badge>
           </CardHeader>
           <CardContent>
             <ChartContainer
