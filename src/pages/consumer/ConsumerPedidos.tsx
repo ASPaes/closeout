@@ -157,15 +157,15 @@ export default function ConsumerPedidos() {
   const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
 
   const statusPriority: Record<string, number> = {
-    ready: 0,
+    pending: 0,
+    processing_payment: 0,
+    partially_paid: 0,
+    paid: 1,
+    preparing: 1,
+    ready: 1,
     partially_delivered: 1,
-    preparing: 2,
-    paid: 3,
-    partially_paid: 4,
-    processing_payment: 5,
-    pending: 6,
-    delivered: 7,
-    cancelled: 8,
+    delivered: 1,
+    cancelled: 2,
   };
 
   const filtered = orders
