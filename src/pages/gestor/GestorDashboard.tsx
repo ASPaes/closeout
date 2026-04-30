@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon, Trophy } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -52,6 +52,9 @@ export default function GestorDashboard() {
   const [finCloseout, setFinCloseout] = useState(0);
   const [finPending, setFinPending] = useState(0);
   const [finLoading, setFinLoading] = useState(false);
+
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [topProductsLoading, setTopProductsLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
@@ -232,6 +235,23 @@ export default function GestorDashboard() {
 
   useEffect(() => { fetchFinancials(); }, [fetchFinancials]);
 
+  useEffect(() => {
+    const fetchTopProducts = async () => {
+      if (!effectiveClientId) return;
+      setTopProductsLoading(true);
+      const { data } = await (supabase.rpc as any)("get_gestor_top_products", {
+        p_client_id: effectiveClientId,
+        p_start_date: filterStart.toISOString(),
+        p_end_date: filterEnd.toISOString(),
+        p_event_id: selectedEventId !== "all" ? selectedEventId : null,
+        p_limit: 3,
+      });
+      setTopProducts(data ?? []);
+      setTopProductsLoading(false);
+    };
+    fetchTopProducts();
+  }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
+
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   return (
@@ -399,6 +419,47 @@ export default function GestorDashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Top 3 Products */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-primary" />
+          Top 3 Produtos
+        </h2>
+        {topProductsLoading ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          </div>
+        ) : topProducts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma venda no período</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {topProducts.map((p: any, idx: number) => (
+              <Card key={p.item_id} className="border-border/60 hover:border-primary/30 transition-colors">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        idx === 0 ? "bg-primary/15 text-primary" :
+                        idx === 1 ? "bg-muted text-muted-foreground" :
+                        "bg-muted/50 text-muted-foreground/70"
+                      }`}>
+                        #{idx + 1}
+                      </span>
+                      <Badge variant="outline" className="text-[9px]">
+                        {p.item_type === "combo" ? "Combo" : "Produto"}
+                      </Badge>
+                    </div>
+                    <span className="text-sm font-bold text-primary">{fmt(p.gmv)}</span>
+                  </div>
+                  <p className="text-sm font-semibold truncate">{p.item_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{p.units_sold} un. vendidas</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bar metrics */}
