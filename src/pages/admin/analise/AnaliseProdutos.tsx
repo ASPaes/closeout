@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Package, DollarSign, Hash, TrendingUp, HelpCircle, Boxes } from "lucide-react";
+import { Package, Hash, TrendingUp, HelpCircle, Boxes } from "lucide-react";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -145,17 +145,15 @@ export default function AnaliseProdutos() {
         )}
 
         {/* KPIs */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
           {loading || !data ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-[108px] rounded-lg" />
             ))
           ) : (
             <>
               <KpiCard title="Itens Vendidos" value={formatInt(kpis.total_items_vendidos)} icon={Package}
                 tooltip="Soma das quantidades de todos os itens de pedidos pagos no período (SUM de quantity). Conta unidades, não pedidos." />
-              <KpiCard title="GMV de Itens" value={formatBRL(kpis.gmv_itens)} icon={DollarSign}
-                tooltip="Soma do valor total dos itens vendidos (SUM de order_items.total). Pode diferir do GMV geral por incluir descontos/ajustes." />
               <KpiCard title="Itens Distintos" value={formatInt(kpis.produtos_distintos)} icon={Hash}
                 tooltip="Quantidade de produtos ou combos únicos que apareceram em pedidos pagos no período." />
               <KpiCard title="Preço Médio" value={formatBRL(kpis.ticket_medio_item)} icon={TrendingUp}
