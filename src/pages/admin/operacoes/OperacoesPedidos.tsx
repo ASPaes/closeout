@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, ChevronLeft, ChevronRight, HelpCircle, Receipt, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, HelpCircle, Receipt, CheckCircle2, XCircle, Clock, Eye, ArrowLeft, CalendarDays } from "lucide-react";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -63,6 +63,19 @@ const methodLabels: Record<string, string> = {
   cash: "Dinheiro",
 };
 
+const eventStatusColors: Record<string, string> = {
+  active: "bg-green-500/15 text-green-400 border-green-500/30",
+  completed: "bg-muted text-muted-foreground border-border",
+  cancelled: "bg-red-500/15 text-red-400 border-red-500/30",
+  draft: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+};
+const eventStatusLabels: Record<string, string> = {
+  active: "Ativo",
+  completed: "Encerrado",
+  cancelled: "Cancelado",
+  draft: "Rascunho",
+};
+
 const ALL_STATUSES = [
   "pending", "processing_payment", "partially_paid", "paid", "preparing",
   "ready", "partially_delivered", "delivered", "cancelled",
@@ -101,19 +114,23 @@ export default function OperacoesPedidos() {
   });
   const [statuses, setStatuses] = useState<string[]>([]);
   const [clientId, setClientId] = useState<string | null>(null);
-  const [eventId, setEventId] = useState<string | null>(null);
   const [originFilter, setOriginFilter] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<any | null>(null);
   const [clientsList, setClientsList] = useState<Array<{ id: string; name: string }>>([]);
-  const [eventsList, setEventsList] = useState<Array<{ id: string; name: string; client_id: string }>>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderDetail, setOrderDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Two-view state
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventName, setSelectedEventName] = useState<string>("");
+  const [eventsData, setEventsData] = useState<any | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   // Debounce search
   useEffect(() => {
@@ -121,29 +138,38 @@ export default function OperacoesPedidos() {
     return () => clearTimeout(t);
   }, [searchText]);
 
-  // Load dropdowns once
+  // Load clients dropdown once
   useEffect(() => {
     const load = async () => {
-      const [c, e] = await Promise.all([
-        supabase.from("clients").select("id, name").eq("status", "active").order("name"),
-        supabase.from("events").select("id, name, client_id").order("start_at", { ascending: false }).limit(500),
-      ]);
+      const c = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
       if (c.data) setClientsList(c.data as any);
-      if (e.data) setEventsList(e.data as any);
     };
     load();
   }, []);
 
-  const filteredEvents = useMemo(() => {
-    if (!clientId) return eventsList;
-    return eventsList.filter(e => e.client_id === clientId);
-  }, [eventsList, clientId]);
-
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [dateRange, statuses, clientId, eventId, originFilter, searchDebounced]);
+  useEffect(() => { setPage(1); }, [dateRange, statuses, originFilter, searchDebounced, selectedEventId]);
 
-  // Main fetch
+  // Events summary fetch (cards view)
   useEffect(() => {
+    if (selectedEventId !== null) return;
+    const fetchEvents = async () => {
+      setEventsLoading(true);
+      const { start, end } = dateRange;
+      const { data, error } = await supabase.rpc("get_orders_event_summary" as any, {
+        p_start_date: start.toISOString(),
+        p_end_date: end.toISOString(),
+        p_client_id: clientId,
+      } as any);
+      if (error) { setError(error.message); setEventsLoading(false); return; }
+      setEventsData(data); setError(null); setEventsLoading(false);
+    };
+    fetchEvents();
+  }, [dateRange, clientId, selectedEventId]);
+
+  // Orders fetch (only when an event is selected)
+  useEffect(() => {
+    if (selectedEventId === null) return;
     const fetchData = async () => {
       setLoading(true);
       const { start, end } = dateRange;
@@ -152,7 +178,7 @@ export default function OperacoesPedidos() {
         p_end_date: end.toISOString(),
         p_statuses: statuses.length > 0 ? statuses : null,
         p_client_id: clientId,
-        p_event_id: eventId,
+        p_event_id: selectedEventId,
         p_origin: originFilter,
         p_search: searchDebounced.trim() || null,
         p_page: page,
@@ -162,7 +188,7 @@ export default function OperacoesPedidos() {
       setData(data); setError(null); setLoading(false);
     };
     fetchData();
-  }, [dateRange, statuses, clientId, eventId, originFilter, searchDebounced, page]);
+  }, [dateRange, statuses, clientId, selectedEventId, originFilter, searchDebounced, page]);
 
   const loadOrderDetail = async (orderId: string) => {
     setSelectedOrderId(orderId);
@@ -173,18 +199,143 @@ export default function OperacoesPedidos() {
     setLoadingDetail(false);
   };
 
-  const summary = data?.summary;
+  const handleBack = () => {
+    setSelectedEventId(null);
+    setSelectedEventName("");
+    setData(null);
+    setStatuses([]);
+    setOriginFilter(null);
+    setSearchText("");
+    setSearchDebounced("");
+    setPage(1);
+  };
 
+  const summary = data?.summary;
+  const eventsSummary = eventsData?.summary;
+  const eventsList = (eventsData?.events ?? []) as any[];
+
+  // ============= EVENTS CARDS VIEW =============
+  if (selectedEventId === null) {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Pedidos</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Selecione um evento para ver seus pedidos
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={clientId ?? "all"} onValueChange={(v) => setClientId(v === "all" ? null : v)}>
+                <SelectTrigger className="w-[200px] h-10"><SelectValue placeholder="Cliente" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos clientes</SelectItem>
+                  {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg p-4 flex items-center justify-between">
+              <p className="text-sm">{error}</p>
+              <Button size="sm" variant="outline" onClick={() => setError(null)}>OK</Button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            {eventsLoading || !eventsSummary ? (
+              Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)
+            ) : (
+              <>
+                <KpiCard title="Total" value={formatInt(eventsSummary.total_orders)} icon={<Receipt className="h-4 w-4" />} tooltip="Quantidade total de pedidos no período." />
+                <KpiCard title="GMV" value={formatBRL(eventsSummary.gmv)} icon={<Receipt className="h-4 w-4" />} tooltip="Soma dos totais dos pedidos pagos e não cancelados no período." />
+                <KpiCard title="Pendentes" value={formatInt(eventsSummary.pending_count)} icon={<Clock className="h-4 w-4" />} iconClassName="text-yellow-400" tooltip="Pedidos em pending, processing_payment ou partially_paid." />
+                <KpiCard title="Pagos" value={formatInt(eventsSummary.paid_count)} icon={<CheckCircle2 className="h-4 w-4" />} iconClassName="text-green-400" tooltip="Pedidos com pagamento aprovado e não cancelados." />
+                <KpiCard title="Cancelados" value={formatInt(eventsSummary.cancelled_count)} icon={<XCircle className="h-4 w-4" />} iconClassName="text-red-400" tooltip="Pedidos com status='cancelled'." />
+                <KpiCard title="Ticket Médio" value={formatBRL(eventsSummary.avg_ticket)} icon={<Receipt className="h-4 w-4" />} tooltip="Valor médio dos pedidos pagos e não cancelados." />
+              </>
+            )}
+          </div>
+
+          {eventsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-44" />)}
+            </div>
+          ) : eventsList.length === 0 ? (
+            <Card>
+              <CardContent className="py-16 text-center text-muted-foreground">
+                <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p>Nenhum evento com pedidos no período</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {eventsList.map((ev: any) => (
+                <button
+                  key={ev.event_id}
+                  onClick={() => { setSelectedEventId(ev.event_id); setSelectedEventName(ev.event_name); }}
+                  className="text-left bg-card border border-border/60 hover:border-primary/30 rounded-xl p-4 transition-colors space-y-3"
+                >
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">{ev.client_name}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-bold text-foreground leading-tight line-clamp-2">{ev.event_name}</h3>
+                      <Badge variant="outline" className={`text-[10px] shrink-0 ${eventStatusColors[ev.event_status] ?? ""}`}>
+                        {eventStatusLabels[ev.event_status] ?? ev.event_status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{formatDateTimeBR(ev.start_at)}</p>
+                  </div>
+
+                  <div className="border-t border-border/50" />
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-base font-semibold text-foreground">{formatInt(ev.total_orders)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pedidos</p>
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-green-400">{formatInt(ev.paid_orders)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pagos</p>
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-red-400">{formatInt(ev.cancelled_orders)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cancel.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">GMV</span>
+                    <span className="text-primary font-bold">{formatBRL(ev.gmv)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </TooltipProvider>
+    );
+  }
+
+  // ============= ORDERS LIST VIEW =============
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Pedidos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Lista global de pedidos com filtros e drill-down
-            </p>
+          <div className="space-y-2">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2 h-8 text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Pedidos — {selectedEventName}</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Lista de pedidos do evento com filtros e drill-down
+              </p>
+            </div>
           </div>
           <AdminPeriodFilter onRangeChange={(start, end) => setDateRange({ start, end })} />
         </div>
@@ -202,22 +353,6 @@ export default function OperacoesPedidos() {
                   className="pl-9 h-10"
                 />
               </div>
-
-              <Select value={clientId ?? "all"} onValueChange={(v) => { setClientId(v === "all" ? null : v); setEventId(null); }}>
-                <SelectTrigger className="w-[200px] h-10"><SelectValue placeholder="Cliente" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos clientes</SelectItem>
-                  {clientsList.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-
-              <Select value={eventId ?? "all"} onValueChange={(v) => setEventId(v === "all" ? null : v)}>
-                <SelectTrigger className="w-[200px] h-10"><SelectValue placeholder="Evento" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos eventos</SelectItem>
-                  {filteredEvents.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
 
               <Select value={originFilter ?? "all"} onValueChange={(v) => setOriginFilter(v === "all" ? null : v)}>
                 <SelectTrigger className="w-[160px] h-10"><SelectValue placeholder="Origem" /></SelectTrigger>
@@ -277,9 +412,9 @@ export default function OperacoesPedidos() {
             <>
               <KpiCard title="Total" value={formatInt(summary.total_orders)} icon={<Receipt className="h-4 w-4" />} tooltip="Quantidade total de pedidos no período, considerando todos os filtros aplicados." />
               <KpiCard title="GMV" value={formatBRL(summary.gmv)} icon={<Receipt className="h-4 w-4" />} tooltip="Soma dos totais dos pedidos com paid_at e status diferente de cancelled." />
-              <KpiCard title="Pendentes" value={formatInt(summary.pending_count)} icon={<Clock className="h-4 w-4" />} iconClassName="text-yellow-400" tooltip="Pedidos em pending, processing_payment ou partially_paid — ainda não concluíram o fluxo de pagamento." />
-              <KpiCard title="Pagos" value={formatInt(summary.paid_count)} icon={<CheckCircle2 className="h-4 w-4" />} iconClassName="text-green-400" tooltip="Pedidos com pagamento aprovado (paid_at preenchido) e não cancelados." />
-              <KpiCard title="Cancelados" value={formatInt(summary.cancelled_count)} icon={<XCircle className="h-4 w-4" />} iconClassName="text-red-400" tooltip="Pedidos com status='cancelled'. Podem ter sido cancelados pelo sistema (PIX expirado) ou manualmente." />
+              <KpiCard title="Pendentes" value={formatInt(summary.pending_count)} icon={<Clock className="h-4 w-4" />} iconClassName="text-yellow-400" tooltip="Pedidos em pending, processing_payment ou partially_paid." />
+              <KpiCard title="Pagos" value={formatInt(summary.paid_count)} icon={<CheckCircle2 className="h-4 w-4" />} iconClassName="text-green-400" tooltip="Pedidos com pagamento aprovado e não cancelados." />
+              <KpiCard title="Cancelados" value={formatInt(summary.cancelled_count)} icon={<XCircle className="h-4 w-4" />} iconClassName="text-red-400" tooltip="Pedidos com status='cancelled'." />
               <KpiCard title="Ticket Médio" value={formatBRL(summary.avg_ticket)} icon={<Receipt className="h-4 w-4" />} tooltip="Valor médio dos pedidos pagos e não cancelados no período." />
             </>
           )}
@@ -392,7 +527,6 @@ export default function OperacoesPedidos() {
               </div>
             ) : (
               <div className="space-y-5">
-                {/* Info principal */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</p>
@@ -423,7 +557,6 @@ export default function OperacoesPedidos() {
                   </div>
                 </div>
 
-                {/* Timeline */}
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Timeline</h3>
                   <div className="space-y-1.5 text-sm">
@@ -452,7 +585,6 @@ export default function OperacoesPedidos() {
                   </div>
                 </div>
 
-                {/* Itens */}
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Itens ({orderDetail.items?.length ?? 0})</h3>
                   <div className="space-y-1.5">
@@ -468,7 +600,6 @@ export default function OperacoesPedidos() {
                   </div>
                 </div>
 
-                {/* Pagamentos */}
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Pagamentos ({orderDetail.payments?.length ?? 0})</h3>
                   <div className="space-y-1.5">
@@ -487,7 +618,6 @@ export default function OperacoesPedidos() {
                   </div>
                 </div>
 
-                {/* Asaas Charges */}
                 {orderDetail.asaas_charges && orderDetail.asaas_charges.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Asaas Charges ({orderDetail.asaas_charges.length})</h3>
