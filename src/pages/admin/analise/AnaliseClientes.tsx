@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AdminPeriodFilter } from "@/components/AdminPeriodFilter";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Building2, UserCheck, UserX, AlertTriangle, Coins, Trophy, HelpCircle } from "lucide-react";
+import { Building2, UserCheck, UserX, AlertTriangle, Banknote, Trophy, HelpCircle } from "lucide-react";
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -153,17 +153,10 @@ export default function AnaliseClientes() {
                 tooltip="Clientes que tinham atividade no período anterior equivalente mas sem vendas no período selecionado. Sinal precoce de churn."
               />
               <KpiCard
-                title="LTV Médio"
-                value={formatBRL(kpis.ltv_medio ?? 0)}
-                Icon={Coins}
-                tooltip="Lifetime Value médio — soma histórica de fees capturadas por cliente. ATUAL: apenas fees de pagamentos. Não inclui mensalidades (chega na Fase 4a)."
-                badge={
-                  kpis.ltv_is_partial ? (
-                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-yellow-500/40 text-yellow-400">
-                      parcial
-                    </Badge>
-                  ) : undefined
-                }
+                title="Fee Médio por Evento"
+                value={formatBRL(kpis.avg_fee_per_event ?? 0)}
+                Icon={Banknote}
+                tooltip="Média de fees capturadas pela plataforma por evento no período selecionado. Total de fees ÷ quantidade de eventos com pagamento."
               />
             </>
           )}
