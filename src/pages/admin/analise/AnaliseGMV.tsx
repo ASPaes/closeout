@@ -24,7 +24,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { DollarSign, Percent, Receipt, ShoppingCart, Users } from "lucide-react";
+import { DollarSign, Receipt, Banknote } from "lucide-react";
 import { HelpCircle } from "lucide-react";
 import {
   Tooltip,
@@ -246,9 +246,9 @@ export default function AnaliseGMV() {
       )}
 
       {/* KPIs */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         {loading
-          ? Array.from({ length: 5 }).map((_, i) => (
+          ? Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-[110px] w-full" />
             ))
           : (
@@ -261,29 +261,16 @@ export default function AnaliseGMV() {
                 tooltip="Volume total de pagamentos aprovados no período, considerando os filtros aplicados. É o 'tamanho' do que passou pela plataforma."
               />
               <KpiCard
-                title="Take Rate"
-                value={formatPct(kpis.take_rate_medio)}
-                icon={<Percent className="h-4 w-4 text-primary" />}
-                tooltip="Percentual do GMV que ficou com a plataforma como receita. Calculado como fees ÷ GMV. Quanto maior, mais a plataforma captura por transação."
-              />
-              <KpiCard
                 title="Ticket Médio"
                 value={formatBRL(kpis.ticket_medio)}
                 icon={<Receipt className="h-4 w-4 text-primary" />}
                 tooltip="Valor médio de cada pagamento aprovado no período. Calculado como GMV ÷ total de pagamentos. Não é o mesmo que valor médio por pedido."
               />
               <KpiCard
-                title="Total Pedidos"
-                value={formatInt(kpis.total_pedidos)}
-                icon={<ShoppingCart className="h-4 w-4 text-primary" />}
-                tooltip="Quantidade de pedidos distintos (por order_id) que geraram ao menos um pagamento aprovado no período. Um pedido pode ter múltiplos pagamentos (split)."
-              />
-              <KpiCard
-                title="Consumers Únicos"
-                value={formatInt(kpis.consumers_unicos)}
-                icon={<Users className="h-4 w-4 text-primary" />}
-                className="col-span-2 lg:col-span-1"
-                tooltip="Consumidores distintos (por consumer_id) que fizeram ao menos um pagamento aprovado no período. Mede base ativa, não transações."
+                title="Faturamento Caixa"
+                value={formatBRL(kpis.gmv_caixa ?? 0)}
+                icon={<Banknote className="h-4 w-4 text-primary" />}
+                tooltip="Total de pedidos pagos feitos pelo módulo Caixa (/caixa) no período, independente do método de pagamento."
               />
             </>
           )}
