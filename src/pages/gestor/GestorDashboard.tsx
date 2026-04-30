@@ -5,10 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -48,11 +53,17 @@ export default function GestorDashboard() {
   const [finPending, setFinPending] = useState(0);
   const [finLoading, setFinLoading] = useState(false);
 
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
+    to: new Date(),
+  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const filterStart = dateRange?.from ?? (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d; })();
+  const filterEnd = dateRange?.to ?? new Date();
+
   useEffect(() => {
     if (!effectiveClientId) return;
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
 
     // Count open registers
     let regQuery = supabase
@@ -63,13 +74,14 @@ export default function GestorDashboard() {
     if (selectedEventId !== "all") regQuery = regQuery.eq("event_id", selectedEventId);
     regQuery.then(({ count }) => setOpenRegisters(count ?? 0));
 
-    // Sum today's sales
+    // Sum sales in range
     let salesQuery = supabase
       .from("cash_orders")
       .select("total")
       .eq("client_id", effectiveClientId)
       .eq("status", "completed")
-      .gte("created_at", todayStart.toISOString());
+      .gte("created_at", filterStart.toISOString())
+      .lte("created_at", filterEnd.toISOString());
     if (selectedEventId !== "all") salesQuery = salesQuery.eq("event_id", selectedEventId);
     salesQuery.then(({ data }) => {
       const sum = (data ?? []).reduce((acc, o) => acc + Number(o.total), 0);
@@ -112,13 +124,14 @@ export default function GestorDashboard() {
     if (selectedEventId !== "all") readyQuery = readyQuery.eq("event_id", selectedEventId);
     readyQuery.then(({ count }) => setBarReady(count ?? 0));
 
-    // Bar: delivered today
+    // Bar: delivered in range
     let deliveredQuery = supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
       .eq("status", "delivered")
-      .gte("delivered_at", todayStart.toISOString());
+      .gte("delivered_at", filterStart.toISOString())
+      .lte("delivered_at", filterEnd.toISOString());
     if (selectedEventId !== "all") deliveredQuery = deliveredQuery.eq("event_id", selectedEventId);
     deliveredQuery.then(({ count }) => setBarDeliveredToday(count ?? 0));
 
@@ -130,7 +143,8 @@ export default function GestorDashboard() {
       .eq("status", "delivered")
       .not("paid_at", "is", null)
       .not("ready_at", "is", null)
-      .gte("ready_at", todayStart.toISOString())
+      .gte("ready_at", filterStart.toISOString())
+      .lte("ready_at", filterEnd.toISOString())
       .limit(200);
     if (selectedEventId !== "all") avgQuery = avgQuery.eq("event_id", selectedEventId);
     avgQuery.then(({ data }) => {
@@ -179,7 +193,7 @@ export default function GestorDashboard() {
       .order("start_at", { ascending: false })
       .limit(50)
       .then(({ data }) => setActiveEvents(data ?? []));
-  }, [effectiveClientId, selectedEventId]);
+  }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
 
   // Financial data fetch
   const fetchFinancials = useCallback(async () => {
@@ -190,6 +204,8 @@ export default function GestorDashboard() {
       .from("asaas_charges")
       .select("id, amount, billing_type, asaas_status, created_at, order_id, split_amount, closeout_amount")
       .eq("client_id", effectiveClientId)
+      .gte("created_at", filterStart.toISOString())
+      .lte("created_at", filterEnd.toISOString())
       .order("created_at", { ascending: false });
 
     if (selectedEventId !== "all") {
@@ -212,7 +228,7 @@ export default function GestorDashboard() {
     setFinPending(pending);
 
     setFinLoading(false);
-  }, [effectiveClientId, selectedEventId]);
+  }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
 
   useEffect(() => { fetchFinancials(); }, [fetchFinancials]);
 
@@ -232,17 +248,48 @@ export default function GestorDashboard() {
             )}
           </p>
         </div>
-        <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-          <SelectTrigger className="w-[220px] h-9">
-            <SelectValue placeholder="Todos os eventos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os eventos</SelectItem>
-            {activeEvents.map((ev) => (
-              <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-9 justify-start text-left font-normal w-[260px]",
+                  !dateRange?.from && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from && dateRange?.to
+                  ? `${dateRange.from.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} — ${dateRange.to.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`
+                  : <span>Selecionar período</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => {
+                  setDateRange(range);
+                  if (range?.from && range?.to) setCalendarOpen(false);
+                }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+            <SelectTrigger className="w-[220px] h-9">
+              <SelectValue placeholder="Todos os eventos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os eventos</SelectItem>
+              {activeEvents.map((ev) => (
+                <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Live metrics */}
@@ -259,7 +306,7 @@ export default function GestorDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("gcx_sales_today")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Vendas no Caixa</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
