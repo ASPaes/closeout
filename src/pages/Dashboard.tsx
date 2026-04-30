@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,6 +85,7 @@ export default function Dashboard() {
   const { profile } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
     const end = new Date();
     const start = new Date();
@@ -232,6 +234,43 @@ export default function Dashboard() {
             Tentar novamente
           </Button>
         </div>
+      )}
+
+      {!alertsLoading && alertsSummary && alertsSummary.open_total > 0 && (
+        <button
+          onClick={() => navigate("/admin/alertas")}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all hover:opacity-90 active:scale-[0.99] mb-4"
+          style={{
+            background: alertsSummary.open_critical > 0
+              ? "rgba(239, 68, 68, 0.08)"
+              : "rgba(234, 179, 8, 0.08)",
+            borderColor: alertsSummary.open_critical > 0
+              ? "rgba(239, 68, 68, 0.25)"
+              : "rgba(234, 179, 8, 0.25)",
+          }}
+        >
+          <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
+            alertsSummary.open_critical > 0 ? "bg-red-500/15" : "bg-yellow-500/15"
+          }`}>
+            <AlertTriangle className={`h-4 w-4 ${
+              alertsSummary.open_critical > 0 ? "text-red-400 animate-pulse" : "text-yellow-400"
+            }`} />
+          </div>
+          <div className="flex-1 text-left">
+            <p className={`text-sm font-semibold ${
+              alertsSummary.open_critical > 0 ? "text-red-400" : "text-yellow-400"
+            }`}>
+              {alertsSummary.open_total} alerta{alertsSummary.open_total > 1 ? "s" : ""} ativo{alertsSummary.open_total > 1 ? "s" : ""}
+              {alertsSummary.open_critical > 0 && ` (${alertsSummary.open_critical} crítico${alertsSummary.open_critical > 1 ? "s" : ""})`}
+            </p>
+            {alertsSummary.newest_open && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {alertsSummary.newest_open.title}
+              </p>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground shrink-0">Ver alertas →</span>
+        </button>
       )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
