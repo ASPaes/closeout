@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,6 +85,7 @@ export default function Dashboard() {
   const { profile } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
     const end = new Date();
     const start = new Date();
