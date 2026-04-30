@@ -421,6 +421,47 @@ export default function GestorDashboard() {
         </div>
       </div>
 
+      {/* Top 3 Products */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-primary" />
+          Top 3 Produtos
+        </h2>
+        {topProductsLoading ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          </div>
+        ) : topProducts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma venda no período</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {topProducts.map((p: any, idx: number) => (
+              <Card key={p.item_id} className="border-border/60 hover:border-primary/30 transition-colors">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        idx === 0 ? "bg-primary/15 text-primary" :
+                        idx === 1 ? "bg-muted text-muted-foreground" :
+                        "bg-muted/50 text-muted-foreground/70"
+                      }`}>
+                        #{idx + 1}
+                      </span>
+                      <Badge variant="outline" className="text-[9px]">
+                        {p.item_type === "combo" ? "Combo" : "Produto"}
+                      </Badge>
+                    </div>
+                    <span className="text-sm font-bold text-primary">{fmt(p.gmv)}</span>
+                  </div>
+                  <p className="text-sm font-semibold truncate">{p.item_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{p.units_sold} un. vendidas</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Bar metrics */}
       <div>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
