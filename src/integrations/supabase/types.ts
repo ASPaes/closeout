@@ -3855,6 +3855,14 @@ export type Database = {
         }[]
       }
       get_order_detail: { Args: { p_order_id: string }; Returns: Json }
+      get_orders_event_summary: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_orders_global: {
         Args: {
           p_client_id?: string
@@ -3869,33 +3877,19 @@ export type Database = {
         }
         Returns: Json
       }
-      get_payments_global:
-        | {
-            Args: {
-              p_client_id?: string
-              p_end_date?: string
-              p_only_divergent?: boolean
-              p_page?: number
-              p_page_size?: number
-              p_payment_method?: string
-              p_start_date?: string
-              p_statuses?: string[]
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_client_id?: string
-              p_end_date?: string
-              p_only_divergent?: boolean
-              p_page?: number
-              p_page_size?: number
-              p_payment_method?: string
-              p_start_date?: string
-              p_statuses?: string[]
-            }
-            Returns: Json
-          }
+      get_payments_global: {
+        Args: {
+          p_client_id?: string
+          p_end_date?: string
+          p_only_divergent?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_payment_method?: string
+          p_start_date?: string
+          p_statuses?: string[]
+        }
+        Returns: Json
+      }
       get_platform_health_summary: { Args: never; Returns: Json }
       get_products_analytics: {
         Args: {
