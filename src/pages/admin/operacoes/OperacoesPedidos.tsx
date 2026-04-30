@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -131,6 +131,7 @@ export default function OperacoesPedidos() {
   const [selectedEventName, setSelectedEventName] = useState<string>("");
   const [eventsData, setEventsData] = useState<any | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventSearch, setEventSearch] = useState("");
 
   // Debounce search
   useEffect(() => {
@@ -214,6 +215,16 @@ export default function OperacoesPedidos() {
   const eventsSummary = eventsData?.summary;
   const eventsList = (eventsData?.events ?? []) as any[];
 
+  const filteredEvents = useMemo(() => {
+    if (!eventsData?.events) return [];
+    if (!eventSearch.trim()) return eventsData.events;
+    const q = eventSearch.toLowerCase().trim();
+    return eventsData.events.filter((ev: any) =>
+      ev.event_name?.toLowerCase().includes(q) ||
+      ev.client_name?.toLowerCase().includes(q)
+    );
+  }, [eventsData, eventSearch]);
+
   // ============= EVENTS CARDS VIEW =============
   if (selectedEventId === null) {
     return (
@@ -260,6 +271,19 @@ export default function OperacoesPedidos() {
             )}
           </div>
 
+          <div className="flex items-center justify-between gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar evento..."
+                value={eventSearch}
+                onChange={(e) => setEventSearch(e.target.value)}
+                className="pl-9 h-10"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">{filteredEvents.length} evento(s)</span>
+          </div>
+
           {eventsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-44" />)}
@@ -273,7 +297,7 @@ export default function OperacoesPedidos() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {eventsList.map((ev: any) => {
+              {filteredEvents.map((ev: any) => {
                 const cfg = eventStatusConfig[ev.event_status] ?? { label: ev.event_status, color: "text-muted-foreground bg-muted/30 border-border" };
                 return (
                   <button
