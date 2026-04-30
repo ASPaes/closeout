@@ -20,18 +20,6 @@ const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url
   { titleKey: "events", descKey: "manage_events", icon: CalendarDays, url: "/gestor/eventos" },
 ];
 
-type FinancialCharge = {
-  id: string;
-  amount: number;
-  billing_type: string;
-  asaas_status: string;
-  created_at: string;
-  order_id: string;
-  order_number?: number;
-  split_amount: number | null;
-  closeout_amount: number | null;
-};
-
 type ActiveEvent = { id: string; name: string };
 
 export default function GestorDashboard() {
@@ -58,7 +46,6 @@ export default function GestorDashboard() {
   const [finNet, setFinNet] = useState(0);
   const [finCloseout, setFinCloseout] = useState(0);
   const [finPending, setFinPending] = useState(0);
-  const [finTransactions, setFinTransactions] = useState<FinancialCharge[]>([]);
   const [finLoading, setFinLoading] = useState(false);
 
   useEffect(() => {
@@ -68,68 +55,75 @@ export default function GestorDashboard() {
     todayStart.setHours(0, 0, 0, 0);
 
     // Count open registers
-    supabase
+    let regQuery = supabase
       .from("cash_registers")
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
-      .eq("status", "open")
-      .then(({ count }) => setOpenRegisters(count ?? 0));
+      .eq("status", "open");
+    if (selectedEventId !== "all") regQuery = regQuery.eq("event_id", selectedEventId);
+    regQuery.then(({ count }) => setOpenRegisters(count ?? 0));
 
     // Sum today's sales
-    supabase
+    let salesQuery = supabase
       .from("cash_orders")
       .select("total")
       .eq("client_id", effectiveClientId)
       .eq("status", "completed")
-      .gte("created_at", todayStart.toISOString())
-      .then(({ data }) => {
-        const sum = (data ?? []).reduce((acc, o) => acc + Number(o.total), 0);
-        setSalesToday(sum);
-      });
+      .gte("created_at", todayStart.toISOString());
+    if (selectedEventId !== "all") salesQuery = salesQuery.eq("event_id", selectedEventId);
+    salesQuery.then(({ data }) => {
+      const sum = (data ?? []).reduce((acc, o) => acc + Number(o.total), 0);
+      setSalesToday(sum);
+    });
 
     // Active waiters
-    supabase
+    let waitQuery = supabase
       .from("waiter_sessions" as any)
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
-      .is("closed_at", null)
-      .then(({ count }) => setActiveWaiters(count ?? 0));
+      .is("closed_at", null);
+    if (selectedEventId !== "all") waitQuery = waitQuery.eq("event_id", selectedEventId);
+    waitQuery.then(({ count }) => setActiveWaiters(count ?? 0));
 
     // Pending cancellations
-    supabase
+    let cancQuery = supabase
       .from("waiter_cancellation_requests" as any)
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
-      .eq("status", "pending")
-      .then(({ count }) => setPendingCancellations(count ?? 0));
+      .eq("status", "pending");
+    if (selectedEventId !== "all") cancQuery = cancQuery.eq("event_id", selectedEventId);
+    cancQuery.then(({ count }) => setPendingCancellations(count ?? 0));
 
     // Bar: queue count
-    supabase
+    let queueQuery = supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
-      .in("status", ["pending", "paid", "preparing"])
-      .then(({ count }) => setBarQueue(count ?? 0));
+      .in("status", ["pending", "paid", "preparing"]);
+    if (selectedEventId !== "all") queueQuery = queueQuery.eq("event_id", selectedEventId);
+    queueQuery.then(({ count }) => setBarQueue(count ?? 0));
 
     // Bar: ready count
-    supabase
+    let readyQuery = supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
-      .eq("status", "ready")
-      .then(({ count }) => setBarReady(count ?? 0));
+      .eq("status", "ready");
+    if (selectedEventId !== "all") readyQuery = readyQuery.eq("event_id", selectedEventId);
+    readyQuery.then(({ count }) => setBarReady(count ?? 0));
 
     // Bar: delivered today
-    supabase
+    let deliveredQuery = supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
       .eq("client_id", effectiveClientId)
       .eq("status", "delivered")
-      .gte("delivered_at", todayStart.toISOString())
-      .then(({ count }) => setBarDeliveredToday(count ?? 0));
+      .gte("delivered_at", todayStart.toISOString());
+    if (selectedEventId !== "all") deliveredQuery = deliveredQuery.eq("event_id", selectedEventId);
+    deliveredQuery.then(({ count }) => setBarDeliveredToday(count ?? 0));
 
     // Bar: avg prep time (ready_at - paid_at)
-    supabase
+    let avgQuery = supabase
       .from("orders")
       .select("paid_at, ready_at")
       .eq("client_id", effectiveClientId)
@@ -137,8 +131,9 @@ export default function GestorDashboard() {
       .not("paid_at", "is", null)
       .not("ready_at", "is", null)
       .gte("ready_at", todayStart.toISOString())
-      .limit(200)
-      .then(({ data }) => {
+      .limit(200);
+    if (selectedEventId !== "all") avgQuery = avgQuery.eq("event_id", selectedEventId);
+    avgQuery.then(({ data }) => {
         if (!data || data.length === 0) { setBarAvgPrepMin(null); return; }
         const diffs = data.map((o) => {
           const paid = new Date(o.paid_at!).getTime();
@@ -150,15 +145,16 @@ export default function GestorDashboard() {
       });
 
     // Bar: unretrieved orders (ready for too long)
-    supabase
+    let unretrievedQuery = supabase
       .from("orders")
       .select("order_number, ready_at, notes")
       .eq("client_id", effectiveClientId)
       .eq("status", "ready")
       .not("ready_at", "is", null)
       .order("ready_at", { ascending: true })
-      .limit(50)
-      .then(({ data }) => {
+      .limit(50);
+    if (selectedEventId !== "all") unretrievedQuery = unretrievedQuery.eq("event_id", selectedEventId);
+    unretrievedQuery.then(({ data }) => {
         if (!data) return;
         const nowMs = Date.now();
         const alerts = data
@@ -183,7 +179,7 @@ export default function GestorDashboard() {
       .order("start_at", { ascending: false })
       .limit(50)
       .then(({ data }) => setActiveEvents(data ?? []));
-  }, [effectiveClientId]);
+  }, [effectiveClientId, selectedEventId]);
 
   // Financial data fetch
   const fetchFinancials = useCallback(async () => {
@@ -215,20 +211,6 @@ export default function GestorDashboard() {
     setFinCloseout(closeout);
     setFinPending(pending);
 
-    // Fetch order numbers for last 10
-    const last10 = charges.slice(0, 10);
-    if (last10.length > 0) {
-      const orderIds = [...new Set(last10.map((c) => c.order_id))];
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("id, order_number")
-        .in("id", orderIds);
-      const orderMap = new Map((orders ?? []).map((o) => [o.id, o.order_number]));
-      setFinTransactions(last10.map((c) => ({ ...c, order_number: orderMap.get(c.order_id) })));
-    } else {
-      setFinTransactions([]);
-    }
-
     setFinLoading(false);
   }, [effectiveClientId, selectedEventId]);
 
@@ -236,30 +218,31 @@ export default function GestorDashboard() {
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
-  const billingLabel = (type: string) => {
-    const map: Record<string, string> = { PIX: "PIX", CREDIT_CARD: "Crédito", DEBIT_CARD: "Débito", BOLETO: "Boleto" };
-    return map[type] ?? type;
-  };
-
-  const statusBadge = (s: string) => {
-    if (s === "CONFIRMED" || s === "RECEIVED") return <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">Pago</Badge>;
-    if (s === "PENDING") return <Badge variant="secondary" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-[10px]">Pendente</Badge>;
-    if (s === "OVERDUE" || s === "REFUNDED") return <Badge variant="destructive" className="text-[10px]">{s === "REFUNDED" ? "Estornado" : "Vencido"}</Badge>;
-    return <Badge variant="outline" className="text-[10px]">{s}</Badge>;
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
-        <p className="text-muted-foreground">
-          {t("welcome_back")}, {profile?.name || "Gestor"}
-          {clientName && (
-            <span className="ml-2 text-sm font-medium text-foreground">
-              — {clientName}
-            </span>
-          )}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
+          <p className="text-muted-foreground">
+            {t("welcome_back")}, {profile?.name || "Gestor"}
+            {clientName && (
+              <span className="ml-2 text-sm font-medium text-foreground">
+                — {clientName}
+              </span>
+            )}
+          </p>
+        </div>
+        <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+          <SelectTrigger className="w-[220px] h-9">
+            <SelectValue placeholder="Todos os eventos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os eventos</SelectItem>
+            {activeEvents.map((ev) => (
+              <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Live metrics */}
@@ -311,23 +294,10 @@ export default function GestorDashboard() {
 
       {/* Financial metrics */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            Financeiro
-          </h2>
-          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger className="w-[220px] h-9">
-              <SelectValue placeholder="Todos os eventos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os eventos</SelectItem>
-              {activeEvents.map((ev) => (
-                <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+          <DollarSign className="h-5 w-5 text-primary" />
+          Financeiro
+        </h2>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -382,47 +352,6 @@ export default function GestorDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent transactions table */}
-        {finTransactions.length > 0 && (
-          <Card className="mt-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Últimas Transações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50">
-                      <th className="text-left py-2 font-medium text-muted-foreground">Pedido</th>
-                      <th className="text-left py-2 font-medium text-muted-foreground">Método</th>
-                      <th className="text-right py-2 font-medium text-muted-foreground">Valor</th>
-                      <th className="text-center py-2 font-medium text-muted-foreground">Status</th>
-                      <th className="text-right py-2 font-medium text-muted-foreground">Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {finTransactions.map((tx) => (
-                      <tr key={tx.id} className="border-b border-border/30 last:border-0">
-                        <td className="py-2 font-mono text-xs">
-                          #{tx.order_number ? String(tx.order_number).padStart(3, "0") : "—"}
-                        </td>
-                        <td className="py-2">
-                          <Badge variant="outline" className="text-[10px]">{billingLabel(tx.billing_type)}</Badge>
-                        </td>
-                        <td className="py-2 text-right font-medium">{fmt(Number(tx.amount))}</td>
-                        <td className="py-2 text-center">{statusBadge(tx.asaas_status)}</td>
-                        <td className="py-2 text-right text-muted-foreground text-xs">
-                          {new Date(tx.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Bar metrics */}
