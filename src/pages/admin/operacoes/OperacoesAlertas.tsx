@@ -42,13 +42,19 @@ const statusColors: Record<string, string> = {
 };
 const alertTypeLabels: Record<string, string> = {
   cron_pix_offline: "Cron PIX offline",
-  split_divergente: "Split divergente",
+  asaas_divergence: "Divergência com Asaas",
+  asaas_failure_rate: "Taxa alta de falhas Asaas",
+  db_connections_high: "Conexões do banco altas",
+  db_dead_tuples: "Dead tuples no banco",
+  cron_failures: "Cron jobs falhando",
+  event_no_engagement: "Evento sem engajamento",
   webhook_asaas_failed: "Webhook Asaas falhou",
   edge_function_failed: "Edge Function falhou",
-  pix_expire_high: "Taxa alta de PIX expirado",
-  payments_failed_burst: "Pagamentos falhando em série",
-  order_stuck: "Pedido travado",
-  event_no_activity: "Evento sem atividade"
+  split_divergente: "Split divergente (legado)",
+  pix_expire_high: "PIX expirado em série (legado)",
+  payments_failed_burst: "Falhas em série (legado)",
+  order_stuck: "Pedido travado (legado)",
+  event_no_activity: "Evento sem atividade (legado)",
 };
 
 export default function OperacoesAlertas() {
@@ -146,12 +152,12 @@ export default function OperacoesAlertas() {
     {
       label: "Críticos", value: data?.summary?.open_critical ?? 0, icon: AlertOctagon,
       color: (data?.summary?.open_critical ?? 0) > 0 ? "text-red-400" : "text-muted-foreground",
-      tooltip: "Alertas críticos abertos: webhook Asaas, Edge Function, split divergente, cron PIX offline. Ação imediata."
+      tooltip: "Alertas críticos abertos: divergência com Asaas, taxa alta de falhas, cron PIX offline. Ação imediata."
     },
     {
       label: "Atenção", value: data?.summary?.open_warning ?? 0, icon: AlertTriangle,
       color: (data?.summary?.open_warning ?? 0) > 0 ? "text-yellow-400" : "text-muted-foreground",
-      tooltip: "Alertas de atenção: PIX expirando em série, pagamentos falhando, pedido travado, evento sem atividade."
+      tooltip: "Alertas de atenção: conexões do banco, dead tuples, cron jobs falhando, evento sem engajamento."
     },
     {
       label: "Resolvidos 24h", value: data?.summary?.resolved_24h ?? 0, icon: CheckCircle2,
