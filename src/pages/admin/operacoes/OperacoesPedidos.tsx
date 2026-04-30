@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -63,17 +64,16 @@ const methodLabels: Record<string, string> = {
   cash: "Dinheiro",
 };
 
-const eventStatusColors: Record<string, string> = {
-  active: "bg-green-500/15 text-green-400 border-green-500/30",
-  completed: "bg-muted text-muted-foreground border-border",
-  cancelled: "bg-red-500/15 text-red-400 border-red-500/30",
-  draft: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+const eventStatusConfig: Record<string, { label: string; color: string }> = {
+  active: { label: "Ativo", color: "text-green-400 bg-green-400/10 border-green-400/30" },
+  completed: { label: "Concluído", color: "text-muted-foreground bg-muted/30 border-border" },
+  cancelled: { label: "Cancelado", color: "text-red-400 bg-red-400/10 border-red-400/30" },
+  draft: { label: "Rascunho", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
 };
-const eventStatusLabels: Record<string, string> = {
-  active: "Ativo",
-  completed: "Encerrado",
-  cancelled: "Cancelado",
-  draft: "Rascunho",
+
+const formatEventDate = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
 const ALL_STATUSES = [
@@ -273,46 +273,35 @@ export default function OperacoesPedidos() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {eventsList.map((ev: any) => (
-                <button
-                  key={ev.event_id}
-                  onClick={() => { setSelectedEventId(ev.event_id); setSelectedEventName(ev.event_name); }}
-                  className="text-left bg-card border border-border/60 hover:border-primary/30 rounded-xl p-4 transition-colors space-y-3"
-                >
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{ev.client_name}</p>
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-foreground leading-tight line-clamp-2">{ev.event_name}</h3>
-                      <Badge variant="outline" className={`text-[10px] shrink-0 ${eventStatusColors[ev.event_status] ?? ""}`}>
-                        {eventStatusLabels[ev.event_status] ?? ev.event_status}
+              {eventsList.map((ev: any) => {
+                const cfg = eventStatusConfig[ev.event_status] ?? { label: ev.event_status, color: "text-muted-foreground bg-muted/30 border-border" };
+                return (
+                  <button
+                    key={ev.event_id}
+                    onClick={() => { setSelectedEventId(ev.event_id); setSelectedEventName(ev.event_name); }}
+                    className="w-full text-left rounded-xl border border-border/60 p-4 hover:border-primary/30 transition-all active:scale-[0.99] bg-card"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{ev.client_name}</p>
+                        <h3 className="text-base font-bold text-foreground mt-0.5">{ev.event_name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">{formatEventDate(ev.start_at)}</p>
+                      </div>
+                      <Badge variant="outline" className={cn("text-[10px] shrink-0", cfg.color)}>
+                        {cfg.label}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">{formatDateTimeBR(ev.start_at)}</p>
-                  </div>
-
-                  <div className="border-t border-border/50" />
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <p className="text-base font-semibold text-foreground">{formatInt(ev.total_orders)}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pedidos</p>
+                    <div className="border-t border-border/30 mt-3 pt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>{ev.total_orders} pedidos</span>
+                        <span className="text-green-400">{ev.paid_orders} pagos</span>
+                        {ev.cancelled_orders > 0 && <span className="text-red-400">{ev.cancelled_orders} canc.</span>}
+                      </div>
+                      <span className="text-sm font-bold text-primary">{formatBRL(ev.gmv)}</span>
                     </div>
-                    <div>
-                      <p className="text-base font-semibold text-green-400">{formatInt(ev.paid_orders)}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pagos</p>
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold text-red-400">{formatInt(ev.cancelled_orders)}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cancel.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">GMV</span>
-                    <span className="text-primary font-bold">{formatBRL(ev.gmv)}</span>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
