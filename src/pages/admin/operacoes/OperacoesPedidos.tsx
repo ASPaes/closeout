@@ -319,6 +319,7 @@ export default function OperacoesPedidos() {
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>{ev.total_orders} pedidos</span>
                         <span className="text-green-400">{ev.paid_orders} pagos</span>
+                        {ev.pending_orders > 0 && <span className="text-yellow-400">{ev.pending_orders} pend.</span>}
                         {ev.cancelled_orders > 0 && <span className="text-red-400">{ev.cancelled_orders} canc.</span>}
                       </div>
                       <span className="text-sm font-bold text-primary">{formatBRL(ev.gmv)}</span>
