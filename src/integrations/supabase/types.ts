@@ -3830,6 +3830,16 @@ export type Database = {
         Args: { p_end_date?: string; p_start_date?: string }
         Returns: Json
       }
+      get_gestor_top_products: {
+        Args: {
+          p_client_id: string
+          p_end_date?: string
+          p_event_id?: string
+          p_limit?: number
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_gmv_metrics: {
         Args: {
           p_client_id?: string
