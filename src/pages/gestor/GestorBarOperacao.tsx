@@ -37,6 +37,7 @@ type StationRow = {
   id: string;
   name: string;
   join_code: string;
+  created_at: string;
   bar_station_members: { name: string }[] | null;
 };
 
@@ -85,6 +86,11 @@ export default function GestorBarOperacao() {
   const [creating, setCreating] = useState(false);
   const [createdStation, setCreatedStation] = useState<{ name: string; join_code: string } | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // Close station dialog
+  const [closingStation, setClosingStation] = useState<StationRow | null>(null);
+  const [closeReport, setCloseReport] = useState<{ delivered: number; gmv: number; hoursOpen: number } | null>(null);
+  const [closeLoading, setCloseLoading] = useState(false);
 
   // Load events for current client
   useEffect(() => {
@@ -155,7 +161,7 @@ export default function GestorBarOperacao() {
     setLoadingStations(true);
     let stationsQ = supabase
       .from("bar_stations")
-      .select("id, name, join_code, bar_station_members(name)")
+      .select("id, name, join_code, created_at, bar_station_members(name)")
       .eq("status", "active")
       .order("created_at");
     if (selectedEventId !== "all") {
@@ -357,6 +363,33 @@ export default function GestorBarOperacao() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  const handleOpenCloseStation = async (station: StationRow) => {
+    setClosingStation(station);
+    setCloseLoading(true);
+    const { data: deliveredData } = await supabase
+      .from("orders")
+      .select("total")
+      .eq("delivered_by_station_id", station.id)
+      .eq("status", "delivered");
+    const delivered = deliveredData?.length ?? 0;
+    const gmv = (deliveredData ?? []).reduce((acc, o) => acc + Number(o.total), 0);
+    const hoursOpen = Math.round((Date.now() - new Date(station.created_at ?? Date.now()).getTime()) / 3600000 * 10) / 10;
+    setCloseReport({ delivered, gmv, hoursOpen });
+    setCloseLoading(false);
+  };
+
+  const handleCloseStation = async () => {
+    if (!closingStation) return;
+    await supabase
+      .from("bar_stations")
+      .update({ status: "closed", closed_at: new Date().toISOString() } as any)
+      .eq("id", closingStation.id);
+    toast.success(`Bar "${closingStation.name}" fechado`);
+    setClosingStation(null);
+    setCloseReport(null);
+    refetchAll();
+  };
+
   // Fetch late orders when dialog opens
   useEffect(() => {
     if (!lateOrdersOpen || !selectedEventId || !effectiveClientId) return;
@@ -536,14 +569,24 @@ export default function GestorBarOperacao() {
                             {members || t("gbar_no_operators" as any)}
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => copyStationLink(station.join_code)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            onClick={() => copyStationLink(station.join_code)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 hover:text-destructive"
+                            onClick={() => handleOpenCloseStation(station)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -693,6 +736,62 @@ export default function GestorBarOperacao() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Close Station Dialog */}
+      <Dialog open={!!closingStation} onOpenChange={(open) => { if (!open) { setClosingStation(null); setCloseReport(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Beer className="h-5 w-5 text-primary" />
+              Fechar Bar — {closingStation?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {closeLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : closeReport && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border/60 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Operadores</span>
+                  <span className="text-sm font-medium">
+                    {(closingStation?.bar_station_members ?? []).map(m => m.name).join(", ") || "Nenhum"}
+                  </span>
+                </div>
+                <div className="border-t border-border/30" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Tempo aberto</span>
+                  <span className="text-sm font-medium">
+                    {closeReport.hoursOpen < 1
+                      ? `${Math.round(closeReport.hoursOpen * 60)} min`
+                      : `${closeReport.hoursOpen}h`
+                    }
+                  </span>
+                </div>
+                <div className="border-t border-border/30" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Pedidos entregues</span>
+                  <span className="text-sm font-bold">{closeReport.delivered}</span>
+                </div>
+                <div className="border-t border-border/30" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Faturamento entregue</span>
+                  <span className="text-sm font-bold text-primary">{formatCurrency(closeReport.gmv)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setClosingStation(null); setCloseReport(null); }}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleCloseStation} disabled={closeLoading}>
+              Fechar Bar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

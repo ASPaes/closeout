@@ -431,6 +431,7 @@ export type Database = {
       bar_stations: {
         Row: {
           client_id: string
+          closed_at: string | null
           created_at: string
           created_by: string | null
           event_id: string
@@ -441,6 +442,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           event_id: string
@@ -451,6 +453,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           event_id?: string
