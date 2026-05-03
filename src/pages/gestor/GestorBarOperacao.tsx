@@ -24,7 +24,7 @@ import {
   AlertTriangle, CalendarDays, Loader2, Ban, Copy, Plus, X, Check,
 } from "lucide-react";
 
-type EventRow = { id: string; name: string; start_at: string | null };
+type EventRow = { id: string; name: string; start_at: string | null; status: string };
 
 type Counts = {
   total: number;
@@ -68,6 +68,7 @@ export default function GestorBarOperacao() {
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>("all");
+  const [eventSearch, setEventSearch] = useState("");
   const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
   const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
   const [lateOrders, setLateOrders] = useState<LateOrder[]>([]);
@@ -90,11 +91,18 @@ export default function GestorBarOperacao() {
     if (!effectiveClientId) return;
     supabase
       .from("events")
-      .select("id, name, start_at")
+      .select("id, name, start_at, status")
       .eq("client_id", effectiveClientId)
-      .eq("status", "active")
+      .in("status", ["active", "completed"])
       .order("start_at", { ascending: false })
-      .then(({ data }) => setEvents((data as EventRow[]) ?? []));
+      .then(({ data }) => {
+        const sorted = ((data as EventRow[]) ?? []).sort((a, b) => {
+          if (a.status === "active" && b.status !== "active") return -1;
+          if (a.status !== "active" && b.status === "active") return 1;
+          return new Date(b.start_at ?? 0).getTime() - new Date(a.start_at ?? 0).getTime();
+        });
+        setEvents(sorted);
+      });
   }, [effectiveClientId]);
 
   // Fetch counts + stations + deliveries per station
