@@ -232,11 +232,15 @@ export default function GestorBarOperacao() {
       }
 
       const orderIds = validQrs.map((q) => q.order_id);
-      const { data: clientOrders } = await supabase
+      let ordersQuery = supabase
         .from("orders")
         .select("id")
         .eq("client_id", effectiveClientId)
         .in("id", orderIds);
+      if (selectedEventId !== "all") {
+        ordersQuery = ordersQuery.eq("event_id", selectedEventId);
+      }
+      const { data: clientOrders } = await ordersQuery;
 
       const clientOrderIds = new Set((clientOrders ?? []).map((o) => o.id));
       const qrsToCancel = validQrs.filter((q) => clientOrderIds.has(q.order_id));
@@ -388,8 +392,16 @@ export default function GestorBarOperacao() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>{t("gbar_bulk_cancel_title" as any)}</AlertDialogTitle>
-                <AlertDialogDescription>{t("gbar_bulk_cancel_desc" as any)}</AlertDialogDescription>
+                <AlertDialogTitle>
+                  {selectedEventId === "all"
+                    ? "Cancelar QRs de TODOS os eventos?"
+                    : "Cancelar QRs em aberto?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {selectedEventId === "all"
+                    ? "Atenção: isso cancelará TODOS os QRs em aberto de TODOS os eventos. Tem certeza que deseja continuar?"
+                    : "Isso cancelará todos os QRs em aberto do evento selecionado. Pedidos serão cancelados e estoque liberado."}
+                </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
