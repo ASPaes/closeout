@@ -67,7 +67,7 @@ export default function GestorBarOperacao() {
   const { session } = useAuth();
 
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string>("all");
   const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
   const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
   const [lateOrders, setLateOrders] = useState<LateOrder[]>([]);
@@ -99,32 +99,41 @@ export default function GestorBarOperacao() {
 
   // Fetch counts + stations + deliveries per station
   const refetchAll = useCallback(async () => {
-    if (!selectedEventId) return;
+    if (!selectedEventId || !effectiveClientId) return;
     const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
 
+    let totalQ = supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .not("status", "in", "(cancelled,pending,processing_payment)");
+    if (selectedEventId !== "all") totalQ = totalQ.eq("event_id", selectedEventId);
+
+    let deliveredQ = supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .eq("status", "delivered");
+    if (selectedEventId !== "all") deliveredQ = deliveredQ.eq("event_id", selectedEventId);
+
+    let readyQ = supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .in("status", ["ready", "partially_delivered"]);
+    if (selectedEventId !== "all") readyQ = readyQ.eq("event_id", selectedEventId);
+
+    let lateQ = supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .not("paid_at", "is", null)
+      .lt("paid_at", lateThreshold)
+      .not("status", "in", "(delivered,cancelled)");
+    if (selectedEventId !== "all") lateQ = lateQ.eq("event_id", selectedEventId);
+
     const [totalRes, deliveredRes, readyRes, lateRes] = await Promise.all([
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", selectedEventId)
-        .not("status", "in", "(cancelled,pending,processing_payment)"),
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", selectedEventId)
-        .eq("status", "delivered"),
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", selectedEventId)
-        .in("status", ["ready", "partially_delivered"]),
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", selectedEventId)
-        .not("paid_at", "is", null)
-        .lt("paid_at", lateThreshold)
-        .not("status", "in", "(delivered,cancelled)"),
+      totalQ, deliveredQ, readyQ, lateQ,
     ]);
 
     setCounts({
@@ -136,30 +145,36 @@ export default function GestorBarOperacao() {
 
     // Stations
     setLoadingStations(true);
-    const { data: stationsData } = await supabase
+    let stationsQ = supabase
       .from("bar_stations")
       .select("id, name, join_code, bar_station_members(name)")
-      .eq("event_id", selectedEventId)
       .eq("status", "active")
       .order("created_at");
+    if (selectedEventId !== "all") {
+      stationsQ = stationsQ.eq("event_id", selectedEventId);
+    } else {
+      stationsQ = stationsQ.eq("client_id", effectiveClientId);
+    }
+    const { data: stationsData } = await stationsQ;
     const stationList = (stationsData as StationRow[]) ?? [];
     setStations(stationList);
 
     // Per-station delivery counts
     const counts = await Promise.all(
-      stationList.map((s) =>
-        supabase
+      stationList.map((s) => {
+        let q = supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
-          .eq("event_id", selectedEventId)
+          .eq("client_id", effectiveClientId)
           .eq("status", "delivered")
-          .eq("delivered_by_station_id", s.id)
-          .then((r) => [s.id, r.count ?? 0] as [string, number])
-      )
+          .eq("delivered_by_station_id", s.id);
+        if (selectedEventId !== "all") q = q.eq("event_id", selectedEventId);
+        return q.then((r) => [s.id, r.count ?? 0] as [string, number]);
+      })
     );
     setStationDeliveries(new Map(counts));
     setLoadingStations(false);
-  }, [selectedEventId]);
+  }, [selectedEventId, effectiveClientId]);
 
   useEffect(() => { refetchAll(); }, [refetchAll]);
 
@@ -172,8 +187,8 @@ export default function GestorBarOperacao() {
         event: "*",
         schema: "public",
         table: "orders",
-        filter: `event_id=eq.${selectedEventId}`,
-      }, () => { refetchAll(); })
+        ...(selectedEventId !== "all" ? { filter: `event_id=eq.${selectedEventId}` } : {}),
+      } as any, () => { refetchAll(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [selectedEventId, refetchAll]);
@@ -187,8 +202,8 @@ export default function GestorBarOperacao() {
         event: "*",
         schema: "public",
         table: "bar_stations",
-        filter: `event_id=eq.${selectedEventId}`,
-      }, () => { refetchAll(); })
+        ...(selectedEventId !== "all" ? { filter: `event_id=eq.${selectedEventId}` } : {}),
+      } as any, () => { refetchAll(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [selectedEventId, refetchAll]);
@@ -290,7 +305,7 @@ export default function GestorBarOperacao() {
   };
 
   const handleCreateBar = async () => {
-    if (!barName.trim() || !selectedEventId || !effectiveClientId || !session?.user?.id) return;
+    if (!barName.trim() || selectedEventId === "all" || !effectiveClientId || !session?.user?.id) return;
     setCreating(true);
     try {
       const { data: station, error } = await supabase
@@ -332,18 +347,19 @@ export default function GestorBarOperacao() {
 
   // Fetch late orders when dialog opens
   useEffect(() => {
-    if (!lateOrdersOpen || !selectedEventId) return;
+    if (!lateOrdersOpen || !selectedEventId || !effectiveClientId) return;
     const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
-    supabase
+    let q = supabase
       .from("orders")
       .select("id, order_number, status, total, paid_at, origin")
-      .eq("event_id", selectedEventId)
+      .eq("client_id", effectiveClientId)
       .not("status", "in", "(delivered,cancelled)")
       .not("paid_at", "is", null)
       .lt("paid_at", lateThreshold)
-      .order("paid_at", { ascending: true })
-      .then(({ data }) => setLateOrders((data as LateOrder[]) ?? []));
-  }, [lateOrdersOpen, selectedEventId]);
+      .order("paid_at", { ascending: true });
+    if (selectedEventId !== "all") q = q.eq("event_id", selectedEventId);
+    q.then(({ data }) => setLateOrders((data as LateOrder[]) ?? []));
+  }, [lateOrdersOpen, selectedEventId, effectiveClientId]);
 
   return (
     <div className="space-y-6">
@@ -353,12 +369,16 @@ export default function GestorBarOperacao() {
         icon={Beer}
         actions={
           <div className="flex items-center gap-2">
-            {selectedEventId && (
-              <Button variant="default" size="sm" onClick={() => setCreateBarOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("gbar_create_bar" as any)}
-              </Button>
-            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setCreateBarOpen(true)}
+              disabled={selectedEventId === "all"}
+              className={selectedEventId === "all" ? "opacity-40 cursor-not-allowed" : ""}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t("gbar_create_bar" as any)}
+            </Button>
             <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" disabled={bulkCancelling}>
@@ -393,6 +413,7 @@ export default function GestorBarOperacao() {
             <SelectValue placeholder={t("gbar_select_event" as any)} />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Todos os eventos</SelectItem>
             {events.map((ev) => (
               <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
             ))}
@@ -400,14 +421,8 @@ export default function GestorBarOperacao() {
         </Select>
       </div>
 
-      {/* Empty state */}
-      {!selectedEventId ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">{t("gbar_select_event_empty" as any)}</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPI cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("gbar_total_orders" as any)}</CardTitle>
@@ -450,8 +465,7 @@ export default function GestorBarOperacao() {
               <div className={`text-2xl font-bold ${lateActive ? "text-destructive" : ""}`}>{counts.late}</div>
             </CardContent>
           </Card>
-        </div>
-      )}
+      </div>
 
       {/* Bars section */}
       {selectedEventId && (
