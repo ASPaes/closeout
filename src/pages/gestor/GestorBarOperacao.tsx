@@ -433,10 +433,33 @@ export default function GestorBarOperacao() {
             <SelectValue placeholder={t("gbar_select_event" as any)} />
           </SelectTrigger>
           <SelectContent>
+            <div className="px-2 pb-2">
+              <Input
+                placeholder="Buscar evento..."
+                value={eventSearch}
+                onChange={(e) => setEventSearch(e.target.value)}
+                className="h-9"
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
             <SelectItem value="all">Todos os eventos</SelectItem>
-            {events.map((ev) => (
-              <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
-            ))}
+            {events
+              .filter((ev) => !eventSearch.trim() || ev.name.toLowerCase().includes(eventSearch.toLowerCase().trim()))
+              .map((ev) => (
+                <SelectItem key={ev.id} value={ev.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{ev.name}</span>
+                    {ev.status === "active" ? (
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">(encerrado)</span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            {events.filter((ev) => !eventSearch.trim() || ev.name.toLowerCase().includes(eventSearch.toLowerCase().trim())).length === 0 && (
+              <div className="py-3 text-center text-xs text-muted-foreground">Nenhum evento encontrado</div>
+            )}
           </SelectContent>
         </Select>
       </div>
