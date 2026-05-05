@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useMemo, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -41,6 +41,7 @@ export function BarProvider({ children }: { children: ReactNode }) {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [stationId, setStationId] = useState<string | null>(null);
   const [stationName, setStationName] = useState<string | null>(null);
+  const stationResolvedRef = useRef(false);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -91,7 +92,7 @@ export function BarProvider({ children }: { children: ReactNode }) {
         setLoadingEvents(false);
 
         // Validate persisted selection
-        if (selectedEventId && data && !data.some((e) => e.id === selectedEventId)) {
+        if (selectedEventId && data && !data.some((e) => e.id === selectedEventId) && !stationResolvedRef.current) {
           setSelectedEventId(null);
           localStorage.removeItem(STORAGE_KEY);
         }
@@ -165,10 +166,9 @@ export function BarProvider({ children }: { children: ReactNode }) {
           setStationId(data.id);
           setStationName(data.name);
           localStorage.setItem(STATION_STORAGE_KEY, data.id);
-          if (data.event_id && data.event_id !== selectedEventId) {
-            setSelectedEventId(data.event_id);
-            localStorage.setItem(STORAGE_KEY, data.event_id);
-          }
+          setSelectedEventId(data.event_id);
+          localStorage.setItem(STORAGE_KEY, data.event_id);
+          stationResolvedRef.current = true;
         }
         // Clean query param without reload
         params.delete("station");
