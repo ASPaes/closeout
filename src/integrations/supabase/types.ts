@@ -3702,7 +3702,12 @@ export type Database = {
         Returns: Json
       }
       confirm_partial_delivery: {
-        Args: { p_items: Json; p_order_id: string; p_staff_id: string }
+        Args: {
+          p_items: Json
+          p_order_id: string
+          p_staff_id: string
+          p_station_id?: string
+        }
         Returns: Json
       }
       consumer_checkin: {

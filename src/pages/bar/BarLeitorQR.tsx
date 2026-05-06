@@ -155,19 +155,13 @@ export default function BarLeitorQR() {
         p_order_id: result.order.id,
         p_items: items as any,
         p_staff_id: user.id,
-      });
+        p_station_id: stationId ?? undefined,
+      } as any);
 
       if (error) throw error;
 
       const deliveryRes = data as unknown as DeliveryResult;
       setFullyDelivered(deliveryRes.fully_delivered);
-
-      if (stationId) {
-        await supabase
-          .from("orders")
-          .update({ delivered_by_station_id: stationId } as any)
-          .eq("id", result.order.id);
-      }
 
       setViewState("done");
 
