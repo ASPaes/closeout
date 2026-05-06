@@ -239,65 +239,21 @@ export default function GestorBarOperacao() {
 
   // Bulk cancel open QRs (preserved from previous version)
   const handleBulkCancelQRs = async () => {
-    if (!effectiveClientId || !session?.user?.id) return;
-    setBulkCancelling(true);
     try {
-      const { data: validQrs } = await supabase
-        .from("qr_tokens")
-        .select("id, order_id, token, status")
-        .eq("status", "valid");
-
-      if (!validQrs || validQrs.length === 0) {
-        toast.info("Nenhum QR em aberto encontrado");
-        setBulkCancelling(false);
-        return;
-      }
-
-      const orderIds = validQrs.map((q) => q.order_id);
-      let ordersQuery = supabase
-        .from("orders")
-        .select("id")
-        .eq("client_id", effectiveClientId)
-        .in("id", orderIds);
-      if (selectedEventId !== "all") {
-        ordersQuery = ordersQuery.eq("event_id", selectedEventId);
-      }
-      const { data: clientOrders } = await ordersQuery;
-
-      const clientOrderIds = new Set((clientOrders ?? []).map((o) => o.id));
-      const qrsToCancel = validQrs.filter((q) => clientOrderIds.has(q.order_id));
-
-      if (qrsToCancel.length === 0) {
-        toast.info("Nenhum QR em aberto para este cliente");
-        setBulkCancelling(false);
-        return;
-      }
-
-      for (const qr of qrsToCancel) {
-        await supabase.from("qr_tokens").update({ status: "cancelled" }).eq("id", qr.id);
-        await supabase.from("orders").update({
-          status: "cancelled",
-          cancelled_at: new Date().toISOString(),
-          cancelled_by: session.user.id,
-          cancel_reason: "Encerramento — QRs cancelados em lote",
-        }).eq("id", qr.order_id);
-        await supabase.rpc("release_stock_for_order", { p_order_id: qr.order_id });
-      }
-
-      await logAudit({
-        action: AUDIT_ACTION.BAR_ORDER_CANCELLED,
-        entityType: "qr_token",
-        entityId: effectiveClientId,
-        newData: { cancelled_count: qrsToCancel.length, reason: "bulk_cancel" },
+      const { data, error } = await (supabase.rpc as any)("bulk_cancel_open_qrs", {
+        p_event_id: selectedEventId !== "all" ? selectedEventId : null,
+        p_client_id: effectiveClientId,
       });
-
-      toast.success(`${qrsToCancel.length} QR(s) cancelado(s) com sucesso`);
+      if (error) throw error;
+      const result = data as { cancelled_count: number; skipped_paid: number; message: string };
+      if (result.cancelled_count === 0 && result.skipped_paid === 0) {
+        toast.info("Nenhum QR em aberto encontrado");
+      } else {
+        toast.success(result.message);
+      }
       refetchAll();
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao cancelar QRs em lote");
-    } finally {
-      setBulkCancelling(false);
+    } catch (err: any) {
+      toast.error("Erro ao cancelar QRs: " + (err.message || "erro desconhecido"));
     }
   };
 
