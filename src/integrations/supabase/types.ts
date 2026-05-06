@@ -3678,6 +3678,10 @@ export type Database = {
       accept_waiter_invite: { Args: { p_join_code: string }; Returns: Json }
       auto_resolve_alerts: { Args: never; Returns: number }
       bootstrap_super_admin: { Args: never; Returns: boolean }
+      bulk_cancel_open_qrs: {
+        Args: { p_client_id?: string; p_event_id?: string }
+        Returns: Json
+      }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       check_order_rate_limit: {
         Args: { p_consumer_id: string }
@@ -3977,6 +3981,7 @@ export type Database = {
         Returns: undefined
       }
       next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
+      next_order_number: { Args: { p_event_id: string }; Returns: number }
       normalize_product_name: { Args: { input: string }; Returns: string }
       release_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
       request_waiter_cancellation: {
