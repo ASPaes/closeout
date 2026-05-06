@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Beer, ShoppingCart, CheckCircle2, Package,
-  AlertTriangle, CalendarDays, Loader2, Ban, Copy, Plus, X, Check,
+  AlertTriangle, CalendarDays, Loader2, Ban, Copy, Plus, X, Check, Clock,
 } from "lucide-react";
 
 type EventRow = { id: string; name: string; start_at: string | null; status: string };
@@ -66,6 +66,14 @@ export default function GestorBarOperacao() {
   const { t } = useTranslation();
   const { effectiveClientId } = useGestor();
   const { session } = useAuth();
+
+  const formatTimeOpen = (createdAt: string) => {
+    const diff = Date.now() - new Date(createdAt).getTime();
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    if (hours > 0) return `${hours}h${minutes > 0 ? ` ${minutes}min` : ""}`;
+    return `${minutes}min`;
+  };
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>("all");
@@ -567,6 +575,10 @@ export default function GestorBarOperacao() {
                           <div className="text-lg font-bold truncate">{station.name}</div>
                           <div className="text-xs text-muted-foreground truncate">
                             {members || t("gbar_no_operators" as any)}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Clock className="h-3 w-3" />
+                            Aberto há {formatTimeOpen(station.created_at)}
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
