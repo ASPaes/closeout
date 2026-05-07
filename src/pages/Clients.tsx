@@ -422,6 +422,15 @@ export default function Clients() {
               <ClientFormFields form={form} setForm={setForm} editing={editing} logoPreview={logoPreview} logoFile={logoFile} fileInputRef={fileInputRef} handleLogoSelect={handleLogoSelect} removeLogo={removeLogo} t={t} />
             </TabsContent>
             <TabsContent value="banco">
+              <div className="space-y-1.5 mb-4">
+                <Label>Faturamento Mensal Estimado (R$)</Label>
+                <Input
+                  type="number"
+                  value={form.income_value}
+                  onChange={(e) => setForm({ ...form, income_value: e.target.value })}
+                  placeholder="10000"
+                />
+              </div>
               <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
             </TabsContent>
             <TabsContent value="cobranca">
@@ -462,6 +471,16 @@ export default function Clients() {
                 </div>
 
                 <Separator className="my-4" />
+
+                <div className="space-y-1.5">
+                  <Label>Faturamento Mensal Estimado (R$)</Label>
+                  <Input
+                    type="number"
+                    value={form.income_value}
+                    onChange={(e) => setForm({ ...form, income_value: e.target.value })}
+                    placeholder="10000"
+                  />
+                </div>
 
                 <BankFields bankPixKey={bankPixKey} setBankPixKey={setBankPixKey} bankCode={bankCode} setBankCode={setBankCode} bankAgency={bankAgency} setBankAgency={setBankAgency} bankAccount={bankAccount} setBankAccount={setBankAccount} bankAccountType={bankAccountType} setBankAccountType={setBankAccountType} bankOptions={BANK_OPTIONS} t={t} />
               </div>
