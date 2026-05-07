@@ -577,42 +577,46 @@ export default function ConsumerEventos() {
             </div>
           )}
 
-          {/* Seção "Todos os eventos" */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-[17px] font-bold text-foreground">
-              {t("consumer_section_all")}
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              {sortedFiltered.length} {t("consumer_events_count")}
-            </span>
-          </div>
-
-          {sortedFiltered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
-                <Calendar className="h-7 w-7 text-primary" />
+          {/* Seção "Todos os eventos" — oculta se vazia e Perto de você tem eventos */}
+          {(sortedFiltered.length > 0 || nearbyEvents.length === 0) && (
+            <>
+              <div className="flex items-center justify-between">
+                <h2 className="text-[17px] font-bold text-foreground">
+                  {t("consumer_section_all")}
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  {sortedFiltered.length} {t("consumer_events_count")}
+                </span>
               </div>
-              <h3 className="text-base font-bold text-foreground">{t("consumer_no_events")}</h3>
-              <p className="mt-1 text-sm text-muted-foreground max-w-[260px]">
-                {t("consumer_no_events_desc")}
-              </p>
-            </div>
-          ) : userLoc ? (
-            <div className="flex flex-col gap-3">{sortedFiltered.map(renderEventCard)}</div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {groupedByCity?.map(([city, list]) => (
-                <div key={city} className="flex flex-col gap-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      {city}
-                    </h3>
+
+              {sortedFiltered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+                    <Calendar className="h-7 w-7 text-primary" />
                   </div>
-                  <div className="flex flex-col gap-3">{list.map(renderEventCard)}</div>
+                  <h3 className="text-base font-bold text-foreground">{t("consumer_no_events")}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-[260px]">
+                    {t("consumer_no_events_desc")}
+                  </p>
                 </div>
-              ))}
-            </div>
+              ) : userLoc ? (
+                <div className="flex flex-col gap-3">{sortedFiltered.map(renderEventCard)}</div>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  {groupedByCity?.map(([city, list]) => (
+                    <div key={city} className="flex flex-col gap-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          {city}
+                        </h3>
+                      </div>
+                      <div className="flex flex-col gap-3">{list.map(renderEventCard)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {refreshing && (
