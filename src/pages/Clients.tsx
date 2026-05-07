@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { maskPhone, maskCPF, maskDocument, unmask } from "@/lib/masks";
+import { maskPhone, maskCPF, maskDocument, maskCEP, unmask } from "@/lib/masks";
 import { supabase } from "@/integrations/supabase/client";
 import { getPtBrErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,10 @@ import { ClientBillingRules } from "@/components/ClientBillingRules";
 type Client = {
   id: string; name: string; slug: string; logo_url: string | null;
   email: string | null; phone: string | null; document: string | null;
-  address: string | null; status: string; created_at: string;
+  address: string | null; postal_code: string | null; address_number: string | null;
+  province: string | null; mobile_phone: string | null; status: string; created_at: string;
   owner_name: string | null; owner_cpf: string | null; owner_phone: string | null;
+  owner_birth_date: string | null; income_value: number | null;
   contact_name: string | null; contact_phone: string | null;
   logo_path: string | null; default_fee_percent: number | null;
   pix_key: string | null; bank_code: string | null; bank_agency: string | null;
@@ -34,15 +36,19 @@ type Client = {
 
 type FormState = {
   name: string; slug: string; email: string; phone: string; document: string;
-  address: string; status: string;
+  address: string; postal_code: string; address_number: string; province: string;
+  mobile_phone: string; status: string;
   owner_name: string; owner_cpf: string; owner_phone: string;
+  owner_birth_date: string; income_value: string;
   contact_name: string; contact_phone: string;
 };
 
 const emptyForm = (): FormState => ({
   name: "", slug: "", email: "", phone: "", document: "", address: "",
+  postal_code: "", address_number: "", province: "", mobile_phone: "",
   status: ENTITY_STATUS.ACTIVE as string,
   owner_name: "", owner_cpf: "", owner_phone: "",
+  owner_birth_date: "", income_value: "",
   contact_name: "", contact_phone: "",
 });
 
@@ -130,9 +136,15 @@ export default function Clients() {
       name: client.name, slug: client.slug,
       email: client.email || "", phone: client.phone || "",
       document: client.document || "", address: client.address || "",
+      postal_code: client.postal_code || "",
+      address_number: client.address_number || "",
+      province: client.province || "",
+      mobile_phone: client.mobile_phone || "",
       status: client.status,
       owner_name: client.owner_name || "", owner_cpf: client.owner_cpf || "",
       owner_phone: client.owner_phone || "",
+      owner_birth_date: client.owner_birth_date || "",
+      income_value: client.income_value?.toString() || "",
       contact_name: client.contact_name || "", contact_phone: client.contact_phone || "",
     });
     setBankPixKey(client.pix_key || "");
@@ -203,8 +215,14 @@ export default function Clients() {
       const payload: Record<string, any> = {
         name: form.name, email: form.email || null, phone: form.phone || null,
         document: form.document || null, address: form.address || null, status: form.status,
+        postal_code: form.postal_code || null,
+        address_number: form.address_number || null,
+        province: form.province || null,
+        mobile_phone: form.mobile_phone || null,
         owner_name: form.owner_name || null, owner_cpf: form.owner_cpf || null,
         owner_phone: form.owner_phone || null,
+        owner_birth_date: form.owner_birth_date || null,
+        income_value: form.income_value ? parseFloat(form.income_value) : null,
         contact_name: form.contact_name || null, contact_phone: form.contact_phone || null,
         pix_key: bankPixKey || null, bank_code: bankCode || null,
         bank_agency: bankAgency || null, bank_account: bankAccount || null,
@@ -230,6 +248,12 @@ export default function Clients() {
               bank_agency: bankAgency || undefined,
               bank_account: bankAccount || undefined,
               bank_account_type: bankAccountType || undefined,
+              postal_code: form.postal_code || undefined,
+              address_number: form.address_number || undefined,
+              province: form.province || undefined,
+              mobile_phone: form.mobile_phone || undefined,
+              birth_date: form.owner_birth_date || undefined,
+              income_value: form.income_value ? parseFloat(form.income_value) : undefined,
             },
           });
           toast.success(t("asaas_subaccount_created"));
@@ -263,6 +287,12 @@ export default function Clients() {
           bank_agency: bankAgency || undefined,
           bank_account: bankAccount || undefined,
           bank_account_type: bankAccountType || undefined,
+          client_postal_code: form.postal_code || undefined,
+          client_address_number: form.address_number || undefined,
+          client_province: form.province || undefined,
+          client_mobile_phone: form.mobile_phone || undefined,
+          owner_birth_date: form.owner_birth_date || undefined,
+          income_value: form.income_value ? parseFloat(form.income_value) : undefined,
         },
       });
 
@@ -298,6 +328,12 @@ export default function Clients() {
               bank_agency: bankAgency || undefined,
               bank_account: bankAccount || undefined,
               bank_account_type: bankAccountType || undefined,
+              postal_code: form.postal_code || undefined,
+              address_number: form.address_number || undefined,
+              province: form.province || undefined,
+              mobile_phone: form.mobile_phone || undefined,
+              birth_date: form.owner_birth_date || undefined,
+              income_value: form.income_value ? parseFloat(form.income_value) : undefined,
             },
           });
           asaasStatus = "✅ Criada";
@@ -469,7 +505,7 @@ export default function Clients() {
 
 function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileInputRef, handleLogoSelect, removeLogo, t }: {
   form: FormState;
-  setForm: (f: FormState) => void;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
   editing: Client | null;
   logoPreview: string | null;
   logoFile: File | null;
@@ -508,8 +544,45 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>{t("address")}</Label>
+                  <Label>CEP *</Label>
+                  <Input
+                    value={maskCEP(form.postal_code)}
+                    onChange={(e) => {
+                      const raw = unmask(e.target.value);
+                      setForm({ ...form, postal_code: raw });
+                      if (raw.length === 8) {
+                        fetch(`https://viacep.com.br/ws/${raw}/json/`)
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (!data.erro) {
+                              setForm((prev) => ({
+                                ...prev,
+                                postal_code: raw,
+                                address: data.logradouro || prev.address,
+                                province: data.bairro || prev.province,
+                              }));
+                            }
+                          })
+                          .catch(() => {});
+                      }
+                    }}
+                    placeholder="88501-100"
+                    maxLength={9}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Endereço</Label>
                   <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Número</Label>
+                    <Input value={form.address_number} onChange={(e) => setForm({ ...form, address_number: e.target.value })} placeholder="100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Bairro</Label>
+                    <Input value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} placeholder="Centro" />
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("status")}</Label>
@@ -541,6 +614,24 @@ function ClientFormFields({ form, setForm, editing, logoPreview, logoFile, fileI
                   <div className="space-y-1.5">
                     <Label>{t("cl_owner_phone")}</Label>
                     <Input value={maskPhone(form.owner_phone)} onChange={(e) => setForm({ ...form, owner_phone: unmask(e.target.value) })} placeholder="(00) 00000-0000" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Data de Nascimento</Label>
+                    <Input
+                      type="date"
+                      value={form.owner_birth_date}
+                      onChange={(e) => setForm({ ...form, owner_birth_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Celular</Label>
+                    <Input
+                      value={maskPhone(form.mobile_phone)}
+                      onChange={(e) => setForm({ ...form, mobile_phone: unmask(e.target.value) })}
+                      placeholder="(00) 00000-0000"
+                    />
                   </div>
                 </div>
               </div>
