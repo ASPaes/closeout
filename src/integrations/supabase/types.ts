@@ -1128,6 +1128,7 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          address_number: string | null
           asaas_subaccount_id: string | null
           bank_account: string | null
           bank_account_type: string | null
@@ -1140,20 +1141,26 @@ export type Database = {
           document: string | null
           email: string | null
           id: string
+          income_value: number | null
           logo_path: string | null
           logo_url: string | null
+          mobile_phone: string | null
           name: string
+          owner_birth_date: string | null
           owner_cpf: string | null
           owner_name: string | null
           owner_phone: string | null
           phone: string | null
           pix_key: string | null
+          postal_code: string | null
+          province: string | null
           slug: string
           status: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          address_number?: string | null
           asaas_subaccount_id?: string | null
           bank_account?: string | null
           bank_account_type?: string | null
@@ -1166,20 +1173,26 @@ export type Database = {
           document?: string | null
           email?: string | null
           id?: string
+          income_value?: number | null
           logo_path?: string | null
           logo_url?: string | null
+          mobile_phone?: string | null
           name: string
+          owner_birth_date?: string | null
           owner_cpf?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
           pix_key?: string | null
+          postal_code?: string | null
+          province?: string | null
           slug: string
           status?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          address_number?: string | null
           asaas_subaccount_id?: string | null
           bank_account?: string | null
           bank_account_type?: string | null
@@ -1192,14 +1205,19 @@ export type Database = {
           document?: string | null
           email?: string | null
           id?: string
+          income_value?: number | null
           logo_path?: string | null
           logo_url?: string | null
+          mobile_phone?: string | null
           name?: string
+          owner_birth_date?: string | null
           owner_cpf?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           phone?: string | null
           pix_key?: string | null
+          postal_code?: string | null
+          province?: string | null
           slug?: string
           status?: string
           updated_at?: string
