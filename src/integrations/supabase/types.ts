@@ -2247,6 +2247,11 @@ export type Database = {
       }
       platform_settings: {
         Row: {
+          asaas_fee_credit_fixed: number | null
+          asaas_fee_credit_percent: number | null
+          asaas_fee_debit_fixed: number | null
+          asaas_fee_debit_percent: number | null
+          asaas_fee_pix: number | null
           asaas_sandbox_mode: boolean
           closeout_fee_percent: number
           created_at: string
@@ -2261,6 +2266,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          asaas_fee_credit_fixed?: number | null
+          asaas_fee_credit_percent?: number | null
+          asaas_fee_debit_fixed?: number | null
+          asaas_fee_debit_percent?: number | null
+          asaas_fee_pix?: number | null
           asaas_sandbox_mode?: boolean
           closeout_fee_percent?: number
           created_at?: string
@@ -2275,6 +2285,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          asaas_fee_credit_fixed?: number | null
+          asaas_fee_credit_percent?: number | null
+          asaas_fee_debit_fixed?: number | null
+          asaas_fee_debit_percent?: number | null
+          asaas_fee_pix?: number | null
           asaas_sandbox_mode?: boolean
           closeout_fee_percent?: number
           created_at?: string
@@ -3858,6 +3873,15 @@ export type Database = {
       }
       get_geography_metrics: {
         Args: { p_end_date?: string; p_start_date?: string }
+        Returns: Json
+      }
+      get_gestor_fee_breakdown: {
+        Args: {
+          p_client_id: string
+          p_end_date?: string
+          p_event_id?: string
+          p_start_date?: string
+        }
         Returns: Json
       }
       get_gestor_top_products: {

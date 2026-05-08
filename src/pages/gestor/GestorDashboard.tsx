@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon, Trophy } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon, Trophy, Receipt } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -50,8 +50,11 @@ export default function GestorDashboard() {
   const [finRevenue, setFinRevenue] = useState(0);
   const [finNet, setFinNet] = useState(0);
   const [finCloseout, setFinCloseout] = useState(0);
+  const [finAsaasFee, setFinAsaasFee] = useState(0);
+  const [finAsaasFeePercent, setFinAsaasFeePercent] = useState(0);
   const [finPending, setFinPending] = useState(0);
   const [finLoading, setFinLoading] = useState(false);
+  const [feeBreakdown, setFeeBreakdown] = useState<any>(null);
 
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [topProductsLoading, setTopProductsLoading] = useState(false);
@@ -202,33 +205,32 @@ export default function GestorDashboard() {
   const fetchFinancials = useCallback(async () => {
     if (!effectiveClientId) return;
     setFinLoading(true);
+    const { data: breakdown } = await (supabase.rpc as any)("get_gestor_fee_breakdown", {
+      p_client_id: effectiveClientId,
+      p_start_date: filterStart.toISOString(),
+      p_end_date: filterEnd.toISOString(),
+      p_event_id: selectedEventId !== "all" ? selectedEventId : null,
+    });
 
-    let query = supabase
-      .from("asaas_charges")
-      .select("id, amount, billing_type, asaas_status, created_at, order_id, split_amount, closeout_amount")
-      .eq("client_id", effectiveClientId)
-      .gte("created_at", filterStart.toISOString())
-      .lte("created_at", filterEnd.toISOString())
-      .order("created_at", { ascending: false });
-
-    if (selectedEventId !== "all") {
-      query = query.eq("event_id", selectedEventId);
+    if (breakdown) {
+      setFinRevenue(Number(breakdown.total_bruto) || 0);
+      setFinNet(Number(breakdown.total_liquido_cliente) || 0);
+      setFinCloseout(Number(breakdown.total_taxa_closeout) || 0);
+      setFinAsaasFee(Number(breakdown.total_taxa_asaas) || 0);
+      setFinAsaasFeePercent(Number(breakdown.taxa_asaas_percent) || 0);
+      setFeeBreakdown(breakdown);
     }
 
-    const { data } = await query.limit(500);
-    const charges = data ?? [];
-
-    // Metrics
-    const confirmed = charges.filter((c) => ["CONFIRMED", "RECEIVED"].includes(c.asaas_status));
-    const revenue = confirmed.reduce((acc, c) => acc + Number(c.amount), 0);
-    const net = confirmed.reduce((acc, c) => acc + Number(c.split_amount ?? 0), 0);
-    const closeout = confirmed.reduce((acc, c) => acc + Number(c.closeout_amount ?? 0), 0);
-    const pending = charges.filter((c) => c.asaas_status === "PENDING").length;
-
-    setFinRevenue(revenue);
-    setFinNet(net);
-    setFinCloseout(closeout);
-    setFinPending(pending);
+    let pendQuery = supabase
+      .from("asaas_charges")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", effectiveClientId)
+      .eq("asaas_status", "PENDING")
+      .gte("created_at", filterStart.toISOString())
+      .lte("created_at", filterEnd.toISOString());
+    if (selectedEventId !== "all") pendQuery = pendQuery.eq("event_id", selectedEventId);
+    const { count: pendCount } = await pendQuery;
+    setFinPending(pendCount ?? 0);
 
     setFinLoading(false);
   }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
@@ -366,7 +368,7 @@ export default function GestorDashboard() {
           Financeiro
         </h2>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
@@ -405,6 +407,18 @@ export default function GestorDashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Taxa Gateway</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {finLoading ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold">{fmt(finAsaasFee)}</div>
+              )}
+              <p className="text-xs text-muted-foreground">{finAsaasFeePercent}% médio · Asaas</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
               <Hourglass className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -419,6 +433,56 @@ export default function GestorDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {feeBreakdown && !finLoading && (Number(feeBreakdown.pix_count) > 0 || Number(feeBreakdown.credit_count) > 0) && (
+          <div className="grid gap-3 sm:grid-cols-3 mt-3">
+            {Number(feeBreakdown.pix_count) > 0 && (
+              <Card className="border-border/40">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground">PIX</span>
+                    <Badge variant="outline" className="text-xs">{feeBreakdown.pix_count} transações</Badge>
+                  </div>
+                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.pix_bruto))}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.pix_taxa_asaas))}</span>
+                    {" · "}Close Out: {fmt(Number(feeBreakdown.pix_taxa_closeout))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {Number(feeBreakdown.credit_count) > 0 && (
+              <Card className="border-border/40">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground">Cartão de Crédito</span>
+                    <Badge variant="outline" className="text-xs">{feeBreakdown.credit_count} transações</Badge>
+                  </div>
+                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.credit_bruto))}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.credit_taxa_asaas))}</span>
+                    {" · "}Close Out: {fmt(Number(feeBreakdown.credit_taxa_closeout))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {Number(feeBreakdown.debit_count) > 0 && (
+              <Card className="border-border/40">
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-muted-foreground">Cartão de Débito</span>
+                    <Badge variant="outline" className="text-xs">{feeBreakdown.debit_count} transações</Badge>
+                  </div>
+                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.debit_bruto))}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.debit_taxa_asaas))}</span>
+                    {" · "}Close Out: {fmt(Number(feeBreakdown.debit_taxa_closeout))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Top 3 Products */}
