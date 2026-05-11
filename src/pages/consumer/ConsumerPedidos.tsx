@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   Clock, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox,
   CalendarX, ChevronDown, QrCode, CreditCard, Smartphone,
-  Banknote, ArrowDown, Split, Loader2,
+  Banknote, ArrowDown, Split, Loader2, RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -91,7 +92,7 @@ function formatTime(iso: string | null) {
 export default function ConsumerPedidos() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { activeOrder, activeEvent } = useConsumer();
+  const { activeOrder, activeEvent, addToCart } = useConsumer();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,6 +196,56 @@ export default function ConsumerPedidos() {
 
   const isActiveQr = (order: OrderRow) =>
     order.has_qr && ["partially_paid", "paid", "preparing", "ready", "partially_delivered"].includes(order.status);
+
+  const handleReorder = async (order: OrderRow) => {
+    const { data: origItems } = await supabase
+      .from("order_items")
+      .select("product_id, combo_id, name, quantity, unit_price")
+      .eq("order_id", order.id);
+
+    if (!origItems || origItems.length === 0) {
+      toast.error("Não foi possível carregar os itens");
+      return;
+    }
+
+    let addedCount = 0;
+    for (const oi of origItems) {
+      if (oi.product_id) {
+        const { data: prod } = await supabase
+          .from("products")
+          .select("id, name, price, is_active, image_path")
+          .eq("id", oi.product_id)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (prod) {
+          for (let i = 0; i < oi.quantity; i++) {
+            addToCart({ id: prod.id, type: "product", name: prod.name, price: Number(prod.price), image_path: prod.image_path });
+          }
+          addedCount += oi.quantity;
+        }
+      } else if (oi.combo_id) {
+        const { data: combo } = await supabase
+          .from("combos")
+          .select("id, name, price, is_active")
+          .eq("id", oi.combo_id)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (combo) {
+          for (let i = 0; i < oi.quantity; i++) {
+            addToCart({ id: combo.id, type: "combo", name: combo.name, price: Number(combo.price) });
+          }
+          addedCount += oi.quantity;
+        }
+      }
+    }
+
+    if (addedCount > 0) {
+      toast.success(`${addedCount} itens adicionados ao carrinho`);
+      navigate("/app/carrinho");
+    } else {
+      toast.error("Itens não estão mais disponíveis");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5 pb-20">
@@ -394,6 +445,18 @@ export default function ConsumerPedidos() {
                       <CreditCard className="h-4 w-4 mr-2" />
                       Pagar pedido
                     </Button>
+                  </div>
+                )}
+
+                {activeEvent?.table_service_enabled && order.status === "delivered" && (
+                  <div className="px-4 pb-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleReorder(order); }}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Pedir de novo
+                    </button>
                   </div>
                 )}
 
