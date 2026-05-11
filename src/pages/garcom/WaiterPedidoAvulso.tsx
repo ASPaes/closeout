@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Search, Plus, Minus, ArrowRight, Loader2, ChevronLeft,
-  Banknote, CreditCard, DollarSign, PartyPopper,
+  Banknote, CreditCard, DollarSign, PartyPopper, CheckCircle,
 } from "lucide-react";
 
 type CatalogProduct = {
@@ -21,7 +21,7 @@ type CartItem = { id: string; type: "product" | "combo"; name: string; price: nu
 
 export default function WaiterPedidoAvulso() {
   const navigate = useNavigate();
-  const { eventId, clientId, refreshSession, cashCollected, setCashCollected } = useWaiter();
+  const { eventId, clientId, refreshSession, cashCollected, setCashCollected, tableServiceEnabled } = useWaiter();
 
   const [phase, setPhase] = useState<"catalog" | "payment">("catalog");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -38,6 +38,23 @@ export default function WaiterPedidoAvulso() {
   const [cashReceived, setCashReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ orderId: string; qrToken: string } | null>(null);
+
+  // ── Table mode state ──
+  const [tableCount, setTableCount] = useState<number | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
+  const [isExternalArea, setIsExternalArea] = useState(false);
+  const [submittedTable, setSubmittedTable] = useState<{ tableNumber: number | null; isExternalArea: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!eventId) return;
+    supabase
+      .from("events")
+      .select("table_count")
+      .eq("id", eventId)
+      .single()
+      .then(({ data }) => setTableCount((data as any)?.table_count ?? null));
+  }, [eventId]);
 
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
@@ -107,14 +124,31 @@ export default function WaiterPedidoAvulso() {
     setSubmitting(true);
 
     const items = cart.map(i => ({ [i.type === "product" ? "product_id" : "combo_id"]: i.id, quantity: i.quantity }));
+    const rpcParams: any = { event_id: eventId, items, payment_method: method };
+    if (tableServiceEnabled) {
+      if (isExternalArea) {
+        rpcParams.is_external_area = true;
+      } else if (tableNumber) {
+        rpcParams.table_number = parseInt(tableNumber);
+      }
+      if (customerName.trim()) {
+        rpcParams.customer_name = customerName.trim();
+      }
+    }
     const { data, error } = await supabase.rpc("create_waiter_order", {
-      params: { event_id: eventId, items, payment_method: method } as any,
+      params: rpcParams as any,
     });
     setSubmitting(false);
     if (error || !(data as any)?.ok) { toast.error((data as any)?.error || "Erro ao criar pedido"); return; }
 
     toast.success("Pedido avulso criado!");
     setResult({ orderId: (data as any).order_id, qrToken: (data as any).qr_token });
+    if (tableServiceEnabled) {
+      setSubmittedTable({
+        tableNumber: isExternalArea ? null : (tableNumber ? parseInt(tableNumber) : null),
+        isExternalArea,
+      });
+    }
     if (method === "cash") setCashCollected(cashCollected + total);
     refreshSession();
   };
@@ -124,16 +158,35 @@ export default function WaiterPedidoAvulso() {
     return (
       <WaiterSessionGuard>
         <div className="flex flex-col items-center gap-6 py-8">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15">
-            <PartyPopper className="h-10 w-10 text-emerald-400" />
-          </div>
-          <h2 className="text-2xl font-bold">Pedido criado!</h2>
-          <p className="text-sm text-muted-foreground">Pedido avulso — sem identificação</p>
-          <div className="rounded-2xl bg-white p-4"><QRCodeSVG value={result.qrToken} size={180} /></div>
-          <p className="text-xs text-muted-foreground">QR Code para retirada</p>
+          {tableServiceEnabled ? (
+            <>
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15">
+                <CheckCircle className="h-10 w-10 text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold">Pedido criado!</h2>
+              <p className="text-sm text-muted-foreground">
+                {submittedTable?.isExternalArea
+                  ? "Área externa"
+                  : submittedTable?.tableNumber
+                    ? `Mesa ${submittedTable.tableNumber}`
+                    : "Pedido avulso"}
+              </p>
+              <p className="text-xs text-muted-foreground">Pedido enviado para o bar</p>
+            </>
+          ) : (
+            <>
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15">
+                <PartyPopper className="h-10 w-10 text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold">Pedido criado!</h2>
+              <p className="text-sm text-muted-foreground">Pedido avulso — sem identificação</p>
+              <div className="rounded-2xl bg-white p-4"><QRCodeSVG value={result.qrToken} size={180} /></div>
+              <p className="text-xs text-muted-foreground">QR Code para retirada</p>
+            </>
+          )}
           <div className="flex flex-col gap-3 w-full mt-4">
             <Button className="h-14 rounded-xl text-base font-semibold w-full" onClick={() => navigate("/garcom/pedidos")}>Ver pedidos</Button>
-            <Button variant="outline" className="h-14 rounded-xl text-base font-semibold w-full border-white/[0.08]" onClick={() => { setResult(null); setCart([]); setMethod(null); setCashReceived(""); setPhase("catalog"); }}>Novo pedido avulso</Button>
+            <Button variant="outline" className="h-14 rounded-xl text-base font-semibold w-full border-white/[0.08]" onClick={() => { setResult(null); setCart([]); setMethod(null); setCashReceived(""); setPhase("catalog"); setCustomerName(""); setTableNumber(""); setIsExternalArea(false); setSubmittedTable(null); }}>Novo pedido avulso</Button>
           </div>
         </div>
       </WaiterSessionGuard>
@@ -168,6 +221,32 @@ export default function WaiterPedidoAvulso() {
               <span className="text-lg font-bold text-primary">R$ {total.toFixed(2)}</span>
             </div>
           </div>
+
+          {tableServiceEnabled && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Informações da mesa</p>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nome do cliente</label>
+                <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nome do cliente" className="h-12 rounded-xl bg-white/[0.04] border-white/[0.08]" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setIsExternalArea(false)} className={cn("flex flex-col items-center gap-1 rounded-xl border p-3 transition-all", !isExternalArea ? "border-primary bg-primary/10" : "border-white/[0.08] bg-white/[0.04]")}>
+                  <span className="text-xl">🪑</span>
+                  <span className="text-xs font-semibold">Mesa</span>
+                </button>
+                <button type="button" onClick={() => setIsExternalArea(true)} className={cn("flex flex-col items-center gap-1 rounded-xl border p-3 transition-all", isExternalArea ? "border-primary bg-primary/10" : "border-white/[0.08] bg-white/[0.04]")}>
+                  <span className="text-xl">🌳</span>
+                  <span className="text-xs font-semibold">Área externa</span>
+                </button>
+              </div>
+              {!isExternalArea && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Número da mesa</label>
+                  <Input type="number" min={1} max={tableCount || undefined} value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="Ex: 7" className="h-12 rounded-xl bg-white/[0.04] border-white/[0.08]" />
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
             {opts.map(o => (
