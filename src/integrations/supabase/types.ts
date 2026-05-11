@@ -1770,6 +1770,8 @@ export type Database = {
           start_at: string | null
           status: string
           stock_control_enabled: boolean
+          table_count: number | null
+          table_service_enabled: boolean
           unretrieved_order_alert_minutes: number | null
           updated_at: string
           venue_id: string
@@ -1788,6 +1790,8 @@ export type Database = {
           start_at?: string | null
           status?: string
           stock_control_enabled?: boolean
+          table_count?: number | null
+          table_service_enabled?: boolean
           unretrieved_order_alert_minutes?: number | null
           updated_at?: string
           venue_id: string
@@ -1806,6 +1810,8 @@ export type Database = {
           start_at?: string | null
           status?: string
           stock_control_enabled?: boolean
+          table_count?: number | null
+          table_service_enabled?: boolean
           unretrieved_order_alert_minutes?: number | null
           updated_at?: string
           venue_id?: string
@@ -1926,6 +1932,39 @@ export type Database = {
           },
         ]
       }
+      notifications_log: {
+        Row: {
+          body: string
+          created_at: string
+          data: Json | null
+          error_message: string | null
+          id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          data?: Json | null
+          error_message?: string | null
+          id?: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          data?: Json | null
+          error_message?: string | null
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_item_deliveries: {
         Row: {
           created_at: string
@@ -2037,11 +2076,13 @@ export type Database = {
           client_id: string
           consumer_id: string | null
           created_at: string
+          customer_name: string | null
           delivered_at: string | null
           delivered_by_staff_id: string | null
           delivered_by_station_id: string | null
           event_id: string
           id: string
+          is_external_area: boolean
           is_split_payment: boolean
           notes: string | null
           order_number: number
@@ -2053,6 +2094,7 @@ export type Database = {
           ready_at: string | null
           split_paid_amount: number | null
           status: Database["public"]["Enums"]["order_status"]
+          table_number: number | null
           total: number
           updated_at: string
           waiter_id: string | null
@@ -2064,11 +2106,13 @@ export type Database = {
           client_id: string
           consumer_id?: string | null
           created_at?: string
+          customer_name?: string | null
           delivered_at?: string | null
           delivered_by_staff_id?: string | null
           delivered_by_station_id?: string | null
           event_id: string
           id?: string
+          is_external_area?: boolean
           is_split_payment?: boolean
           notes?: string | null
           order_number: number
@@ -2080,6 +2124,7 @@ export type Database = {
           ready_at?: string | null
           split_paid_amount?: number | null
           status?: Database["public"]["Enums"]["order_status"]
+          table_number?: number | null
           total: number
           updated_at?: string
           waiter_id?: string | null
@@ -2091,11 +2136,13 @@ export type Database = {
           client_id?: string
           consumer_id?: string | null
           created_at?: string
+          customer_name?: string | null
           delivered_at?: string | null
           delivered_by_staff_id?: string | null
           delivered_by_station_id?: string | null
           event_id?: string
           id?: string
+          is_external_area?: boolean
           is_split_payment?: boolean
           notes?: string | null
           order_number?: number
@@ -2107,6 +2154,7 @@ export type Database = {
           ready_at?: string | null
           split_paid_amount?: number | null
           status?: Database["public"]["Enums"]["order_status"]
+          table_number?: number | null
           total?: number
           updated_at?: string
           waiter_id?: string | null
@@ -2548,6 +2596,39 @@ export type Database = {
           street?: string | null
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh_key: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh_key: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh_key?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -3758,6 +3839,14 @@ export type Database = {
       }
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
       create_consumer_split_order: { Args: { params: Json }; Returns: Json }
+      create_consumer_waiter_call: {
+        Args: {
+          p_event_id: string
+          p_is_external_area?: boolean
+          p_table_number?: number
+        }
+        Returns: Json
+      }
       create_cpf_change_request: {
         Args: { p_justification: string; p_requested_cpf: string }
         Returns: string
@@ -4021,6 +4110,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      mark_order_delivered: {
+        Args: { p_order_id: string; p_staff_id: string; p_station_id?: string }
+        Returns: Json
       }
       next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
       next_order_number: { Args: { p_event_id: string }; Returns: number }
