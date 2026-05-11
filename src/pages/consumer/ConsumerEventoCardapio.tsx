@@ -80,7 +80,7 @@ export default function ConsumerEventoCardapio() {
     Promise.all([
       supabase
         .from("events")
-        .select("id, name, description, start_at, end_at, status, client_id, venue_id, venues(name, city, state, address, latitude, longitude)")
+        .select("id, name, description, start_at, end_at, status, client_id, venue_id, table_service_enabled, table_count, venues(name, city, state, address, latitude, longitude)")
         .eq("id", eventId)
         .single(),
       supabase
@@ -162,7 +162,13 @@ export default function ConsumerEventoCardapio() {
     setShowSuccess(true);
     // Set active event in context
     if (event) {
-      setActiveEvent({ id: event.id, name: event.name, client_id: event.client_id || "" });
+      setActiveEvent({
+        id: event.id,
+        name: event.name,
+        client_id: event.client_id || "",
+        table_service_enabled: (event as any).table_service_enabled ?? false,
+        table_count: (event as any).table_count ?? null,
+      });
     }
   };
 

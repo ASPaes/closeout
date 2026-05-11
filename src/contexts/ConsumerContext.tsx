@@ -41,12 +41,26 @@ type ActiveOrder = {
 };
 
 type ConsumerContextType = {
-  activeEvent: { id: string; name: string; client_id: string } | null;
+  activeEvent: {
+    id: string;
+    name: string;
+    client_id: string;
+    table_service_enabled: boolean;
+    table_count: number | null;
+  } | null;
   activeOrder: ActiveOrder | null;
   cart: Cart;
   consumptionLimits: ConsumptionLimits | null;
   location: { lat: number; lng: number } | null;
-  setActiveEvent: (event: { id: string; name: string; client_id: string } | null) => void;
+  setActiveEvent: (
+    event: {
+      id: string;
+      name: string;
+      client_id: string;
+      table_service_enabled: boolean;
+      table_count: number | null;
+    } | null,
+  ) => void;
   setActiveOrder: (order: ActiveOrder | null) => void;
   setLocation: (loc: { lat: number; lng: number } | null) => void;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
@@ -56,19 +70,31 @@ type ConsumerContextType = {
   refreshActiveOrder: () => Promise<void>;
   loadingOrder: boolean;
   loadingEvent: boolean;
+  lastTableNumber: number | null;
+  lastIsExternalArea: boolean;
+  setLastTableNumber: (n: number | null) => void;
+  setLastIsExternalArea: (v: boolean) => void;
 };
 
 const ConsumerContext = createContext<ConsumerContextType | null>(null);
 
 export function ConsumerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [activeEvent, setActiveEvent] = useState<{ id: string; name: string; client_id: string } | null>(null);
+  const [activeEvent, setActiveEvent] = useState<{
+    id: string;
+    name: string;
+    client_id: string;
+    table_service_enabled: boolean;
+    table_count: number | null;
+  } | null>(null);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 });
   const [consumptionLimits, setConsumptionLimits] = useState<ConsumptionLimits | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(true);
+  const [lastTableNumber, setLastTableNumber] = useState<number | null>(null);
+  const [lastIsExternalArea, setLastIsExternalArea] = useState(false);
 
   const computeTotal = (items: CartItem[]) =>
     items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -149,6 +175,41 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
           is_split_payment: order.is_split_payment || false,
         });
       } else {
+        // Fallback: table-mode (no QR), look for active order directly
+        if (activeEvent?.table_service_enabled) {
+          const { data: tableOrders } = await supabase
+            .from("orders")
+            .select(
+              "id, order_number, status, total, is_split_payment, table_number, is_external_area, order_items(name, quantity, unit_price, delivered_quantity)",
+            )
+            .eq("consumer_id", user.id)
+            .eq("event_id", activeEvent.id)
+            .not("status", "in", '("delivered","cancelled")')
+            .order("created_at", { ascending: false })
+            .limit(1);
+          if (tableOrders && tableOrders.length > 0) {
+            const order = tableOrders[0] as any;
+            const { data: paymentsData } = await supabase
+              .from("payments")
+              .select("payment_method, amount, status")
+              .eq("order_id", order.id);
+            setActiveOrder({
+              id: order.id,
+              order_number: order.order_number,
+              status: order.status,
+              total: order.total,
+              qr_token: "",
+              items: order.order_items || [],
+              payments: (paymentsData || []).map((p: any) => ({
+                method: p.payment_method,
+                amount: p.amount,
+                status: p.status,
+              })),
+              is_split_payment: order.is_split_payment || false,
+            });
+            return;
+          }
+        }
         setActiveOrder(null);
       }
     } catch {
@@ -156,7 +217,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoadingOrder(false);
     }
-  }, [user]);
+  }, [user, activeEvent]);
 
   // Fetch consumption limits
   useEffect(() => {
@@ -181,7 +242,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     setLoadingEvent(true);
     supabase
       .from("event_checkins")
-      .select("event_id, events!inner(id, name, client_id)")
+      .select("event_id, events!inner(id, name, client_id, table_service_enabled, table_count)")
       .eq("user_id", user.id)
       .is("checked_out_at", null)
       .limit(1)
@@ -189,11 +250,43 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => {
         const ev = (data as any)?.events;
         if (ev) {
-          setActiveEvent({ id: ev.id, name: ev.name, client_id: ev.client_id || "" });
+          setActiveEvent({
+            id: ev.id,
+            name: ev.name,
+            client_id: ev.client_id || "",
+            table_service_enabled: ev.table_service_enabled ?? false,
+            table_count: ev.table_count ?? null,
+          });
         }
         setLoadingEvent(false);
       });
   }, [user]);
+
+  // Realtime subscription on event for table_service toggle
+  useEffect(() => {
+    if (!activeEvent?.id) return;
+    const channel = supabase
+      .channel("consumer-event-" + activeEvent.id)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "events", filter: `id=eq.${activeEvent.id}` },
+        (payload: any) => {
+          setActiveEvent((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  table_service_enabled: payload.new.table_service_enabled ?? false,
+                  table_count: payload.new.table_count ?? null,
+                }
+              : null,
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeEvent?.id]);
 
   // Fetch active order on mount
   useEffect(() => {
@@ -218,6 +311,10 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         refreshActiveOrder,
         loadingOrder,
         loadingEvent,
+        lastTableNumber,
+        lastIsExternalArea,
+        setLastTableNumber,
+        setLastIsExternalArea,
       }}
     >
       {children}
