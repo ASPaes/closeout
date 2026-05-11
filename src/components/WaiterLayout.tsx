@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Bell, PlusCircle, ClipboardList, User } from "lucide-react";
+import { Home, Bell, PlusCircle, ClipboardList, User, Truck } from "lucide-react";
 import { useWaiter, WaiterProvider } from "@/contexts/WaiterContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 const tabs = [
   { path: "/garcom", icon: Home, labelKey: "waiter_dashboard" as const },
   { path: "/garcom/chamados", icon: Bell, labelKey: "waiter_calls" as const },
+  { path: "/garcom/entregas", icon: Truck, labelKey: "waiter_deliveries" as const },
   { path: "/garcom/pedido", icon: PlusCircle, labelKey: "waiter_new_order" as const },
   { path: "/garcom/pedidos", icon: ClipboardList, labelKey: "waiter_orders" as const },
   { path: "/garcom/turno", icon: User, labelKey: "waiter_shift" as const },
@@ -20,7 +21,7 @@ function WaiterTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { pendingCallsCount, waiterId, eventId } = useWaiter();
+  const { pendingCallsCount, waiterId, eventId, pendingDeliveriesCount, tableServiceEnabled } = useWaiter();
   const [hasReadyOrders, setHasReadyOrders] = useState(false);
 
   // Track if there are ready orders for badge
@@ -74,12 +75,21 @@ function WaiterTabBar() {
               >
                 <tab.icon className={cn("h-[22px] w-[22px]", active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]")} />
                 {active && (
-                  <span className="text-[10px] font-semibold tracking-wide">{t(tab.labelKey)}</span>
+                  <span className="text-[10px] font-semibold tracking-wide">
+                    {tab.labelKey === "waiter_deliveries"
+                      ? (t(tab.labelKey as any) === "waiter_deliveries" ? "Entregas" : t(tab.labelKey as any))
+                      : t(tab.labelKey)}
+                  </span>
                 )}
                 {isCalls && pendingCallsCount > 0 && (
                   <span className="absolute right-1 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white shadow-[0_0_8px_hsl(0,100%,50%,0.5)]">
                     {pendingCallsCount > 9 ? "9+" : pendingCallsCount}
                     <span className="absolute inset-0 animate-ping rounded-full bg-destructive/60" />
+                  </span>
+                )}
+                {tab.path === "/garcom/entregas" && tableServiceEnabled && pendingDeliveriesCount > 0 && (
+                  <span className="absolute right-1 top-0.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white shadow-[0_0_8px_hsl(24,100%,50%,0.5)]">
+                    {pendingDeliveriesCount > 9 ? "9+" : pendingDeliveriesCount}
                   </span>
                 )}
                 {isOrders && hasReadyOrders && (
