@@ -277,6 +277,8 @@ export default function GestorEventos() {
     setEndAt(ev.end_at ? toLocalInput(ev.end_at) : "");
     setStatus(ev.status); setFormTab("general");
     setSandboxMode(ev.payment_sandbox_mode);
+    setTableServiceEnabled(ev.table_service_enabled ?? false);
+    setTableCount(ev.table_count ? String(ev.table_count) : "");
 
     const { data: settings } = await supabase
       .from("event_settings")
@@ -311,11 +313,18 @@ export default function GestorEventos() {
     if (!venueId) { toast.error(t("gevt_validation_venue")); return; }
     if (startAt && endAt && new Date(endAt) <= new Date(startAt)) { toast.error(t("gevt_validation_dates")); return; }
 
+    if (tableServiceEnabled && (!tableCount || parseInt(tableCount, 10) < 1)) {
+      toast.error("Informe a quantidade de mesas (mínimo 1)");
+      return;
+    }
+
     setSaving(true);
     const eventPayload = {
       name: name.trim(), description: description.trim() || null, venue_id: venueId, client_id: clientId!,
       start_at: startAt ? new Date(startAt).toISOString() : null, end_at: endAt ? new Date(endAt).toISOString() : null, status,
       payment_sandbox_mode: sandboxMode,
+      table_service_enabled: tableServiceEnabled,
+      table_count: tableServiceEnabled ? (parseInt(tableCount, 10) || null) : null,
     };
 
     let eventId = editingId;
@@ -477,6 +486,11 @@ export default function GestorEventos() {
       <div className="flex items-center gap-1.5">
         <StatusBadge status={statusVariant(r.status)} label={statusLabel(r.status)} />
         {r.payment_sandbox_mode && <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-500">SANDBOX</Badge>}
+        {r.table_service_enabled && (
+          <Badge variant="outline" className="text-[10px] border-orange-500/50 text-orange-500">
+            Mesas: {r.table_count}
+          </Badge>
+        )}
       </div>
     )},
     {
@@ -665,6 +679,19 @@ export default function GestorEventos() {
               <Label className="cursor-pointer">{t("stock_control")}</Label>
               <Switch checked={stockEnabled} onCheckedChange={setStockEnabled} />
             </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+              <div>
+                <Label className="cursor-pointer">Atendimento em Mesas</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">Consumidor informa a mesa, garçom entrega. Sem QR code.</p>
+              </div>
+              <Switch checked={tableServiceEnabled} onCheckedChange={setTableServiceEnabled} />
+            </div>
+            {tableServiceEnabled && (
+              <div className="space-y-2">
+                <Label>Quantidade de mesas</Label>
+                <Input type="number" min={1} value={tableCount} onChange={(e) => setTableCount(e.target.value)} placeholder="Ex: 30" className="h-12" />
+              </div>
+            )}
             <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
               <div>
                 <Label className="cursor-pointer">Modo Teste de Pagamento</Label>
