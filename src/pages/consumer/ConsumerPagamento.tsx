@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   Loader2,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -94,7 +95,7 @@ export default function ConsumerPagamento() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { cart, activeEvent, clearCart, setActiveOrder } = useConsumer();
+  const { cart, activeEvent, clearCart, setActiveOrder, lastTableNumber, lastIsExternalArea } = useConsumer();
 
   // ── Resume pending order via ?resume=<orderId> ──
   const [searchParams] = useSearchParams();
@@ -834,8 +835,16 @@ export default function ConsumerPagamento() {
           quantity: i.quantity,
         }));
 
+        const rpcParams: any = { event_id: activeEvent!.id, items, payments };
+        if (activeEvent?.table_service_enabled) {
+          if (lastIsExternalArea) {
+            rpcParams.is_external_area = true;
+          } else if (lastTableNumber) {
+            rpcParams.table_number = lastTableNumber;
+          }
+        }
         const { data, error } = await supabase.rpc("create_consumer_split_order", {
-          params: { event_id: activeEvent!.id, items, payments },
+          params: rpcParams,
         });
 
         if (error) throw new Error(error.message);
