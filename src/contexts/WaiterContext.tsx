@@ -13,6 +13,8 @@ type WaiterContextType = {
   assignmentType: "tables" | "sector" | "free" | null;
   assignmentValue: string | null;
   pendingCallsCount: number;
+  tableServiceEnabled: boolean;
+  pendingDeliveriesCount: number;
   cashCollected: number;
   refreshSession: () => Promise<void>;
   setCashCollected: (v: number) => void;
@@ -31,6 +33,8 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
   const [assignmentType, setAssignmentType] = useState<"tables" | "sector" | "free" | null>(null);
   const [assignmentValue, setAssignmentValue] = useState<string | null>(null);
   const [pendingCallsCount, setPendingCallsCount] = useState(0);
+  const [tableServiceEnabled, setTableServiceEnabled] = useState(false);
+  const [pendingDeliveriesCount, setPendingDeliveriesCount] = useState(0);
   const [cashCollected, setCashCollected] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -55,12 +59,13 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
 
         const { data: evt } = await supabase
           .from("events")
-          .select("name, client_id")
+          .select("name, client_id, table_service_enabled")
           .eq("id", session.event_id)
           .single();
         if (evt) {
           setEventName(evt.name);
           setClientId(evt.client_id);
+          setTableServiceEnabled((evt as any).table_service_enabled ?? false);
         }
       } else {
         setSessionId(null);
@@ -71,6 +76,8 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
         setAssignmentType(null);
         setAssignmentValue(null);
         setCashCollected(0);
+        setTableServiceEnabled(false);
+        setPendingDeliveriesCount(0);
       }
     } catch (e) {
       console.error("WaiterContext: refreshSession error", e);
@@ -106,6 +113,24 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [eventId]);
 
+  useEffect(() => {
+    if (!eventId || !tableServiceEnabled) { setPendingDeliveriesCount(0); return; }
+    const fetchDeliveries = async () => {
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", eventId)
+        .in("status", ["ready", "partially_delivered"]);
+      setPendingDeliveriesCount(count || 0);
+    };
+    fetchDeliveries();
+    const channel = supabase
+      .channel("waiter-deliveries-" + eventId)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `event_id=eq.${eventId}` }, () => fetchDeliveries())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [eventId, tableServiceEnabled]);
+
   return (
     <WaiterContext.Provider
       value={{
@@ -119,6 +144,8 @@ export function WaiterProvider({ children }: { children: ReactNode }) {
         assignmentType,
         assignmentValue,
         pendingCallsCount,
+        tableServiceEnabled,
+        pendingDeliveriesCount,
         cashCollected,
         refreshSession,
         setCashCollected,
