@@ -18,6 +18,9 @@ interface ReadyOrder {
   created_at: string;
   event_id: string;
   waiter_id: string | null;
+  table_number: number | null;
+  is_external_area: boolean;
+  customer_name: string | null;
   order_items: { id: string; name: string; quantity: number }[];
 }
 
@@ -71,7 +74,7 @@ export default function BarProntos() {
     if (!eventId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, origin, ready_at, created_at, event_id, waiter_id, order_items(id, name, quantity)")
+      .select("id, order_number, origin, ready_at, created_at, event_id, waiter_id, table_number, is_external_area, customer_name, order_items(id, name, quantity)")
       .eq("event_id", eventId)
       .eq("status", "ready")
       .order("ready_at", { ascending: true });
@@ -203,6 +206,17 @@ function ReadyCard({ order, removing, alertMinutes, t }: {
           </div>
         )}
       </div>
+
+      {(order.table_number || order.is_external_area) && (
+        <div className="mb-2">
+          <span className="inline-block rounded-full bg-orange-600 text-white px-3 py-1 text-lg font-bold">
+            {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
+          </span>
+        </div>
+      )}
+      {order.customer_name && (
+        <p className="text-sm text-muted-foreground mb-3">Cliente: {order.customer_name}</p>
+      )}
 
       {/* Origin */}
       <div className="mb-4">
