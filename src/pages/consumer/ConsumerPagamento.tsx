@@ -1701,6 +1701,21 @@ export default function ConsumerPagamento() {
         </div>
       </div>
 
+      {activeEvent?.table_service_enabled && (lastTableNumber || lastIsExternalArea) && (
+        <div className="flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3">
+          <MapPin className="h-5 w-5 text-primary shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {lastIsExternalArea ? "Área externa" : `Mesa ${lastTableNumber}`}
+            </p>
+            <p className="text-xs text-muted-foreground">O garçom entregará seu pedido</p>
+          </div>
+          <button onClick={() => navigate("/app/mesa")} className="text-xs text-primary font-medium hover:underline ml-auto shrink-0">
+            Alterar
+          </button>
+        </div>
+      )}
+
       {/* CPF do pagador — shown for digital methods */}
       {needsDigital && (
         <div className="space-y-1.5">
