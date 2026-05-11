@@ -59,6 +59,8 @@ type OrderQR = {
   qr_token: string;
   items: OrderItem[];
   payments?: PaymentDetail[];
+  table_number?: number | null;
+  is_external_area?: boolean;
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -89,12 +91,6 @@ export default function ConsumerQR() {
   const { activeOrder, loadingOrder, refreshActiveOrder, activeEvent } = useConsumer();
 
   const paramOrderId = searchParams.get("order");
-
-  useEffect(() => {
-    if (activeEvent?.table_service_enabled) {
-      navigate("/app/pedidos", { replace: true });
-    }
-  }, [activeEvent?.table_service_enabled, navigate]);
 
   const [specificOrder, setSpecificOrder] = useState<OrderQR | null>(null);
   const [loadingSpecific, setLoadingSpecific] = useState(false);
@@ -144,7 +140,7 @@ export default function ConsumerQR() {
 
       const { data: orderData } = await supabase
         .from("orders")
-        .select("id, order_number, status, total")
+        .select("id, order_number, status, total, table_number, is_external_area")
         .eq("id", paramOrderId)
         .eq("consumer_id", user.id)
         .single();
@@ -162,6 +158,8 @@ export default function ConsumerQR() {
           qr_token: qrToken,
           items,
           payments: payments.length > 0 ? payments : undefined,
+          table_number: (orderData as any).table_number,
+          is_external_area: (orderData as any).is_external_area || false,
         });
       }
       setLoadingSpecific(false);
@@ -171,6 +169,15 @@ export default function ConsumerQR() {
   // Determine which order to display
   const displayOrder = paramOrderId ? specificOrder : activeOrder;
   const isLoading = paramOrderId ? loadingSpecific : loadingOrder;
+
+  // Modo mesa é baseado no EVENTO, não no pedido
+  const isTableMode = activeEvent?.table_service_enabled === true;
+  // Label da mesa vem do pedido (pra exibição)
+  const tableLabel = (displayOrder as any)?.is_external_area
+    ? "Área externa"
+    : (displayOrder as any)?.table_number
+      ? `Mesa ${(displayOrder as any).table_number}`
+      : null;
 
   const displayItems: OrderItem[] = liveItems || (displayOrder?.items as OrderItem[]) || [];
   const displayPayments: PaymentDetail[] | undefined =
@@ -294,7 +301,7 @@ export default function ConsumerQR() {
     const fetchActiveOrders = async () => {
       const { data: orders } = await supabase
         .from("orders")
-        .select("id, order_number, status, total, created_at")
+        .select("id, order_number, status, total, created_at, table_number, is_external_area")
         .eq("consumer_id", user.id)
         .eq("event_id", activeEvent.id)
         .in("status", ["paid", "preparing", "ready", "partially_delivered"])
@@ -514,8 +521,17 @@ export default function ConsumerQR() {
                   R$ {Number(order.total).toFixed(2)}
                 </span>
                 <div className="flex items-center gap-1 text-xs font-medium text-primary">
-                  <QrCode className="h-3.5 w-3.5" />
-                  Ver QR Code
+                  {isTableMode && (order.table_number || order.is_external_area) ? (
+                    <>
+                      <Package className="h-3.5 w-3.5" />
+                      {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="h-3.5 w-3.5" />
+                      Ver QR Code
+                    </>
+                  )}
                   <ChevronRight className="h-4 w-4" />
                 </div>
               </div>
@@ -583,11 +599,13 @@ export default function ConsumerQR() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-border/40 bg-card/50 p-6 opacity-40 grayscale">
-          <div className="rounded-2xl bg-white p-3">
-            <QRCodeSVG value={displayOrder.qr_token} size={160} level="H" bgColor="#ffffff" fgColor="#0A0A0A" />
+        {!isTableMode && (
+          <div className="rounded-3xl border border-border/40 bg-card/50 p-6 opacity-40 grayscale">
+            <div className="rounded-2xl bg-white p-3">
+              <QRCodeSVG value={displayOrder.qr_token} size={160} level="H" bgColor="#ffffff" fgColor="#0A0A0A" />
+            </div>
           </div>
-        </div>
+        )}
 
         <OrderSummary items={displayItems} total={displayOrder.total} showDelivery />
 
@@ -730,10 +748,10 @@ export default function ConsumerQR() {
         <div className="w-full rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-center animate-pulse">
           <Clock className="mx-auto h-8 w-8 text-amber-400 mb-1" />
           <h1 className="text-lg font-extrabold text-amber-300">
-            Procure um garçom para pagar em dinheiro
+            {isTableMode ? "Aguardando pagamento em dinheiro" : "Procure um garçom para pagar em dinheiro"}
           </h1>
           <p className="text-xs text-amber-200/70 mt-0.5">
-            Apresente seu QR Code ao garçom
+            {isTableMode && tableLabel ? `O garçom irá até ${tableLabel}` : "Apresente seu QR Code ao garçom"}
           </p>
         </div>
       )}
@@ -742,8 +760,12 @@ export default function ConsumerQR() {
       {isReady && (
         <div className="w-full rounded-2xl border border-success/40 bg-success/10 p-4 text-center animate-pulse">
           <Package className="mx-auto h-8 w-8 text-success mb-1" />
-          <h1 className="text-lg font-extrabold text-success">{t("consumer_qr_ready_title")}</h1>
-          <p className="text-xs text-success/80 mt-0.5">{t("consumer_qr_ready_desc")}</p>
+          <h1 className="text-lg font-extrabold text-success">
+            {isTableMode ? "Pedido pronto!" : t("consumer_qr_ready_title")}
+          </h1>
+          <p className="text-xs text-success/80 mt-0.5">
+            {isTableMode && tableLabel ? `Garçom a caminho da ${tableLabel}` : t("consumer_qr_ready_desc")}
+          </p>
         </div>
       )}
 
@@ -770,35 +792,45 @@ export default function ConsumerQR() {
       </div>
 
       {/* QR Code */}
-      <div
-        className={cn(
-          "relative rounded-3xl border bg-card p-6 transition-all",
-          isPartiallyPaid
-            ? "border-amber-500/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
-            : isReady
-              ? "border-success/40 shadow-[0_0_60px_hsl(145_100%_39%/0.2)]"
-              : isPartial
-                ? "border-warning/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
-                : "border-border/60"
-        )}
-      >
-        <div className="rounded-2xl bg-white p-4">
-          <QRCodeSVG
-            value={displayOrder.qr_token}
-            size={220}
-            level="H"
-            bgColor="#ffffff"
-            fgColor="#0A0A0A"
-          />
+      {isTableMode && tableLabel ? (
+        <div className="w-full rounded-3xl border border-primary/40 bg-card/50 p-6 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 border border-primary/30 mx-auto mb-3">
+            <Package className="h-10 w-10 text-primary" />
+          </div>
+          <p className="text-2xl font-extrabold text-primary">{tableLabel}</p>
+          <p className="text-sm text-muted-foreground mt-1">O garçom entregará seu pedido</p>
         </div>
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          {isPartiallyPaid
-            ? "Mostre ao garçom para pagar em dinheiro"
-            : isPartial
-              ? t("consumer_qr_partial_show_again")
-              : t("consumer_qr_show_counter")}
-        </p>
-      </div>
+      ) : (
+        <div
+          className={cn(
+            "relative rounded-3xl border bg-card p-6 transition-all",
+            isPartiallyPaid
+              ? "border-amber-500/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
+              : isReady
+                ? "border-success/40 shadow-[0_0_60px_hsl(145_100%_39%/0.2)]"
+                : isPartial
+                  ? "border-warning/40 shadow-[0_0_40px_hsl(45_100%_50%/0.15)]"
+                  : "border-border/60"
+          )}
+        >
+          <div className="rounded-2xl bg-white p-4">
+            <QRCodeSVG
+              value={displayOrder.qr_token}
+              size={220}
+              level="H"
+              bgColor="#ffffff"
+              fgColor="#0A0A0A"
+            />
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            {isPartiallyPaid
+              ? "Mostre ao garçom para pagar em dinheiro"
+              : isPartial
+                ? t("consumer_qr_partial_show_again")
+                : t("consumer_qr_show_counter")}
+          </p>
+        </div>
+      )}
 
       {/* Payment details card (for partially_paid or split) */}
       {displayPayments && displayPayments.length > 0 && (isPartiallyPaid || displayPayments.length > 1) && (
