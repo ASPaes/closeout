@@ -275,7 +275,7 @@ export default function ConsumerCarrinho() {
 
       {/* Pay button */}
       <Button
-        onClick={() => navigate("/app/pagamento")}
+        onClick={() => navigate(activeEvent?.table_service_enabled ? "/app/mesa" : "/app/pagamento")}
         disabled={isBlocked || cart.items.length === 0}
         className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full"
         style={{ boxShadow: isBlocked ? "none" : "0 8px 32px hsl(24 100% 50% / 0.35)" }}
