@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
 import logoMark from "@/assets/brand/logo-mark.png";
 import { ChamarGarcomFAB } from "@/components/ChamarGarcomFAB";
+import { PushPermissionBanner } from "@/components/PushPermissionBanner";
 
 const tabs = [
   { path: "/app", icon: Home, labelKey: "consumer_tab_events" as const },
@@ -128,6 +129,7 @@ function ConsumerContent() {
   return (
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
+      <PushPermissionBanner />
       <main className="px-5 pb-24 pt-4">
         <Outlet />
       </main>
