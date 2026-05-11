@@ -11,6 +11,7 @@ import { PackageCheck, Clock, Smartphone, User, Monitor, AlertTriangle, Volume2,
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { sendPushNotification } from "@/lib/push-notify";
 
 interface ReadyOrder {
   id: string;
@@ -108,6 +109,26 @@ export default function BarProntos() {
     }
     toast.success("Pedido marcado como entregue");
     fetchOrders();
+
+    // Push notification (fire-and-forget)
+    const deliveredOrder = orders.find((o) => o.id === orderId);
+    if (deliveredOrder) {
+      (async () => {
+        const { data: orderData } = await supabase
+          .from("orders")
+          .select("consumer_id")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (orderData?.consumer_id) {
+          sendPushNotification(
+            [orderData.consumer_id],
+            "Pedido entregue",
+            `Pedido #${String(deliveredOrder.order_number).padStart(3, "0")} foi entregue`,
+            "/app/pedidos"
+          );
+        }
+      })();
+    }
   };
 
   // Realtime

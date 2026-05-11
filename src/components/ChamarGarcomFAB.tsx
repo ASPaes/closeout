@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { sendPushNotification } from "@/lib/push-notify";
 
 export function ChamarGarcomFAB() {
   const { activeEvent, lastTableNumber, lastIsExternalArea } = useConsumer();
@@ -84,6 +85,20 @@ export function ChamarGarcomFAB() {
     toast.success("Garçom chamado! Aguarde");
     setHasPending(true);
     setOpen(false);
+
+    // Notify active waiters (fire-and-forget)
+    (async () => {
+      const { data: sessions } = await supabase
+        .from("waiter_sessions")
+        .select("waiter_id")
+        .eq("event_id", activeEvent.id)
+        .is("closed_at", null);
+      if (sessions && sessions.length > 0) {
+        const waiterIds = sessions.map((s: any) => s.waiter_id);
+        const mesaText = isExternal ? "Área externa" : `Mesa ${tableNumber}`;
+        sendPushNotification(waiterIds, "Chamado!", `${mesaText} está chamando`, "/garcom/chamados");
+      }
+    })();
   };
 
   return (
