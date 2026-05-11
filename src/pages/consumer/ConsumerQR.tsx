@@ -90,6 +90,12 @@ export default function ConsumerQR() {
 
   const paramOrderId = searchParams.get("order");
 
+  useEffect(() => {
+    if (activeEvent?.table_service_enabled) {
+      navigate("/app/pedidos", { replace: true });
+    }
+  }, [activeEvent?.table_service_enabled, navigate]);
+
   const [specificOrder, setSpecificOrder] = useState<OrderQR | null>(null);
   const [loadingSpecific, setLoadingSpecific] = useState(false);
   const [liveStatus, setLiveStatus] = useState<string | null>(null);
