@@ -7,8 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PackageCheck, Clock, Smartphone, User, Monitor, AlertTriangle, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { PackageCheck, Clock, Smartphone, User, Monitor, AlertTriangle, Volume2, VolumeX, Loader2, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface ReadyOrder {
   id: string;
@@ -55,7 +57,8 @@ function getReadySince(readyAt: string | null, createdAt: string) {
 
 export default function BarProntos() {
   const { t } = useTranslation();
-  const { eventId } = useBar();
+  const { eventId, stationId } = useBar();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -91,6 +94,21 @@ export default function BarProntos() {
   }, [eventId, soundEnabled]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const handleDeliver = async (orderId: string) => {
+    if (!user) return;
+    const { data, error } = await supabase.rpc("mark_order_delivered", {
+      p_order_id: orderId,
+      p_staff_id: user.id,
+      p_station_id: stationId || null,
+    });
+    if (error || !(data as any)?.ok) {
+      toast.error((data as any)?.message || error?.message || "Erro ao marcar como entregue");
+      return;
+    }
+    toast.success("Pedido marcado como entregue");
+    fetchOrders();
+  };
 
   // Realtime
   useEffect(() => {
@@ -169,6 +187,7 @@ export default function BarProntos() {
                 removing={removingIds.has(order.id)}
                 alertMinutes={alertMinutes}
                 t={t}
+                onDeliver={handleDeliver}
               />
             ))}
           </div>
@@ -178,11 +197,12 @@ export default function BarProntos() {
   );
 }
 
-function ReadyCard({ order, removing, alertMinutes, t }: {
+function ReadyCard({ order, removing, alertMinutes, t, onDeliver }: {
   order: ReadyOrder;
   removing: boolean;
   alertMinutes: number;
   t: (key: any) => string;
+  onDeliver: (orderId: string) => void;
 }) {
   const { min, sec } = getReadySince(order.ready_at, order.created_at);
   const isAlert = min >= alertMinutes;
@@ -248,6 +268,17 @@ function ReadyCard({ order, removing, alertMinutes, t }: {
         <span className="text-sm font-medium">
           {t("bar_ready_since")} {timeText}
         </span>
+      </div>
+
+      <div className="mt-3">
+        <Button
+          onClick={(e) => { e.stopPropagation(); onDeliver(order.id); }}
+          variant="outline"
+          className="w-full h-10 gap-2 text-green-500 border-green-500/30 hover:bg-green-500/10"
+        >
+          <CheckCircle className="h-4 w-4" />
+          Marcar Entregue
+        </Button>
       </div>
     </Card>
   );
