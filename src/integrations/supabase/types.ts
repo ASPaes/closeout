@@ -270,6 +270,7 @@ export type Database = {
           cpf: string
           created_at: string
           id: string
+          is_sandbox: boolean
           user_id: string
         }
         Insert: {
@@ -277,6 +278,7 @@ export type Database = {
           cpf: string
           created_at?: string
           id?: string
+          is_sandbox?: boolean
           user_id: string
         }
         Update: {
@@ -284,6 +286,7 @@ export type Database = {
           cpf?: string
           created_at?: string
           id?: string
+          is_sandbox?: boolean
           user_id?: string
         }
         Relationships: []
