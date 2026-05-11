@@ -8,6 +8,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { cn } from "@/lib/utils";
 import { useConsumerNotifications } from "@/hooks/useConsumerNotifications";
 import logoMark from "@/assets/brand/logo-mark.png";
+import { ChamarGarcomFAB } from "@/components/ChamarGarcomFAB";
 
 const tabs = [
   { path: "/app", icon: Home, labelKey: "consumer_tab_events" as const },
@@ -130,6 +131,7 @@ function ConsumerContent() {
       <main className="px-5 pb-24 pt-4">
         <Outlet />
       </main>
+      <ChamarGarcomFAB />
       <ConsumerTabBar />
     </div>
   );
