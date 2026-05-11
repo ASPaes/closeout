@@ -37,6 +37,8 @@ type Event = {
   venue_id: string;
   venue_name?: string;
   payment_sandbox_mode: boolean;
+  table_service_enabled: boolean;
+  table_count: number | null;
 };
 
 type Venue = { id: string; name: string };
@@ -97,6 +99,8 @@ export default function GestorEventos() {
   const [maxOrderValue, setMaxOrderValue] = useState("");
   const [alertMinutes, setAlertMinutes] = useState("15");
   const [stockEnabled, setStockEnabled] = useState(true);
+  const [tableServiceEnabled, setTableServiceEnabled] = useState(false);
+  const [tableCount, setTableCount] = useState("");
   const [sandboxMode, setSandboxMode] = useState(true);
   const [sandboxConfirmOpen, setSandboxConfirmOpen] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -118,7 +122,7 @@ export default function GestorEventos() {
     const [eventsRes, venuesRes] = await Promise.all([
       supabase
         .from("events")
-        .select("id, name, description, start_at, end_at, status, venue_id, payment_sandbox_mode")
+        .select("id, name, description, start_at, end_at, status, venue_id, payment_sandbox_mode, table_service_enabled, table_count")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false }),
       supabase
@@ -256,6 +260,8 @@ export default function GestorEventos() {
     setEventCampaigns([]); setAllCampaigns([]);
     setPendingImages([]);
     setSandboxMode(true);
+    setTableServiceEnabled(false);
+    setTableCount("");
     const defaults = await loadDefaults();
     setGeoRadius(String(defaults.geo_radius_meters));
     setMaxOrderValue(defaults.max_order_value != null ? String(defaults.max_order_value) : "");
