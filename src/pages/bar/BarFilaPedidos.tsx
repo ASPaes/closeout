@@ -42,6 +42,9 @@ interface OrderWithItems {
   event_id: string;
   client_id: string;
   consumer_id: string | null;
+  table_number: number | null;
+  is_external_area: boolean;
+  customer_name: string | null;
   order_items: OrderItemWithDelivery[];
 }
 
@@ -73,7 +76,7 @@ export default function BarFilaPedidos() {
     if (!eventId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, order_items(id, name, quantity, delivered_quantity)")
+      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, table_number, is_external_area, customer_name, order_items(id, name, quantity, delivered_quantity)")
       .eq("event_id", eventId)
       .in("status", ACTIVE_STATUSES)
       .order("created_at", { ascending: true });
@@ -411,6 +414,11 @@ function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
             <OriginIcon className="h-3 w-3" />
             {originLabels[order.origin] || order.origin}
           </Badge>
+          {(order.table_number || order.is_external_area) && (
+            <Badge className="bg-orange-600 text-white border-0 text-sm font-bold">
+              {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <Clock className={cn("h-3.5 w-3.5", levelColors[level])} />
@@ -419,6 +427,10 @@ function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
           </span>
         </div>
       </div>
+
+      {order.customer_name && (
+        <div className="mb-2 text-xs text-muted-foreground">Cliente: {order.customer_name}</div>
+      )}
 
       {/* Items */}
       <div className="space-y-1 mb-3">
