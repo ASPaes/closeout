@@ -88,6 +88,7 @@ import ConsumerLimites from "@/pages/consumer/ConsumerLimites";
 import ConsumerCheckin from "@/pages/consumer/ConsumerCheckin";
 import ConsumerPresentes from "@/pages/consumer/ConsumerPresentes";
 import ConsumerEventoCardapio from "@/pages/consumer/ConsumerEventoCardapio";
+import ConsumerMesa from "@/pages/consumer/ConsumerMesa";
 
 const queryClient = new QueryClient();
 
@@ -191,6 +192,7 @@ const App = () => (
               <Route path="evento/:eventId" element={<ConsumerEventoCardapio />} />
               <Route path="cardapio" element={<ConsumerCardapio />} />
               <Route path="carrinho" element={<ConsumerCarrinho />} />
+              <Route path="mesa" element={<ConsumerMesa />} />
               <Route path="pagamento" element={<ConsumerPagamento />} />
               <Route path="qr" element={<ConsumerQR />} />
               <Route path="pedidos" element={<ConsumerPedidos />} />
