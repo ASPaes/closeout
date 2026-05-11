@@ -39,6 +39,8 @@ type OrderRow = {
   items: { name: string; quantity: number; unit_price: number; delivered_quantity?: number }[];
   has_qr: boolean;
   payments: PaymentRow[];
+  table_number: number | null;
+  is_external_area: boolean;
 };
 
 const statusConfig: Record<string, { label: string; variant: "active" | "inactive" | "draft" | "completed" | "cancelled"; icon: React.ElementType }> = {
@@ -102,7 +104,7 @@ export default function ConsumerPedidos() {
     if (!user || !activeEvent) { setLoading(false); return; }
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, total, created_at, event_id, payment_method, is_split_payment, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
+      .select("id, order_number, status, total, created_at, event_id, payment_method, is_split_payment, paid_at, preparing_at, ready_at, delivered_at, cancelled_at, table_number, is_external_area, events!inner(name), order_items(name, quantity, unit_price, delivered_quantity)")
       .eq("consumer_id", user.id)
       .eq("event_id", activeEvent?.id || "")
       .order("created_at", { ascending: false })
@@ -146,6 +148,8 @@ export default function ConsumerPedidos() {
         items: (o.order_items || []).map((i: any) => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, delivered_quantity: i.delivered_quantity || 0 })),
         has_qr: qrOrderIds.has(o.id),
         payments: paymentsByOrder[o.id] || [],
+        table_number: o.table_number,
+        is_external_area: o.is_external_area || false,
       })));
     }
     setLoading(false);
@@ -153,6 +157,17 @@ export default function ConsumerPedidos() {
   }, [user, activeEvent?.id]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  useEffect(() => {
+    if (!activeEvent?.id) return;
+    const channel = supabase
+      .channel('consumer-orders-' + activeEvent.id)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `event_id=eq.${activeEvent.id}` }, () => {
+        fetchOrders();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeEvent?.id, fetchOrders]);
 
   const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
 
@@ -314,10 +329,24 @@ export default function ConsumerPedidos() {
                               Dividido
                             </span>
                           )}
+                          {(order.table_number || order.is_external_area) && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/25 px-2 py-0.5 text-[10px] font-semibold text-orange-400">
+                              {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                           {order.event_name} · {dateStr}
                         </p>
+                        {activeEvent?.table_service_enabled && order.table_number && order.status === "ready" && (
+                          <p className="text-xs text-green-400 mt-0.5">Garçom levando para Mesa {order.table_number}</p>
+                        )}
+                        {activeEvent?.table_service_enabled && order.is_external_area && order.status === "ready" && (
+                          <p className="text-xs text-green-400 mt-0.5">Garçom levando para área externa</p>
+                        )}
+                        {activeEvent?.table_service_enabled && order.status === "partially_delivered" && (
+                          <p className="text-xs text-amber-400 mt-0.5">Entrega parcial — itens restantes a caminho</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
@@ -341,7 +370,7 @@ export default function ConsumerPedidos() {
                 </button>
 
                 {/* QR button */}
-                {isActiveQr(order) && (
+                {isActiveQr(order) && !activeEvent?.table_service_enabled && (
                   <div className="px-4 pb-3">
                     <Button
                       size="sm"
