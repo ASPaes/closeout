@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { sendPushNotification } from "@/lib/push-notify";
 import type { Database } from "@/integrations/supabase/types";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
@@ -145,6 +146,33 @@ export default function BarFilaPedidos() {
       toast.success(newStatus === "preparing" ? t("bar_order_preparing_success") : t("bar_order_ready_success"));
       fetchOrders();
       fetchDeliveredCount();
+
+      // Push notifications (fire-and-forget)
+      const numStr = String(order.order_number).padStart(3, "0");
+      if (newStatus === "preparing") {
+        if (order.consumer_id) {
+          sendPushNotification([order.consumer_id], "Pedido em preparo", `Pedido #${numStr} está sendo preparado`, "/app/pedidos");
+        }
+      } else if (newStatus === "ready") {
+        const mesaText = order.table_number ? ` — Mesa ${order.table_number}` : order.is_external_area ? " — Área externa" : "";
+        if (order.consumer_id) {
+          sendPushNotification([order.consumer_id], "Pedido pronto!", `Pedido #${numStr} está pronto${mesaText}`, "/app/pedidos");
+        }
+        if (order.table_number || order.is_external_area) {
+          (async () => {
+            const { data: sessions } = await supabase
+              .from("waiter_sessions")
+              .select("waiter_id")
+              .eq("event_id", order.event_id)
+              .is("closed_at", null);
+            if (sessions && sessions.length > 0) {
+              const waiterIds = sessions.map((s: any) => s.waiter_id);
+              const target = order.table_number ? `Mesa ${order.table_number}` : "Área externa";
+              sendPushNotification(waiterIds, "Pedido pronto!", `#${numStr} pronto para ${target}`, "/garcom/entregas");
+            }
+          })();
+        }
+      }
     }
     setUpdatingIds((prev) => { const next = new Set(prev); next.delete(order.id); return next; });
   };
