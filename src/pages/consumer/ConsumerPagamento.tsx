@@ -546,7 +546,7 @@ export default function ConsumerPagamento() {
 
       if (charge.card_approved) {
         setFlowState("success");
-        setTimeout(() => navigate(activeEvent?.table_service_enabled ? "/app/pedidos" : "/app/qr?order=" + orderId, { replace: true }), 1500);
+        setTimeout(() => navigate("/app/qr?order=" + orderId, { replace: true }), 1500);
       }
     } catch (err: any) {
       console.error("Card charge error:", err);
@@ -580,7 +580,7 @@ export default function ConsumerPagamento() {
               } catch {}
               setFlowState("success");
               setTimeout(() => {
-                navigate(activeEvent?.table_service_enabled ? "/app/pedidos" : `/app/qr?order=${orderId}`, { replace: true });
+                navigate(`/app/qr?order=${orderId}`, { replace: true });
               }, 1500);
             } else if (newStatus === "cancelled") {
               setFlowState("error");
@@ -907,7 +907,7 @@ export default function ConsumerPagamento() {
 
       setFlowState("success");
       setTimeout(() => {
-        navigate(activeEvent?.table_service_enabled ? "/app/pedidos" : `/app/qr?order=${orderId}`, { replace: true });
+        navigate(`/app/qr?order=${orderId}`, { replace: true });
       }, 1500);
     } catch (err: any) {
       console.error("Payment error:", err);
@@ -1215,11 +1215,11 @@ export default function ConsumerPagamento() {
 
         {pendingCardPayment && (
           <Button
-            onClick={() => navigate(activeEvent?.table_service_enabled ? "/app/pedidos" : `/app/qr?order=${pendingCardPayment.orderId}`, { replace: false })}
+            onClick={() => navigate(`/app/qr?order=${pendingCardPayment.orderId}`, { replace: false })}
             variant="outline"
             className="h-12 rounded-xl w-full max-w-[320px] gap-2"
           >
-            {activeEvent?.table_service_enabled ? "Ver meus pedidos" : "Ver meu QR Code"}
+            Ver meu QR Code
           </Button>
         )}
       </div>
@@ -1268,11 +1268,7 @@ export default function ConsumerPagamento() {
             Pedido criado — procure um garçom
           </h2>
           <p className="text-sm text-amber-200/80 mt-2">
-            {activeEvent?.table_service_enabled ? (
-              <>O garçom confirmará o pagamento na sua mesa — <strong>R$ {cashPendingInfo.cashAmount.toFixed(2)}</strong> em dinheiro</>
-            ) : (
-              <>Apresente seu QR Code para pagar <strong>R$ {cashPendingInfo.cashAmount.toFixed(2)}</strong> em dinheiro</>
-            )}
+            Apresente seu QR Code para pagar <strong>R$ {cashPendingInfo.cashAmount.toFixed(2)}</strong> em dinheiro
           </p>
           {cashPendingInfo.digitalAmount > 0 && (
             <p className="text-sm text-success mt-2 flex items-center justify-center gap-1.5">
@@ -1283,14 +1279,11 @@ export default function ConsumerPagamento() {
         </div>
         <Button
           onClick={() =>
-            navigate(
-              activeEvent?.table_service_enabled ? "/app/pedidos" : `/app/qr?order=${cashPendingInfo.orderId}`,
-              { replace: true }
-            )
+            navigate(`/app/qr?order=${cashPendingInfo.orderId}`, { replace: true })
           }
           className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground w-full max-w-[320px]"
         >
-          {activeEvent?.table_service_enabled ? "Ver meus pedidos" : "Ver meu QR Code"}
+          Ver meu QR Code
         </Button>
       </div>
     );
