@@ -72,6 +72,7 @@ import WaiterPedidos from "@/pages/garcom/WaiterPedidos";
 import WaiterTurno from "@/pages/garcom/WaiterTurno";
 import WaiterLeitorQR from "@/pages/garcom/WaiterLeitorQR";
 import WaiterHistorico from "@/pages/garcom/WaiterHistorico";
+import WaiterEntregas from "@/pages/garcom/WaiterEntregas";
 // Consumer pages
 import ConsumerLogin from "@/pages/consumer/ConsumerLogin";
 import ConsumerCadastro from "@/pages/consumer/ConsumerCadastro";
@@ -173,6 +174,7 @@ const App = () => (
             <Route path="/garcom" element={<WaiterLayout />}>
               <Route index element={<WaiterDashboard />} />
               <Route path="chamados" element={<WaiterChamados />} />
+              <Route path="entregas" element={<WaiterEntregas />} />
               <Route path="pedido" element={<WaiterNovoPedido />} />
               <Route path="pedido-avulso" element={<WaiterPedidoAvulso />} />
               <Route path="pedidos" element={<WaiterPedidos />} />
