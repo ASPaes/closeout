@@ -226,17 +226,36 @@ export default function ConsumerPagamento() {
   // ── Fetch saved cards (Asaas) ──
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("asaas_customer_cards")
-      .select("id, card_brand, card_last_four, card_holder_name, card_token, is_default")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setSavedCards(data);
-        }
-      });
-  }, [user]);
+
+    // Determine event sandbox mode
+    const getEventSandbox = async () => {
+      const eventId = isResumeMode ? resumeOrder?.event_id : activeEvent?.id;
+      if (!eventId) return true; // default sandbox if unknown
+      const { data: evt } = await supabase
+        .from("events")
+        .select("payment_sandbox_mode")
+        .eq("id", eventId)
+        .single();
+      return evt?.payment_sandbox_mode ?? true;
+    };
+
+    const loadCards = async () => {
+      const isSandbox = await getEventSandbox();
+      const { data } = await supabase
+        .from("asaas_customer_cards")
+        .select("id, card_brand, card_last_four, card_holder_name, card_token, is_default, is_sandbox")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .eq("is_sandbox", isSandbox);
+      if (data && data.length > 0) {
+        setSavedCards(data);
+      } else {
+        setSavedCards([]);
+      }
+    };
+
+    loadCards();
+  }, [user, activeEvent?.id, resumeOrder?.event_id]);
 
   // ── Pre-fill CPF and card holder name from profile ──
   useEffect(() => {
