@@ -259,7 +259,18 @@ export default function ConsumerCadastro() {
     });
 
     if (error) {
-      toast.error(error.message);
+      const msg = error.message || "";
+      if (msg.includes("CPF_ALREADY_REGISTERED") || msg.includes("Database error")) {
+        toast.error("Já existe uma conta com este CPF. Faça login ou use 'Esqueci minha senha'.");
+        setCpfTaken(true);
+        setCpfError("CPF já cadastrado em outra conta");
+        setStep(1);
+      } else if (msg.includes("already registered") || msg.includes("already been registered")) {
+        toast.error("Este e-mail já está cadastrado. Faça login ou use 'Esqueci minha senha'.");
+        setStep(2);
+      } else {
+        toast.error(msg);
+      }
       setLoading(false);
       return;
     }
