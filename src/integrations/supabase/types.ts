@@ -234,6 +234,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_default: boolean
+          is_sandbox: boolean
           user_id: string
         }
         Insert: {
@@ -247,6 +248,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_default?: boolean
+          is_sandbox?: boolean
           user_id: string
         }
         Update: {
@@ -260,6 +262,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_default?: boolean
+          is_sandbox?: boolean
           user_id?: string
         }
         Relationships: []
