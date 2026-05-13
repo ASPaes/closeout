@@ -683,7 +683,10 @@ export default function ConsumerPagamento() {
           { body }
         );
 
-        if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+        if (chargeError) {
+          const realError = (chargeResult as any)?.error || chargeError.message || "Erro ao criar cobrança";
+          throw new Error(realError === "Edge Function returned a non-2xx status code" ? "Erro ao processar pagamento. Tente novamente." : realError);
+        }
 
         const charge = (chargeResult as any)?.data || chargeResult;
         if (charge?.error) throw new Error(charge.detail || charge.error);
