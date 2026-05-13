@@ -529,8 +529,9 @@ export default function ConsumerPagamento() {
       );
 
       if (chargeError) {
-        console.error("Card charge error (edge function):", chargeError);
-        setDeclinedMessage(chargeError.message || "Erro ao criar cobrança");
+        console.error("Card charge error:", chargeError, "result:", chargeResult);
+        const realError = (chargeResult as any)?.error || chargeError.message || "Erro ao criar cobrança";
+        setDeclinedMessage(realError === "Edge Function returned a non-2xx status code" ? "Erro ao processar cartão. Tente novamente." : realError);
         setDeclinedOrderId(orderId);
         setFlowState("card_declined_split");
         return;
@@ -682,7 +683,10 @@ export default function ConsumerPagamento() {
           { body }
         );
 
-        if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+        if (chargeError) {
+          const realError = (chargeResult as any)?.error || chargeError.message || "Erro ao criar cobrança";
+          throw new Error(realError === "Edge Function returned a non-2xx status code" ? "Erro ao processar pagamento. Tente novamente." : realError);
+        }
 
         const charge = (chargeResult as any)?.data || chargeResult;
         if (charge?.error) throw new Error(charge.detail || charge.error);
@@ -739,7 +743,10 @@ export default function ConsumerPagamento() {
         { body }
       );
 
-      if (chargeError) throw new Error(chargeError.message || "Erro ao criar cobrança");
+      if (chargeError) {
+        const realError = (chargeResult as any)?.error || chargeError.message || "Erro ao criar cobrança";
+        throw new Error(realError === "Edge Function returned a non-2xx status code" ? "Erro ao processar pagamento. Tente novamente." : realError);
+      }
 
       const charge = (chargeResult as any)?.data || chargeResult;
       if (charge?.error) throw new Error(charge.detail || charge.error);
