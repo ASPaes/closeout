@@ -58,7 +58,7 @@ function getReadySince(readyAt: string | null, createdAt: string) {
 
 export default function BarProntos() {
   const { t } = useTranslation();
-  const { eventId, stationId } = useBar();
+  const { eventId, stationId, tableServiceEnabled } = useBar();
   const { user } = useAuth();
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,6 +207,7 @@ export default function BarProntos() {
                 order={order}
                 removing={removingIds.has(order.id)}
                 alertMinutes={alertMinutes}
+                tableServiceEnabled={tableServiceEnabled}
                 t={t}
                 onDeliver={handleDeliver}
               />
@@ -218,10 +219,11 @@ export default function BarProntos() {
   );
 }
 
-function ReadyCard({ order, removing, alertMinutes, t, onDeliver }: {
+function ReadyCard({ order, removing, alertMinutes, tableServiceEnabled, t, onDeliver }: {
   order: ReadyOrder;
   removing: boolean;
   alertMinutes: number;
+  tableServiceEnabled: boolean;
   t: (key: any) => string;
   onDeliver: (orderId: string) => void;
 }) {
@@ -291,16 +293,18 @@ function ReadyCard({ order, removing, alertMinutes, t, onDeliver }: {
         </span>
       </div>
 
-      <div className="mt-3">
-        <Button
-          onClick={(e) => { e.stopPropagation(); onDeliver(order.id); }}
-          variant="outline"
-          className="w-full h-10 gap-2 text-green-500 border-green-500/30 hover:bg-green-500/10"
-        >
-          <CheckCircle className="h-4 w-4" />
-          Marcar Entregue
-        </Button>
-      </div>
+      {tableServiceEnabled && (
+        <div className="mt-3">
+          <Button
+            onClick={(e) => { e.stopPropagation(); onDeliver(order.id); }}
+            variant="outline"
+            className="w-full h-10 gap-2 text-green-500 border-green-500/30 hover:bg-green-500/10"
+          >
+            <CheckCircle className="h-4 w-4" />
+            Marcar Entregue
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }
