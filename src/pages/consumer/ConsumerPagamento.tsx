@@ -1650,7 +1650,6 @@ export default function ConsumerPagamento() {
   }[] = [
     { method: "pix", label: "PIX", desc: "Aprovação instantânea", icon: Smartphone },
     { method: "credit_card", label: "Crédito", desc: "Cartão de crédito", icon: CreditCard },
-    { method: "debit_card", label: "Débito", desc: "Cartão de débito", icon: CreditCard },
     { method: "cash", label: "Dinheiro", desc: "Pagar com um garçom", icon: Banknote },
   ];
 
