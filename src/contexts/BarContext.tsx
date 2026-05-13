@@ -18,6 +18,7 @@ type BarContextType = {
   pendingOrdersCount: number;
   stationId: string | null;
   stationName: string | null;
+  tableServiceEnabled: boolean;
 };
 
 const BarContext = createContext<BarContextType>({
@@ -31,6 +32,7 @@ const BarContext = createContext<BarContextType>({
   pendingOrdersCount: 0,
   stationId: null,
   stationName: null,
+  tableServiceEnabled: false,
 });
 
 export function BarProvider({ children }: { children: ReactNode }) {
