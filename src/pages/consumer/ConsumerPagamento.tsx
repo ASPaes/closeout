@@ -37,6 +37,7 @@ type AsaasCard = {
   card_holder_name: string | null;
   card_token: string;
   is_default: boolean;
+  is_sandbox?: boolean;
 };
 
 type PaymentMethod = "pix" | "credit_card" | "debit_card" | "cash";
