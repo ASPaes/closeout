@@ -43,6 +43,7 @@ export function BarProvider({ children }: { children: ReactNode }) {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [stationId, setStationId] = useState<string | null>(null);
   const [stationName, setStationName] = useState<string | null>(null);
+  const [tableServiceEnabled, setTableServiceEnabled] = useState(false);
   const stationResolvedRef = useRef(false);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
@@ -105,19 +106,19 @@ export function BarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!eventId) {
       setEventName(null);
+      setTableServiceEnabled(false);
       return;
     }
-    const found = availableEvents.find((e) => e.id === eventId);
-    if (found) {
-      setEventName(found.name);
-      return;
-    }
+    // Always fetch from DB to get table_service_enabled
     supabase
       .from("events")
-      .select("name")
+      .select("name, table_service_enabled")
       .eq("id", eventId)
       .single()
-      .then(({ data }) => setEventName(data?.name ?? null));
+      .then(({ data }) => {
+        setEventName(data?.name ?? null);
+        setTableServiceEnabled(data?.table_service_enabled ?? false);
+      });
   }, [eventId, availableEvents]);
 
   // Poll pending orders count
@@ -217,6 +218,7 @@ export function BarProvider({ children }: { children: ReactNode }) {
         pendingOrdersCount,
         stationId,
         stationName,
+        tableServiceEnabled,
       }}
     >
       {children}
