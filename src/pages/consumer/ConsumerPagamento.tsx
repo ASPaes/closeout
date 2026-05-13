@@ -529,8 +529,9 @@ export default function ConsumerPagamento() {
       );
 
       if (chargeError) {
-        console.error("Card charge error (edge function):", chargeError);
-        setDeclinedMessage(chargeError.message || "Erro ao criar cobrança");
+        console.error("Card charge error:", chargeError, "result:", chargeResult);
+        const realError = (chargeResult as any)?.error || chargeError.message || "Erro ao criar cobrança";
+        setDeclinedMessage(realError === "Edge Function returned a non-2xx status code" ? "Erro ao processar cartão. Tente novamente." : realError);
         setDeclinedOrderId(orderId);
         setFlowState("card_declined_split");
         return;
