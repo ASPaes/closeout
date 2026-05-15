@@ -510,7 +510,40 @@ export default function GestorBarOperacao() {
       </Dialog>
 
       {/* Create Bar Dialog */}
-      {/* placeholder-marker */}
+      {/* Event drill-down sheet */}
+      <Sheet
+        open={!!selectedGroup}
+        onOpenChange={(open) => { if (!open) setSelectedGroup(null); }}
+      >
+        <SheetContent
+          side="bottom"
+          className="h-[92vh] max-h-[92vh] overflow-y-auto p-0 bg-background border-border"
+        >
+          {selectedGroup && (
+            <EventBarSheet
+              group={selectedGroup}
+              onCreateBar={(eventId) => {
+                setCreateBarEventId(eventId);
+                setCreateBarOpen(true);
+                setSelectedGroup(null);
+              }}
+              onCloseStation={(station) => {
+                handleOpenCloseStation(station);
+                setSelectedGroup(null);
+              }}
+              onCancelQRs={(eventId) => {
+                handleBulkCancelQRs(eventId);
+                setSelectedGroup(null);
+              }}
+              onCopyLink={copyStationLink}
+              formatTimeOpen={formatTimeOpen}
+              bulkCancelling={bulkCancelling}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Create Bar Dialog */}
       <Dialog open={createBarOpen} onOpenChange={handleCloseCreateDialog}>
         <DialogContent>
           {!createdStation ? (
