@@ -408,9 +408,9 @@ export default function GestorCaixas() {
       )}
 
       {loading && registers.length === 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="shrink-0 min-w-[400px] rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div key={i} className="w-full rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2 flex-1">
                   <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
