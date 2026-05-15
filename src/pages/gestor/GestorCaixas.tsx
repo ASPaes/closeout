@@ -624,6 +624,75 @@ export default function GestorCaixas() {
   );
 }
 
+function SummaryStrip({ groups, tab }: { groups: EventGroup[]; tab: string }) {
+  const totalVendas = Math.round(groups.reduce((s, g) => s + g.totalVendas, 0) * 100) / 100;
+  const totalSaldo = Math.round(groups.reduce((s, g) => s + g.totalSaldo, 0) * 100) / 100;
+  const totalSangrias = Math.round(groups.reduce((s, g) => s + g.totalSangrias, 0) * 100) / 100;
+  const totalCaixas = groups.reduce((s, g) => s + g.caixas.length, 0);
+  const caixasAbertos = groups.reduce((s, g) => s + g.caixasAbertos, 0);
+
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  return (
+    <div
+      key={tab}
+      className="flex items-stretch gap-0 border border-border/30 rounded-2xl overflow-hidden"
+      style={{ animation: "valueFade 0.35s ease-out" }}
+    >
+      {/* Hero — Faturamento total */}
+      <div className="flex-[1.5] p-5 bg-primary/[0.03]">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Faturamento total
+        </div>
+        <div className="text-primary text-3xl font-bold mb-1">
+          {fmt(totalVendas)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {tab === "ativos"
+            ? `${groups.length} evento${groups.length !== 1 ? "s" : ""} ativo${groups.length !== 1 ? "s" : ""}`
+            : `${groups.length} evento${groups.length !== 1 ? "s" : ""} encerrado${groups.length !== 1 ? "s" : ""}`
+          }
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Saldo em caixa */}
+      <div className="flex-1 p-5 bg-card/30">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Saldo em caixa
+        </div>
+        <div className="text-foreground text-xl font-semibold mb-1">
+          {fmt(totalSaldo)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {caixasAbertos > 0
+            ? `${caixasAbertos} aberto${caixasAbertos > 1 ? "s" : ""}`
+            : `${totalCaixas} caixa${totalCaixas > 1 ? "s" : ""}`
+          }
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Sangrias */}
+      <div className="flex-1 p-5 bg-card/30">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Sangrias
+        </div>
+        <div className="text-foreground text-xl font-semibold mb-1">
+          {fmt(totalSangrias)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          Acumulado
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventCard({ group, index, onClick }: { group: EventGroup; index: number; onClick: () => void }) {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dateLabel = (() => {
