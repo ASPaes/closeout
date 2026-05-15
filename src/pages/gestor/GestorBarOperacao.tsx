@@ -357,7 +357,7 @@ export default function GestorBarOperacao() {
       .eq("delivered_by_station_id", station.id)
       .eq("status", "delivered");
     const delivered = deliveredData?.length ?? 0;
-    const gmv = (deliveredData ?? []).reduce((acc, o) => acc + Number(o.total), 0);
+    const gmv = Math.round((deliveredData ?? []).reduce((acc, o) => acc + Number(o.total), 0) * 100) / 100;
     const hoursOpen = Math.round((Date.now() - new Date(station.created_at ?? Date.now()).getTime()) / 3600000 * 10) / 10;
     setCloseReport({ delivered, gmv, hoursOpen });
     setCloseLoading(false);
@@ -375,7 +375,7 @@ export default function GestorBarOperacao() {
     fetchAllData();
   };
 
-  const lateOrdersList = selectedGroup?.lateOrders ?? [];
+  
 
   return (
     <div className="space-y-6">
@@ -468,44 +468,6 @@ export default function GestorBarOperacao() {
         </div>
       )}
 
-      {/* Late Orders Dialog */}
-      <Dialog open={lateOrdersOpen} onOpenChange={setLateOrdersOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              {t("gbar_late_title" as any)}
-            </DialogTitle>
-          </DialogHeader>
-          {lateOrdersList.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              {t("gbar_late_empty" as any)}
-            </div>
-          ) : (
-            <div className="max-h-[400px] overflow-y-auto space-y-2">
-              {lateOrdersList.map((o) => (
-                <div
-                  key={o.id}
-                  className="flex justify-between items-center border border-border/60 rounded-lg p-3"
-                >
-                  <div>
-                    <div className="text-primary font-bold">#{o.order_number ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {ORIGIN_LABELS[o.origin ?? ""] ?? o.origin ?? "—"}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold">{formatCurrency(Number(o.total) || 0)}</div>
-                    <div className="text-xs text-destructive">
-                      {minutesSince(o.paid_at)} {t("gbar_minutes_ago" as any)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Create Bar Dialog */}
       {/* Event drill-down sheet */}
