@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
-import { PageHeader } from "@/components/PageHeader";
-import { DataTable } from "@/components/DataTable";
-import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, LockOpen, Eye } from "lucide-react";
+import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,8 +13,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
-import type { TranslationKey } from "@/i18n/translations/pt-BR";
-import type { DataTableColumn } from "@/components/DataTable";
+import { cn } from "@/lib/utils";
 
 type CashRegisterRow = {
   id: string;
@@ -52,6 +47,19 @@ type ReturnRow = {
   operator_name: string;
 };
 
+type EventGroup = {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  caixas: CashRegisterRow[];
+  isActive: boolean;
+  totalSaldo: number;
+  totalVendas: number;
+  totalSangrias: number;
+  ticketMedio: number;
+  caixasAbertos: number;
+};
+
 export default function GestorCaixas() {
   const { t } = useTranslation();
   const { effectiveClientId } = useGestor();
@@ -61,7 +69,7 @@ export default function GestorCaixas() {
   const [loadingReturns, setLoadingReturns] = useState(true);
   const [filterEvent, setFilterEvent] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
+  const [events, setEvents] = useState<{ id: string; name: string; start_at: string | null }[]>([]);
   const [detailModal, setDetailModal] = useState<CashRegisterRow | null>(null);
   const [closeConfirm, setCloseConfirm] = useState<CashRegisterRow | null>(null);
   const [closingBalance, setClosingBalance] = useState("");
@@ -73,12 +81,14 @@ export default function GestorCaixas() {
   const [openBalance, setOpenBalance] = useState("");
   const [opening, setOpening] = useState(false);
   const [operators, setOperators] = useState<{ id: string; name: string }[]>([]);
+  const [activeTab, setActiveTab] = useState<"ativos" | "encerrados">("ativos");
+  const [selectedGroup, setSelectedGroup] = useState<EventGroup | null>(null);
 
   useEffect(() => {
     if (!effectiveClientId) return;
     supabase
       .from("events")
-      .select("id, name")
+      .select("id, name, start_at")
       .eq("client_id", effectiveClientId)
       .order("name")
       .then(({ data }) => setEvents(data ?? []));
@@ -271,123 +281,116 @@ export default function GestorCaixas() {
     }
   };
 
-  const occLabels: Record<string, TranslationKey> = {
-    defect: "ret_occ_defect",
-    error: "ret_occ_error",
-    withdrawal: "ret_occ_withdrawal",
-    other: "ret_occ_other",
-  };
-
-  const registerColumns: DataTableColumn<CashRegisterRow>[] = [
-    { key: "register_number", header: t("gcx_col_register_number"), render: (r) => <span className="font-mono font-semibold">#{r.register_number}</span> },
-    { key: "operator_name", header: t("gcx_col_operator"), render: (r) => r.operator_name },
-    { key: "event_name", header: t("gcx_col_event"), render: (r) => r.event_name },
-    { key: "opened_at", header: t("gcx_col_opened_at"), render: (r) => format(new Date(r.opened_at), "dd/MM HH:mm") },
-    {
-      key: "status", header: t("status"), render: (r) => (
-        <StatusBadge status={r.status === "open" ? "active" : "completed"} label={r.status === "open" ? t("caixa_status_open") : t("caixa_status_closed")} />
-      ),
-    },
-    { key: "opening_balance", header: t("gcx_col_opening"), render: (r) => fmt(r.opening_balance) },
-    { key: "sales_total", header: t("gcx_col_sales"), render: (r) => fmt(r.sales_total) },
-    { key: "movements_out", header: t("gcx_col_withdrawals"), render: (r) => fmt(r.movements_out) },
-    { key: "current", header: t("gcx_col_current"), render: (r) => <span className="font-semibold">{fmt(currentBalance(r))}</span> },
-    {
-      key: "actions", header: t("actions"), render: (r) => (
-        <div className="flex gap-2">
-          {r.status === "open" && (
-            <Button size="sm" variant="outline" onClick={() => window.open(`/caixa?event=${r.event_id}`, "_blank")} title={t("gcx_view_register")}>
-              <Eye className="h-4 w-4" />
-            </Button>
-          )}
-          {r.status === "closed" && (
-            <Button size="sm" variant="outline" onClick={() => setDetailModal(r)}>{t("details")}</Button>
-          )}
-          {r.status === "open" && (
-            <Button size="sm" variant="destructive" onClick={() => setCloseConfirm(r)}>{t("gcx_close_register")}</Button>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  const returnColumns: DataTableColumn<ReturnRow>[] = [
-    { key: "created_at", header: t("timestamp"), render: (r) => format(new Date(r.created_at), "dd/MM HH:mm") },
-    { key: "order_number", header: t("ret_col_order"), render: (r) => r.order_number ? `#${r.order_number}` : "—" },
-    {
-      key: "items", header: t("ret_col_items"), render: (r) => {
-        const items = Array.isArray(r.items) ? r.items : [];
-        return items.map((i: any) => `${i.name} x${i.quantity}`).join(", ") || "—";
-      },
-    },
-    { key: "refund_amount", header: t("ret_col_value"), render: (r) => fmt(r.refund_amount) },
-    { key: "reason", header: t("ret_col_reason"), render: (r) => r.reason },
-    {
-      key: "occurrence_type", header: t("ret_col_occurrence"), render: (r) => {
-        const key = occLabels[r.occurrence_type];
-        return key ? t(key) : r.occurrence_type;
-      },
-    },
-    { key: "authorized_by", header: t("ret_col_authorized_by"), render: (r) => r.authorized_by_name },
-    { key: "operator", header: t("gcx_col_operator"), render: (r) => r.operator_name },
-  ];
-
-  const filterControls = (
-    <div className="flex flex-wrap gap-3">
-      <Select value={filterEvent} onValueChange={setFilterEvent}>
-        <SelectTrigger className="w-48"><SelectValue placeholder={t("gcx_all_events")} /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("gcx_all_events")}</SelectItem>
-          {events.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Select value={filterStatus} onValueChange={setFilterStatus}>
-        <SelectTrigger className="w-40"><SelectValue placeholder={t("gcx_all_status")} /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("gcx_all_status")}</SelectItem>
-          <SelectItem value="open">{t("caixa_status_open")}</SelectItem>
-          <SelectItem value="closed">{t("caixa_status_closed")}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+  const eventDateMap = useMemo(
+    () => Object.fromEntries(events.map((e) => [e.id, e.start_at])),
+    [events]
   );
+
+  const groups: EventGroup[] = useMemo(() => {
+    const map = new Map<string, CashRegisterRow[]>();
+    registers.forEach((r) => {
+      if (!map.has(r.event_id)) map.set(r.event_id, []);
+      map.get(r.event_id)!.push(r);
+    });
+    const out: EventGroup[] = [];
+    map.forEach((caixas, eventId) => {
+      const totalSaldo = caixas.reduce((s, c) => s + currentBalance(c), 0);
+      const totalVendas = caixas.reduce((s, c) => s + c.sales_total, 0);
+      const totalSangrias = caixas.reduce((s, c) => s + c.movements_out, 0);
+      const caixasComVendas = caixas.filter((c) => c.sales_total > 0).length;
+      const ticketMedio = caixasComVendas > 0 ? totalVendas / caixasComVendas : 0;
+      const caixasAbertos = caixas.filter((c) => c.status === "open").length;
+      out.push({
+        eventId,
+        eventName: caixas[0].event_name,
+        eventDate: eventDateMap[eventId] || caixas[0].opened_at,
+        caixas,
+        isActive: caixasAbertos > 0,
+        totalSaldo,
+        totalVendas,
+        totalSangrias,
+        ticketMedio,
+        caixasAbertos,
+      });
+    });
+    return out;
+  }, [registers, eventDateMap]);
+
+  const activeGroups = useMemo(
+    () => groups.filter((g) => g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const closedGroups = useMemo(
+    () => groups.filter((g) => !g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} actions={
-        <Button onClick={() => setOpenModal(true)}>
-          <LockOpen className="h-4 w-4 mr-2" />
-          {t("gcx_open_new")}
-        </Button>
-      } />
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Banknote className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t("gcx_title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("gcx_description")}</p>
+        </div>
+      </div>
 
-      <Tabs defaultValue="registers">
-        <TabsList>
-          <TabsTrigger value="registers">{t("gcx_tab_registers")}</TabsTrigger>
-          <TabsTrigger value="returns">{t("gcx_tab_returns")}</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-border">
+        <button
+          onClick={() => setActiveTab("ativos")}
+          className={cn(
+            "flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors",
+            activeTab === "ativos"
+              ? "text-primary border-primary"
+              : "text-muted-foreground border-transparent hover:text-foreground"
+          )}
+        >
+          <Play className="h-4 w-4" />
+          Ativos
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">{activeGroups.length}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("encerrados")}
+          className={cn(
+            "flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors",
+            activeTab === "encerrados"
+              ? "text-primary border-primary"
+              : "text-muted-foreground border-transparent hover:text-foreground"
+          )}
+        >
+          <Check className="h-4 w-4" />
+          Encerrados
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">{closedGroups.length}</span>
+        </button>
+      </div>
 
-        <TabsContent value="registers" className="space-y-4">
-          {filterControls}
-          <DataTable
-            columns={registerColumns}
-            data={registers}
-            keyExtractor={(r) => r.id}
-            loading={loading}
-            emptyMessage={t("gcx_empty")}
-          />
-        </TabsContent>
+      {activeTab === "ativos" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualiza automaticamente a cada 1 minuto
+        </div>
+      )}
 
-        <TabsContent value="returns" className="space-y-4">
-          <DataTable
-            columns={returnColumns}
-            data={returns}
-            keyExtractor={(r) => r.id}
-            loading={loadingReturns}
-            emptyMessage={t("gcx_returns_empty")}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Cards horizontais */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+        {currentGroups.map((group, i) => (
+          <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
+        ))}
+      </div>
+
+      {currentGroups.length === 0 && !loading && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Banknote className="h-12 w-12 text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground">
+            Nenhum evento {activeTab === "ativos" ? "ativo" : "encerrado"} com caixas
+          </p>
+        </div>
+      )}
 
       {/* Detail Modal for closed register */}
       {detailModal && (
@@ -534,5 +537,74 @@ export default function GestorCaixas() {
         </ModalForm>
       )}
     </div>
+  );
+}
+
+function EventCard({ group, index, onClick }: { group: EventGroup; index: number; onClick: () => void }) {
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const dateLabel = (() => {
+    try {
+      return format(new Date(group.eventDate), "dd/MM/yyyy · HH:mm");
+    } catch {
+      return "";
+    }
+  })();
+  return (
+    <button
+      onClick={onClick}
+      style={{ animationDelay: `${index * 60}ms` }}
+      className="relative shrink-0 min-w-[400px] text-left rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group"
+    >
+      <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+
+      <div className="relative flex items-start justify-between gap-4 mb-5">
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold text-foreground truncate">{group.eventName}</h3>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {dateLabel}
+          </div>
+        </div>
+        {group.isActive ? (
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            Ativo
+          </span>
+        ) : (
+          <span className="shrink-0 inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            Encerrado
+          </span>
+        )}
+      </div>
+
+      <div className="relative mb-5">
+        <div className="text-xs text-muted-foreground mb-1">Saldo total em caixa</div>
+        <div className="text-3xl font-bold text-foreground">{fmt(group.totalSaldo)}</div>
+      </div>
+
+      <div className="relative grid grid-cols-2 gap-3 mb-5">
+        <div className="rounded-lg bg-secondary/50 p-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Faturamento</div>
+          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.totalVendas)}</div>
+        </div>
+        <div className="rounded-lg bg-secondary/50 p-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
+          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.ticketMedio)}</div>
+        </div>
+      </div>
+
+      <div className="relative flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Banknote className="h-3.5 w-3.5" />
+          {group.caixasAbertos > 0
+            ? `${group.caixasAbertos} caixa${group.caixasAbertos > 1 ? "s" : ""} aberto${group.caixasAbertos > 1 ? "s" : ""}`
+            : `${group.caixas.length} caixa${group.caixas.length > 1 ? "s" : ""}`}
+        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:gap-2 transition-all">
+          Ver caixas
+          <ChevronRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </button>
   );
 }
