@@ -812,3 +812,276 @@ function EventCard({
     </button>
   );
 }
+
+// ============================================================
+// EventBarSheet — drill-down with stations + late orders
+// ============================================================
+interface EventBarSheetProps {
+  group: EventBarGroup;
+  onCreateBar: (eventId: string) => void;
+  onCloseStation: (station: StationRow) => void;
+  onCancelQRs: (eventId: string) => void;
+  onCopyLink: (joinCode: string) => void;
+  formatTimeOpen: (createdAt: string) => string;
+  bulkCancelling: boolean;
+}
+
+function EventBarSheet({
+  group, onCreateBar, onCloseStation, onCancelQRs,
+  onCopyLink, formatTimeOpen, bulkCancelling,
+}: EventBarSheetProps) {
+  const hasLate = group.ordersLate > 0;
+  const dateLabel = (() => {
+    try { return format(new Date(group.eventDate), "dd/MM/yyyy · HH:mm"); } catch { return ""; }
+  })();
+
+  const summaryChips: { label: string; value: string; highlight?: boolean; danger?: boolean }[] = [
+    { label: "Faturamento entregue", value: formatCurrency(group.faturamentoEntregue), highlight: true },
+    { label: "Total pedidos", value: String(group.ordersTotal) },
+    { label: "Entregues", value: String(group.ordersDelivered) },
+    { label: "Prontos", value: String(group.ordersReady) },
+    { label: "Atrasados", value: String(group.ordersLate), danger: hasLate },
+  ];
+
+  const visibleStations = group.stations.filter((s) => group.isActive ? s.status === "active" : true);
+
+  return (
+    <div className="px-5 pt-3 pb-8 space-y-5">
+      {/* Handle */}
+      <div className="flex justify-center">
+        <div className="h-1 w-10 rounded-full bg-border" />
+      </div>
+
+      {/* Header */}
+      <SheetHeader className="space-y-1.5 text-left">
+        <SheetTitle className="text-xl font-bold text-foreground">{group.eventName}</SheetTitle>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="h-3 w-3" />
+            {dateLabel}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Beer className="h-3 w-3" />
+            {group.stations.length} {group.stations.length === 1 ? "bar" : "bares"}
+          </span>
+          {group.isActive && (
+            <span className="inline-flex items-center gap-1.5">
+              <RefreshCw className="h-3 w-3" />
+              Atualiza a cada 1 min
+            </span>
+          )}
+        </div>
+      </SheetHeader>
+
+      {/* Summary chips */}
+      <div className="flex flex-wrap gap-2">
+        {summaryChips.map((chip) => (
+          <div
+            key={chip.label}
+            className={cn(
+              "rounded-lg border px-3 py-2 min-w-[120px] flex-1",
+              chip.highlight && "bg-primary/[0.07] border-primary/[0.12]",
+              chip.danger && "bg-destructive/10 border-destructive/40",
+              !chip.highlight && !chip.danger && "bg-card border-border/60",
+            )}
+          >
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{chip.label}</div>
+            <div className={cn(
+              "text-base font-bold mt-0.5",
+              chip.highlight && "text-primary",
+              chip.danger && "text-destructive",
+            )}>
+              {chip.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-border/50" />
+
+      {/* Bares do evento */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Bares do evento</h3>
+          {group.isActive && (
+            <Button size="sm" onClick={() => onCreateBar(group.eventId)} className="gap-1.5 h-8">
+              <Plus className="h-3.5 w-3.5" />
+              Criar bar
+            </Button>
+          )}
+        </div>
+
+        {visibleStations.length === 0 ? (
+          <div className="text-center py-6 text-xs text-muted-foreground border border-border/60 rounded-lg">
+            Nenhum bar para mostrar
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {visibleStations.map((station) => {
+              const d = group.stationDeliveries.get(station.id);
+              return (
+                <BarStationCard
+                  key={station.id}
+                  station={station}
+                  deliveries={d?.count ?? 0}
+                  gmv={d?.gmv ?? 0}
+                  formatTimeOpen={formatTimeOpen}
+                  onCopyLink={() => onCopyLink(station.join_code)}
+                  onClose={() => onCloseStation(station)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-border/50" />
+
+      {/* Pedidos atrasados */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Pedidos atrasados</h3>
+          {hasLate && (
+            <Badge variant="outline" className="bg-destructive/10 border-destructive/40 text-destructive text-[10px]">
+              {group.ordersLate}
+            </Badge>
+          )}
+        </div>
+
+        {group.lateOrders.length === 0 ? (
+          <div className="text-center py-6 border border-border/60 rounded-lg">
+            <CheckCircle2 className="h-6 w-6 text-primary mx-auto mb-1.5 opacity-70" />
+            <p className="text-xs text-muted-foreground">Nenhum pedido atrasado. Tudo em dia!</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {group.lateOrders.map((o) => (
+              <div
+                key={o.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2"
+              >
+                <div className="flex items-center gap-2 text-sm min-w-0">
+                  <span className="font-bold text-primary">#{o.order_number ?? "—"}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {ORIGIN_LABELS[o.origin ?? ""] ?? o.origin ?? "—"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-sm font-semibold">{formatCurrency(o.total)}</span>
+                  <span className="text-xs text-destructive font-medium">{o.minutesAgo} min</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Cancelar QRs */}
+      {group.isActive && (
+        <>
+          <div className="border-t border-border/50" />
+          <div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-10 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={bulkCancelling}
+                >
+                  {bulkCancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                  Cancelar QRs em aberto
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar QRs em aberto?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso cancelará todos os QRs em aberto do evento &quot;{group.eventName}&quot;. Pedidos serão cancelados e estoque liberado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onCancelQRs(group.eventId)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Confirmar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// BarStationCard — single station inside the sheet
+// ============================================================
+function BarStationCard({
+  station, deliveries, gmv, formatTimeOpen, onCopyLink, onClose,
+}: {
+  station: StationRow;
+  deliveries: number;
+  gmv: number;
+  formatTimeOpen: (createdAt: string) => string;
+  onCopyLink: () => void;
+  onClose: () => void;
+}) {
+  const isActive = station.status === "active";
+  const members = (station.bar_station_members ?? []).map((m) => m.name).join(", ");
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={cn(
+            "h-7 w-7 rounded-md flex items-center justify-center shrink-0",
+            isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+          )}>
+            <Beer className="h-3.5 w-3.5" />
+          </div>
+          <div className="text-sm font-semibold truncate">{station.name}</div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCopyLink} title="Copiar link">
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+          {isActive && (
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onClose} title="Fechar bar">
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Members */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <User className="h-3 w-3 shrink-0" />
+        <span className="truncate">{members || "Sem operadores"}</span>
+      </div>
+
+      {/* Time open */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Clock className="h-3 w-3 shrink-0" />
+        {isActive ? `Aberto há ${formatTimeOpen(station.created_at)}` : "Fechado"}
+      </div>
+
+      {/* Faturamento */}
+      <div className="rounded-lg bg-primary/[0.07] border border-primary/[0.12] p-2.5">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Faturamento entregue</div>
+        <div className="text-base font-bold text-primary mt-0.5">{formatCurrency(gmv)}</div>
+      </div>
+
+      {/* Deliveries */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">Pedidos entregues</span>
+        <span className="font-semibold">{deliveries}</span>
+      </div>
+    </div>
+  );
+}
