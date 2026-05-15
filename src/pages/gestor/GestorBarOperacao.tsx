@@ -195,7 +195,7 @@ export default function GestorBarOperacao() {
       const ordersReady = eventOrders.filter((o) => o.status === "ready" || o.status === "partially_delivered").length;
 
       const lateList: LateOrder[] = eventOrders
-        .filter((o) => o.paid_at && new Date(o.paid_at).getTime() < lateThreshold && o.status !== "delivered")
+        .filter((o) => o.paid_at && new Date(o.paid_at).getTime() < lateThreshold && o.status !== "delivered" && o.status !== "partially_delivered")
         .map((o) => ({
           id: o.id,
           order_number: o.order_number,
