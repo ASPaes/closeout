@@ -430,7 +430,7 @@ export default function GestorCaixas() {
 
       {(!loading || registers.length > 0) && (
         <>
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             {currentGroups.map((group, i) => (
               <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
             ))}
