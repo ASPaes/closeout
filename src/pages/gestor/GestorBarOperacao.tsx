@@ -84,8 +84,6 @@ const ORIGIN_LABELS: Record<string, string> = {
 const formatCurrency = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const minutesSince = (dateStr: string) =>
-  Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
 
 export default function GestorBarOperacao() {
   const { t } = useTranslation();
