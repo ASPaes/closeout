@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight } from "lucide-react";
+import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight, Plus, ReceiptText, Eye, Lock, FileText, User } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,7 @@ type ReturnRow = {
   occurrence_type: string;
   authorized_by_name: string;
   operator_name: string;
+  cash_register_id: string;
 };
 
 type EventGroup = {
@@ -213,7 +215,7 @@ export default function GestorCaixas() {
     (async () => {
       const { data: rets } = await supabase
         .from("returns")
-        .select("id, created_at, cash_order_id, items, refund_amount, reason, occurrence_type, authorized_by, operator_id")
+        .select("id, created_at, cash_order_id, cash_register_id, items, refund_amount, reason, occurrence_type, authorized_by, operator_id")
         .eq("client_id", effectiveClientId)
         .order("created_at", { ascending: false })
         .limit(200);
@@ -241,6 +243,7 @@ export default function GestorCaixas() {
         occurrence_type: r.occurrence_type,
         authorized_by_name: pMap[r.authorized_by] || r.authorized_by.slice(0, 8),
         operator_name: pMap[r.operator_id] || r.operator_id.slice(0, 8),
+        cash_register_id: r.cash_register_id,
       })));
       setLoadingReturns(false);
     })();
@@ -326,6 +329,12 @@ export default function GestorCaixas() {
   );
   const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
 
+  const eventReturns = useMemo(() => {
+    if (!selectedGroup) return [];
+    const ids = new Set(selectedGroup.caixas.map((c) => c.id));
+    return returns.filter((r) => ids.has(r.cash_register_id));
+  }, [returns, selectedGroup]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -391,6 +400,26 @@ export default function GestorCaixas() {
           </p>
         </div>
       )}
+
+      {/* Event drill-down sheet */}
+      <Sheet open={!!selectedGroup} onOpenChange={(open) => { if (!open) setSelectedGroup(null); }}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl border-t border-border bg-background p-0 max-h-[92dvh] overflow-y-auto"
+        >
+          {selectedGroup && (
+            <EventSheet
+              group={selectedGroup}
+              returns={eventReturns}
+              onClose={() => setSelectedGroup(null)}
+              onOpenRegister={(eventId) => { setOpenEventId(eventId); setOpenModal(true); setSelectedGroup(null); }}
+              onCloseRegister={(reg) => { setCloseConfirm(reg); setSelectedGroup(null); }}
+              onViewDetail={(reg) => { setDetailModal(reg); setSelectedGroup(null); }}
+              currentBalance={currentBalance}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Detail Modal for closed register */}
       {detailModal && (
