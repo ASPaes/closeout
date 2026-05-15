@@ -17,7 +17,14 @@ import {
   Beer, ShoppingCart, CheckCircle2,
   AlertTriangle, Loader2, Copy, X, Check,
   Play, RefreshCw, Calendar, ChevronRight,
+  Plus, Ban, Clock, User,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type EventRow = { id: string; name: string; start_at: string | null; status: string };
 
@@ -159,6 +166,13 @@ export default function GestorBarOperacao() {
   };
 
   useEffect(() => { fetchAllData(); }, [effectiveClientId]);
+
+  useEffect(() => {
+    if (!selectedGroup) return;
+    const updated = groups.find((g) => g.eventId === selectedGroup.eventId);
+    if (updated) setSelectedGroup(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
 
   const eventDateMap = useMemo(
     () => Object.fromEntries(events.map((e) => [e.id, { name: e.name, start_at: e.start_at }])),
