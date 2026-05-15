@@ -165,6 +165,12 @@ export default function GestorBarOperacao() {
 
   useEffect(() => { fetchAllData(); }, [effectiveClientId]);
 
+  useEffect(() => {
+    if (activeTab !== "ativos") return;
+    const interval = setInterval(() => { fetchAllData(); }, 60000);
+    return () => clearInterval(interval);
+  }, [activeTab, effectiveClientId]);
+
   const eventDateMap = useMemo(
     () => Object.fromEntries(events.map((e) => [e.id, { name: e.name, start_at: e.start_at }])),
     [events]
@@ -431,7 +437,7 @@ export default function GestorBarOperacao() {
       {activeTab === "ativos" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <RefreshCw className="h-3 w-3" />
-          Atualizado às {format(lastRefresh, "HH:mm:ss")}
+          Atualiza a cada 1 min · Última: {lastRefresh.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </div>
       )}
 
@@ -439,7 +445,37 @@ export default function GestorBarOperacao() {
       {loading && allStations.length === 0 && (
         <div className="flex gap-4 overflow-x-auto pb-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="min-w-[400px] h-[260px] rounded-xl bg-muted animate-pulse" />
+            <div key={i} className="min-w-[400px] max-w-[400px] rounded-xl border border-border bg-card p-5 flex flex-col gap-4 opacity-70">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-5 w-3/4 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="h-5 w-16 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                <div className="h-7 w-1/2 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg border border-border p-2.5 space-y-2">
+                  <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                  <div className="h-6 w-8 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="rounded-lg border border-border p-2.5 space-y-2">
+                  <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                  <div className="h-6 w-8 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="rounded-lg border border-border p-2.5 space-y-2">
+                  <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                  <div className="h-6 w-8 rounded bg-muted animate-pulse" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-1/4 rounded bg-muted animate-pulse" />
+              </div>
+            </div>
           ))}
         </div>
       )}
