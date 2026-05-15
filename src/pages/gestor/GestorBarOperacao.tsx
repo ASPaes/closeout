@@ -106,7 +106,7 @@ export default function GestorBarOperacao() {
   const [selectedGroup, setSelectedGroup] = useState<EventBarGroup | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
+  
   const [bulkCancelling, setBulkCancelling] = useState(false);
 
   // Create bar dialog
