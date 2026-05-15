@@ -492,7 +492,7 @@ export default function GestorBarOperacao() {
 
       {/* Event cards horizontal scroll */}
       {(!loading || allStations.length > 0) && currentGroups.length > 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           {currentGroups.map((group, idx) => (
             <EventCard
               key={group.eventId}
