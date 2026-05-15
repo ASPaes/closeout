@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, Beer, UserCheck, DollarSign, CreditCard, TrendingUp, Hourglass, CalendarIcon, Trophy, Receipt } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon } from "lucide-react";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -527,11 +527,11 @@ export default function GestorDashboard() {
 
         {/* Right column */}
         <div className="space-y-6">
-          {/* Top 3 Products */}
+          {/* Top vendidos */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Trophy className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold text-muted-foreground">Top 3 Produtos</h2>
+              <div className="w-[3px] h-3.5 rounded-full bg-purple-500" />
+              <h2 className="text-sm font-semibold text-muted-foreground">Mais vendidos</h2>
             </div>
             {topProductsLoading ? (
               <div className="space-y-2">
@@ -540,23 +540,36 @@ export default function GestorDashboard() {
             ) : topProducts.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma venda no período</p>
             ) : (
-              <div className="space-y-2">
-                {topProducts.map((p: any, idx: number) => (
-                  <div key={p.item_id} className="rounded-xl border border-border/40 bg-card/30 p-3 flex items-center gap-3">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      idx === 0 ? "bg-primary/15 text-primary" :
-                      idx === 1 ? "bg-muted text-muted-foreground" :
-                      "bg-muted/50 text-muted-foreground/70"
-                    }`}>
-                      #{idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{p.item_name}</p>
-                      <p className="text-[11px] text-muted-foreground">{p.units_sold} un. · {p.item_type === "combo" ? "Combo" : "Produto"}</p>
+              <div className="space-y-0">
+                {topProducts.map((p: any, idx: number) => {
+                  const maxRev = topProducts[0]?.gmv || 1;
+                  const pct = Math.round((Number(p.gmv) / Number(maxRev)) * 100);
+                  return (
+                    <div key={p.item_id} className="flex items-center gap-3 py-3 border-b border-border/30 last:border-none">
+                      <div className={cn(
+                        "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0",
+                        idx === 0 ? "bg-primary/12 text-primary" :
+                        idx === 1 ? "bg-muted text-muted-foreground" :
+                        "bg-muted/40 text-muted-foreground/50"
+                      )}>
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{p.item_name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[8px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {p.item_type === "combo" ? "Combo" : "Produto"}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground/50">{p.units_sold} un.</span>
+                        </div>
+                        <div className="mt-1.5 h-[2px] rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%`, opacity: idx === 0 ? 1 : 0.3 }} />
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-primary tabular-nums shrink-0">{fmt(Number(p.gmv))}</span>
                     </div>
-                    <span className="text-sm font-bold text-primary tabular-nums">{fmt(p.gmv)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -565,47 +578,59 @@ export default function GestorDashboard() {
           {feeBreakdown && !finLoading && (Number(feeBreakdown.pix_count) > 0 || Number(feeBreakdown.credit_count) > 0 || Number(feeBreakdown.debit_count) > 0) && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <CreditCard className="h-4 w-4 text-primary" />
+                <div className="w-[3px] h-3.5 rounded-full bg-blue-500" />
                 <h2 className="text-sm font-semibold text-muted-foreground">Pagamentos</h2>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {Number(feeBreakdown.pix_count) > 0 && (
-                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">PIX</span>
-                      <Badge variant="outline" className="text-xs">{feeBreakdown.pix_count} transações</Badge>
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-foreground">PIX</span>
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                        {feeBreakdown.pix_count} transações
+                      </span>
                     </div>
-                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.pix_bruto))}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.pix_taxa_asaas))}</span>
-                      {" · "}Close Out: {fmt(Number(feeBreakdown.pix_taxa_closeout))}
-                    </div>
+                    <p className="text-xl font-bold text-foreground tabular-nums mb-2">
+                      {fmt(Number(feeBreakdown.pix_bruto))}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/50">
+                      Asaas: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.pix_taxa_asaas))}</span>
+                      {" · "}Close Out: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.pix_taxa_closeout))}</span>
+                    </p>
                   </div>
                 )}
                 {Number(feeBreakdown.credit_count) > 0 && (
-                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">Cartão de Crédito</span>
-                      <Badge variant="outline" className="text-xs">{feeBreakdown.credit_count} transações</Badge>
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-foreground">Cartão de Crédito</span>
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                        {feeBreakdown.credit_count} transações
+                      </span>
                     </div>
-                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.credit_bruto))}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.credit_taxa_asaas))}</span>
-                      {" · "}Close Out: {fmt(Number(feeBreakdown.credit_taxa_closeout))}
-                    </div>
+                    <p className="text-xl font-bold text-foreground tabular-nums mb-2">
+                      {fmt(Number(feeBreakdown.credit_bruto))}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/50">
+                      Asaas: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.credit_taxa_asaas))}</span>
+                      {" · "}Close Out: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.credit_taxa_closeout))}</span>
+                    </p>
                   </div>
                 )}
                 {Number(feeBreakdown.debit_count) > 0 && (
-                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">Cartão de Débito</span>
-                      <Badge variant="outline" className="text-xs">{feeBreakdown.debit_count} transações</Badge>
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-foreground">Cartão de Débito</span>
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                        {feeBreakdown.debit_count} transações
+                      </span>
                     </div>
-                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.debit_bruto))}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.debit_taxa_asaas))}</span>
-                      {" · "}Close Out: {fmt(Number(feeBreakdown.debit_taxa_closeout))}
-                    </div>
+                    <p className="text-xl font-bold text-foreground tabular-nums mb-2">
+                      {fmt(Number(feeBreakdown.debit_bruto))}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/50">
+                      Asaas: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.debit_taxa_asaas))}</span>
+                      {" · "}Close Out: <span className="text-muted-foreground">{fmt(Number(feeBreakdown.debit_taxa_closeout))}</span>
+                    </p>
                   </div>
                 )}
               </div>
@@ -614,18 +639,18 @@ export default function GestorDashboard() {
         </div>
       </div>
 
-      {/* Feature cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Feature cards — quick links */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {cards.map((c) => (
-          <Card key={c.titleKey} className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/50" onClick={() => navigate(c.url)}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t(c.titleKey)}</CardTitle>
-              <c.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">{t(c.descKey)}</p>
-            </CardContent>
-          </Card>
+          <div
+            key={c.titleKey}
+            onClick={() => navigate(c.url)}
+            className="rounded-xl border border-border/30 bg-card/20 p-4 cursor-pointer transition-all hover:border-primary/20 hover:bg-card/40 text-center"
+          >
+            <c.icon className="h-4 w-4 mx-auto mb-2 text-muted-foreground/40" />
+            <p className="text-xs font-medium text-muted-foreground">{t(c.titleKey)}</p>
+            <p className="text-[10px] text-muted-foreground/30 mt-0.5">{t(c.descKey)}</p>
+          </div>
         ))}
       </div>
     </div>
