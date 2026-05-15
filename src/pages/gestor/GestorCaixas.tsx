@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
-import { PageHeader } from "@/components/PageHeader";
-import { DataTable } from "@/components/DataTable";
-import { StatusBadge } from "@/components/StatusBadge";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, LockOpen, Eye } from "lucide-react";
+import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,8 +13,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTION } from "@/config/audit-actions";
-import type { TranslationKey } from "@/i18n/translations/pt-BR";
-import type { DataTableColumn } from "@/components/DataTable";
+import { cn } from "@/lib/utils";
 
 type CashRegisterRow = {
   id: string;
@@ -52,6 +47,19 @@ type ReturnRow = {
   operator_name: string;
 };
 
+type EventGroup = {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  caixas: CashRegisterRow[];
+  isActive: boolean;
+  totalSaldo: number;
+  totalVendas: number;
+  totalSangrias: number;
+  ticketMedio: number;
+  caixasAbertos: number;
+};
+
 export default function GestorCaixas() {
   const { t } = useTranslation();
   const { effectiveClientId } = useGestor();
@@ -61,7 +69,7 @@ export default function GestorCaixas() {
   const [loadingReturns, setLoadingReturns] = useState(true);
   const [filterEvent, setFilterEvent] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
+  const [events, setEvents] = useState<{ id: string; name: string; start_at: string | null }[]>([]);
   const [detailModal, setDetailModal] = useState<CashRegisterRow | null>(null);
   const [closeConfirm, setCloseConfirm] = useState<CashRegisterRow | null>(null);
   const [closingBalance, setClosingBalance] = useState("");
@@ -73,12 +81,14 @@ export default function GestorCaixas() {
   const [openBalance, setOpenBalance] = useState("");
   const [opening, setOpening] = useState(false);
   const [operators, setOperators] = useState<{ id: string; name: string }[]>([]);
+  const [activeTab, setActiveTab] = useState<"ativos" | "encerrados">("ativos");
+  const [selectedGroup, setSelectedGroup] = useState<EventGroup | null>(null);
 
   useEffect(() => {
     if (!effectiveClientId) return;
     supabase
       .from("events")
-      .select("id, name")
+      .select("id, name, start_at")
       .eq("client_id", effectiveClientId)
       .order("name")
       .then(({ data }) => setEvents(data ?? []));
