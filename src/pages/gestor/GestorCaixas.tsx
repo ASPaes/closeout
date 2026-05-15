@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { ModalForm } from "@/components/ModalForm";
-import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight } from "lucide-react";
+import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight, Plus, ReceiptText, Eye, Lock, FileText, User } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,7 @@ type ReturnRow = {
   occurrence_type: string;
   authorized_by_name: string;
   operator_name: string;
+  cash_register_id: string;
 };
 
 type EventGroup = {
@@ -213,7 +215,7 @@ export default function GestorCaixas() {
     (async () => {
       const { data: rets } = await supabase
         .from("returns")
-        .select("id, created_at, cash_order_id, items, refund_amount, reason, occurrence_type, authorized_by, operator_id")
+        .select("id, created_at, cash_order_id, cash_register_id, items, refund_amount, reason, occurrence_type, authorized_by, operator_id")
         .eq("client_id", effectiveClientId)
         .order("created_at", { ascending: false })
         .limit(200);
@@ -241,6 +243,7 @@ export default function GestorCaixas() {
         occurrence_type: r.occurrence_type,
         authorized_by_name: pMap[r.authorized_by] || r.authorized_by.slice(0, 8),
         operator_name: pMap[r.operator_id] || r.operator_id.slice(0, 8),
+        cash_register_id: r.cash_register_id,
       })));
       setLoadingReturns(false);
     })();
@@ -326,6 +329,12 @@ export default function GestorCaixas() {
   );
   const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
 
+  const eventReturns = useMemo(() => {
+    if (!selectedGroup) return [];
+    const ids = new Set(selectedGroup.caixas.map((c) => c.id));
+    return returns.filter((r) => ids.has(r.cash_register_id));
+  }, [returns, selectedGroup]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -391,6 +400,26 @@ export default function GestorCaixas() {
           </p>
         </div>
       )}
+
+      {/* Event drill-down sheet */}
+      <Sheet open={!!selectedGroup} onOpenChange={(open) => { if (!open) setSelectedGroup(null); }}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl border-t border-border bg-background p-0 max-h-[92dvh] overflow-y-auto"
+        >
+          {selectedGroup && (
+            <EventSheet
+              group={selectedGroup}
+              returns={eventReturns}
+              onClose={() => setSelectedGroup(null)}
+              onOpenRegister={(eventId) => { setOpenEventId(eventId); setOpenModal(true); setSelectedGroup(null); }}
+              onCloseRegister={(reg) => { setCloseConfirm(reg); setSelectedGroup(null); }}
+              onViewDetail={(reg) => { setDetailModal(reg); setSelectedGroup(null); }}
+              currentBalance={currentBalance}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Detail Modal for closed register */}
       {detailModal && (
@@ -606,5 +635,228 @@ function EventCard({ group, index, onClick }: { group: EventGroup; index: number
         </span>
       </div>
     </button>
+  );
+}
+
+interface EventSheetProps {
+  group: EventGroup;
+  returns: ReturnRow[];
+  onClose: () => void;
+  onOpenRegister: (eventId: string) => void;
+  onCloseRegister: (register: CashRegisterRow) => void;
+  onViewDetail: (register: CashRegisterRow) => void;
+  currentBalance: (r: CashRegisterRow) => number;
+}
+
+function EventSheet({ group, returns, onOpenRegister, onCloseRegister, onViewDetail, currentBalance }: EventSheetProps) {
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const dateLabel = (() => {
+    try { return format(new Date(group.eventDate), "dd/MM/yyyy · HH:mm"); } catch { return ""; }
+  })();
+
+  const summaryChips = [
+    { label: "Saldo total", value: fmt(group.totalSaldo), highlight: true },
+    { label: "Faturamento", value: fmt(group.totalVendas), highlight: false },
+    { label: "Ticket médio", value: fmt(group.ticketMedio), highlight: false },
+    { label: "Sangrias", value: fmt(group.totalSangrias), highlight: false },
+  ];
+
+  return (
+    <div className="px-6 pt-4 pb-10">
+      <div className="flex justify-center mb-4">
+        <div className="h-1.5 w-12 rounded-full bg-border" />
+      </div>
+
+      <div className="mb-5">
+        <h2 className="text-2xl font-bold text-foreground">{group.eventName}</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            {dateLabel}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Banknote className="h-3.5 w-3.5" />
+            {group.caixas.length} caixa{group.caixas.length > 1 ? "s" : ""}
+          </span>
+          {group.isActive && (
+            <span className="inline-flex items-center gap-1.5 text-primary">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Atualiza a cada 1 min
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {summaryChips.map((chip) => (
+          <div
+            key={chip.label}
+            className={cn(
+              "rounded-xl p-3 border",
+              chip.highlight
+                ? "bg-primary/[0.07] border-primary/20"
+                : "bg-secondary/40 border-border"
+            )}
+          >
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{chip.label}</div>
+            <div className={cn("mt-1 text-base font-bold", chip.highlight ? "text-primary" : "text-foreground")}>
+              {chip.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <hr className="border-border mb-5" />
+
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground">Caixas do evento</h3>
+          {group.isActive && (
+            <Button
+              size="sm"
+              onClick={() => onOpenRegister(group.eventId)}
+              className="gap-1.5 h-8"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Abrir novo caixa
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          {group.caixas.map((caixa) => (
+            <CaixaCard
+              key={caixa.id}
+              caixa={caixa}
+              currentBalance={currentBalance(caixa)}
+              onClose={() => onCloseRegister(caixa)}
+              onView={() => onViewDetail(caixa)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <hr className="border-border mb-5" />
+
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Devoluções do evento</h3>
+        {returns.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center rounded-xl border border-dashed border-border">
+            <ReceiptText className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <p className="text-xs text-muted-foreground">Nenhuma devolução registrada</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {returns.map((ret) => (
+              <div key={ret.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+                <div className="min-w-0 flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-foreground">
+                    {ret.order_number ? `Pedido #${ret.order_number}` : "—"}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground truncate">{ret.reason}</span>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="text-sm font-semibold text-destructive">-{fmt(ret.refund_amount)}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {format(new Date(ret.created_at), "dd/MM · HH:mm")}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CaixaCard({ caixa, currentBalance, onClose, onView }: {
+  caixa: CashRegisterRow;
+  currentBalance: number;
+  onClose: () => void;
+  onView: () => void;
+}) {
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const isOpen = caixa.status === "open";
+
+  return (
+    <div className="shrink-0 w-[280px] rounded-2xl border border-border bg-card p-4 flex flex-col">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Banknote className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <span className="text-sm font-bold text-foreground">Caixa #{caixa.register_number}</span>
+        </div>
+        {isOpen ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            Aberto
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+            Fechado
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+        <User className="h-3 w-3" />
+        <span className="truncate">{caixa.operator_name}</span>
+      </div>
+
+      <div className="rounded-lg bg-primary/[0.07] border border-primary/20 p-3 mb-3">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Saldo atual</div>
+        <div className="mt-0.5 text-xl font-bold text-primary">{fmt(currentBalance)}</div>
+      </div>
+
+      <div className="space-y-1.5 mb-4">
+        {[
+          { label: "Saldo inicial", value: caixa.opening_balance },
+          { label: "Vendas", value: caixa.sales_total },
+          { label: "Sangrias", value: caixa.movements_out },
+        ].map((row) => (
+          <div key={row.label} className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">{row.label}</span>
+            <span className="text-foreground font-medium">{fmt(row.value)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-auto flex items-center gap-2">
+        {isOpen ? (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 h-8 gap-1.5"
+              onClick={() => window.open(`/caixa?event=${caixa.event_id}`, "_blank")}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Ver
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 h-8 gap-1.5"
+              onClick={onClose}
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Fechar
+            </Button>
+          </>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full h-8 gap-1.5"
+            onClick={onView}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Detalhes
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
