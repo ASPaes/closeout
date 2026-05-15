@@ -511,6 +511,7 @@ export default function GestorBarOperacao() {
 
       {/* Create Bar Dialog */}
       <Dialog open={createBarOpen} onOpenChange={handleCloseCreateDialog}>
+
         <DialogContent>
           {!createdStation ? (
             <>
