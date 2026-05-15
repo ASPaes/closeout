@@ -375,7 +375,7 @@ export default function GestorCaixas() {
       </div>
 
       {/* Summary Strip */}
-      {(!loading || registers.length > 0) && currentGroups.length > 0 && (
+      {(!loading || registers.length > 0) && (
         <SummaryStrip groups={currentGroups} tab={activeTab} />
       )}
 
