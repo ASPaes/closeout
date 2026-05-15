@@ -281,123 +281,116 @@ export default function GestorCaixas() {
     }
   };
 
-  const occLabels: Record<string, TranslationKey> = {
-    defect: "ret_occ_defect",
-    error: "ret_occ_error",
-    withdrawal: "ret_occ_withdrawal",
-    other: "ret_occ_other",
-  };
-
-  const registerColumns: DataTableColumn<CashRegisterRow>[] = [
-    { key: "register_number", header: t("gcx_col_register_number"), render: (r) => <span className="font-mono font-semibold">#{r.register_number}</span> },
-    { key: "operator_name", header: t("gcx_col_operator"), render: (r) => r.operator_name },
-    { key: "event_name", header: t("gcx_col_event"), render: (r) => r.event_name },
-    { key: "opened_at", header: t("gcx_col_opened_at"), render: (r) => format(new Date(r.opened_at), "dd/MM HH:mm") },
-    {
-      key: "status", header: t("status"), render: (r) => (
-        <StatusBadge status={r.status === "open" ? "active" : "completed"} label={r.status === "open" ? t("caixa_status_open") : t("caixa_status_closed")} />
-      ),
-    },
-    { key: "opening_balance", header: t("gcx_col_opening"), render: (r) => fmt(r.opening_balance) },
-    { key: "sales_total", header: t("gcx_col_sales"), render: (r) => fmt(r.sales_total) },
-    { key: "movements_out", header: t("gcx_col_withdrawals"), render: (r) => fmt(r.movements_out) },
-    { key: "current", header: t("gcx_col_current"), render: (r) => <span className="font-semibold">{fmt(currentBalance(r))}</span> },
-    {
-      key: "actions", header: t("actions"), render: (r) => (
-        <div className="flex gap-2">
-          {r.status === "open" && (
-            <Button size="sm" variant="outline" onClick={() => window.open(`/caixa?event=${r.event_id}`, "_blank")} title={t("gcx_view_register")}>
-              <Eye className="h-4 w-4" />
-            </Button>
-          )}
-          {r.status === "closed" && (
-            <Button size="sm" variant="outline" onClick={() => setDetailModal(r)}>{t("details")}</Button>
-          )}
-          {r.status === "open" && (
-            <Button size="sm" variant="destructive" onClick={() => setCloseConfirm(r)}>{t("gcx_close_register")}</Button>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  const returnColumns: DataTableColumn<ReturnRow>[] = [
-    { key: "created_at", header: t("timestamp"), render: (r) => format(new Date(r.created_at), "dd/MM HH:mm") },
-    { key: "order_number", header: t("ret_col_order"), render: (r) => r.order_number ? `#${r.order_number}` : "—" },
-    {
-      key: "items", header: t("ret_col_items"), render: (r) => {
-        const items = Array.isArray(r.items) ? r.items : [];
-        return items.map((i: any) => `${i.name} x${i.quantity}`).join(", ") || "—";
-      },
-    },
-    { key: "refund_amount", header: t("ret_col_value"), render: (r) => fmt(r.refund_amount) },
-    { key: "reason", header: t("ret_col_reason"), render: (r) => r.reason },
-    {
-      key: "occurrence_type", header: t("ret_col_occurrence"), render: (r) => {
-        const key = occLabels[r.occurrence_type];
-        return key ? t(key) : r.occurrence_type;
-      },
-    },
-    { key: "authorized_by", header: t("ret_col_authorized_by"), render: (r) => r.authorized_by_name },
-    { key: "operator", header: t("gcx_col_operator"), render: (r) => r.operator_name },
-  ];
-
-  const filterControls = (
-    <div className="flex flex-wrap gap-3">
-      <Select value={filterEvent} onValueChange={setFilterEvent}>
-        <SelectTrigger className="w-48"><SelectValue placeholder={t("gcx_all_events")} /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("gcx_all_events")}</SelectItem>
-          {events.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Select value={filterStatus} onValueChange={setFilterStatus}>
-        <SelectTrigger className="w-40"><SelectValue placeholder={t("gcx_all_status")} /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("gcx_all_status")}</SelectItem>
-          <SelectItem value="open">{t("caixa_status_open")}</SelectItem>
-          <SelectItem value="closed">{t("caixa_status_closed")}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+  const eventDateMap = useMemo(
+    () => Object.fromEntries(events.map((e) => [e.id, e.start_at])),
+    [events]
   );
+
+  const groups: EventGroup[] = useMemo(() => {
+    const map = new Map<string, CashRegisterRow[]>();
+    registers.forEach((r) => {
+      if (!map.has(r.event_id)) map.set(r.event_id, []);
+      map.get(r.event_id)!.push(r);
+    });
+    const out: EventGroup[] = [];
+    map.forEach((caixas, eventId) => {
+      const totalSaldo = caixas.reduce((s, c) => s + currentBalance(c), 0);
+      const totalVendas = caixas.reduce((s, c) => s + c.sales_total, 0);
+      const totalSangrias = caixas.reduce((s, c) => s + c.movements_out, 0);
+      const caixasComVendas = caixas.filter((c) => c.sales_total > 0).length;
+      const ticketMedio = caixasComVendas > 0 ? totalVendas / caixasComVendas : 0;
+      const caixasAbertos = caixas.filter((c) => c.status === "open").length;
+      out.push({
+        eventId,
+        eventName: caixas[0].event_name,
+        eventDate: eventDateMap[eventId] || caixas[0].opened_at,
+        caixas,
+        isActive: caixasAbertos > 0,
+        totalSaldo,
+        totalVendas,
+        totalSangrias,
+        ticketMedio,
+        caixasAbertos,
+      });
+    });
+    return out;
+  }, [registers, eventDateMap]);
+
+  const activeGroups = useMemo(
+    () => groups.filter((g) => g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const closedGroups = useMemo(
+    () => groups.filter((g) => !g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("gcx_title")} subtitle={t("gcx_description")} icon={Banknote} actions={
-        <Button onClick={() => setOpenModal(true)}>
-          <LockOpen className="h-4 w-4 mr-2" />
-          {t("gcx_open_new")}
-        </Button>
-      } />
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Banknote className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t("gcx_title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("gcx_description")}</p>
+        </div>
+      </div>
 
-      <Tabs defaultValue="registers">
-        <TabsList>
-          <TabsTrigger value="registers">{t("gcx_tab_registers")}</TabsTrigger>
-          <TabsTrigger value="returns">{t("gcx_tab_returns")}</TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-border">
+        <button
+          onClick={() => setActiveTab("ativos")}
+          className={cn(
+            "flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors",
+            activeTab === "ativos"
+              ? "text-primary border-primary"
+              : "text-muted-foreground border-transparent hover:text-foreground"
+          )}
+        >
+          <Play className="h-4 w-4" />
+          Ativos
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">{activeGroups.length}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("encerrados")}
+          className={cn(
+            "flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors",
+            activeTab === "encerrados"
+              ? "text-primary border-primary"
+              : "text-muted-foreground border-transparent hover:text-foreground"
+          )}
+        >
+          <Check className="h-4 w-4" />
+          Encerrados
+          <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">{closedGroups.length}</span>
+        </button>
+      </div>
 
-        <TabsContent value="registers" className="space-y-4">
-          {filterControls}
-          <DataTable
-            columns={registerColumns}
-            data={registers}
-            keyExtractor={(r) => r.id}
-            loading={loading}
-            emptyMessage={t("gcx_empty")}
-          />
-        </TabsContent>
+      {activeTab === "ativos" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualiza automaticamente a cada 1 minuto
+        </div>
+      )}
 
-        <TabsContent value="returns" className="space-y-4">
-          <DataTable
-            columns={returnColumns}
-            data={returns}
-            keyExtractor={(r) => r.id}
-            loading={loadingReturns}
-            emptyMessage={t("gcx_returns_empty")}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Cards horizontais */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+        {currentGroups.map((group, i) => (
+          <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
+        ))}
+      </div>
+
+      {currentGroups.length === 0 && !loading && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Banknote className="h-12 w-12 text-muted-foreground/40 mb-3" />
+          <p className="text-sm text-muted-foreground">
+            Nenhum evento {activeTab === "ativos" ? "ativo" : "encerrado"} com caixas
+          </p>
+        </div>
+      )}
 
       {/* Detail Modal for closed register */}
       {detailModal && (
