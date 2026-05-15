@@ -167,13 +167,6 @@ export default function GestorBarOperacao() {
 
   useEffect(() => { fetchAllData(); }, [effectiveClientId]);
 
-  useEffect(() => {
-    if (!selectedGroup) return;
-    const updated = groups.find((g) => g.eventId === selectedGroup.eventId);
-    if (updated) setSelectedGroup(updated);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups]);
-
   const eventDateMap = useMemo(
     () => Object.fromEntries(events.map((e) => [e.id, { name: e.name, start_at: e.start_at }])),
     [events]
@@ -258,6 +251,13 @@ export default function GestorBarOperacao() {
     [groups]
   );
   const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
+
+  useEffect(() => {
+    if (!selectedGroup) return;
+    const updated = groups.find((g) => g.eventId === selectedGroup.eventId);
+    if (updated) setSelectedGroup(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
 
   // Bulk cancel open QRs
   const handleBulkCancelQRs = async (eventId: string) => {
