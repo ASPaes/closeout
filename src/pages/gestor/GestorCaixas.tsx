@@ -731,14 +731,14 @@ function EventCard({ group, index, onClick }: { group: EventGroup; index: number
       </div>
 
       <div className="relative mb-5">
-        <div className="text-xs text-muted-foreground mb-1">Saldo total em caixa</div>
-        <div className="text-3xl font-bold text-foreground">{fmt(group.totalSaldo)}</div>
+        <div className="text-xs text-muted-foreground mb-1">Faturamento total</div>
+        <div className="text-3xl font-bold text-foreground">{fmt(group.totalVendas)}</div>
       </div>
 
       <div className="relative grid grid-cols-2 gap-3 mb-5">
         <div className="rounded-lg bg-secondary/50 p-3">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Faturamento</div>
-          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.totalVendas)}</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Saldo em caixa</div>
+          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.totalSaldo)}</div>
         </div>
         <div className="rounded-lg bg-secondary/50 p-3">
           <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
