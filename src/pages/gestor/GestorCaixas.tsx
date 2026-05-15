@@ -628,7 +628,7 @@ function EventCard({ group, index, onClick }: { group: EventGroup; index: number
     <button
       onClick={onClick}
       style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 80}ms both` }}
-      className="relative shrink-0 min-w-[400px] text-left rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group opacity-0"
+      className="relative text-left w-full rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group opacity-0"
     >
       <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 
