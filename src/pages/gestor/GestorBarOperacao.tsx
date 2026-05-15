@@ -407,6 +407,11 @@ export default function GestorBarOperacao() {
         </div>
       </div>
 
+      {/* Summary Strip */}
+      {(!loading || allStations.length > 0) && (
+        <SummaryStrip groups={currentGroups} tab={activeTab} />
+      )}
+
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-border">
         <button
