@@ -443,9 +443,9 @@ export default function GestorBarOperacao() {
 
       {/* Loading skeleton */}
       {loading && allStations.length === 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-2">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="min-w-[400px] max-w-[400px] rounded-xl border border-border bg-card p-5 flex flex-col gap-4 opacity-70">
+            <div key={i} className="w-full rounded-xl border border-border bg-card p-5 flex flex-col gap-4 opacity-70">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="h-5 w-3/4 rounded bg-muted animate-pulse" />
