@@ -705,6 +705,78 @@ export default function GestorBarOperacao() {
 }
 
 // ============================================================
+// SummaryStrip — contextual totals
+// ============================================================
+function SummaryStrip({ groups, tab }: { groups: EventBarGroup[]; tab: string }) {
+  const totalFaturamento = Math.round(groups.reduce((s, g) => s + g.faturamentoEntregue, 0) * 100) / 100;
+  const totalPedidos = groups.reduce((s, g) => s + g.ordersTotal, 0);
+  const totalEntregues = groups.reduce((s, g) => s + g.ordersDelivered, 0);
+  const totalAtrasados = groups.reduce((s, g) => s + g.ordersLate, 0);
+  const totalBares = groups.reduce((s, g) => s + g.stations.length, 0);
+  const baresAtivos = groups.reduce((s, g) => s + g.activeStations, 0);
+  const hasLate = totalAtrasados > 0;
+
+  return (
+    <div
+      key={tab}
+      className="flex items-stretch gap-0 border border-border/30 rounded-2xl overflow-hidden"
+      style={{ animation: "valueFade 0.35s ease-out" }}
+    >
+      {/* Hero — Faturamento entregue */}
+      <div className="flex-[1.5] p-5 bg-primary/[0.03]">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Faturamento entregue
+        </div>
+        <div className="text-primary text-3xl font-bold mb-1">
+          {formatCurrency(totalFaturamento)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {tab === "ativos"
+            ? `${groups.length} evento${groups.length !== 1 ? "s" : ""} ativo${groups.length !== 1 ? "s" : ""}`
+            : `${groups.length} evento${groups.length !== 1 ? "s" : ""} encerrado${groups.length !== 1 ? "s" : ""}`
+          }
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Total pedidos */}
+      <div className="flex-1 p-5 bg-card/30">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Pedidos
+        </div>
+        <div className="text-foreground text-xl font-semibold mb-1">
+          {totalPedidos}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {totalEntregues} entregue{totalEntregues !== 1 ? "s" : ""}
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Atrasados */}
+      <div className={cn("flex-1 p-5", hasLate ? "bg-destructive/[0.03]" : "bg-card/30")}>
+        <div className={cn("text-[10px] uppercase tracking-widest mb-1", hasLate ? "text-destructive/50" : "text-muted-foreground")}>
+          Atrasados
+        </div>
+        <div className={cn("text-xl font-semibold mb-1", hasLate ? "text-destructive" : "text-foreground")}>
+          {totalAtrasados}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {baresAtivos > 0
+            ? `${baresAtivos} bar${baresAtivos > 1 ? "es" : ""} ativo${baresAtivos > 1 ? "s" : ""}`
+            : `${totalBares} bar${totalBares > 1 ? "es" : ""}`
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // EventCard — horizontal card per event
 // ============================================================
 function EventCard({
