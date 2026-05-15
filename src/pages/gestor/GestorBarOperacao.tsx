@@ -712,7 +712,7 @@ function EventCard({
   return (
     <button
       onClick={onSelect}
-      className="opacity-0 text-left min-w-[400px] max-w-[400px] rounded-xl border border-border bg-card hover:bg-card/80 transition-colors p-5 flex flex-col gap-4"
+      className="opacity-0 text-left w-full rounded-xl border border-border bg-card hover:bg-card/80 transition-colors p-5 flex flex-col gap-4"
       style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 80}ms both` }}
     >
       {/* Header */}
