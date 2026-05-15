@@ -259,16 +259,19 @@ export default function GestorDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
-          <p className="text-muted-foreground">
-            {t("welcome_back")}, {profile?.name || "Gestor"}
-            {clientName && (
-              <span className="ml-2 text-sm font-medium text-foreground">
-                — {clientName}
-              </span>
-            )}
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">C</div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
+            <p className="text-muted-foreground">
+              {t("welcome_back")}, {profile?.name || "Gestor"}
+              {clientName && (
+                <span className="ml-2 text-sm font-medium text-foreground">
+                  — {clientName}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -314,269 +317,55 @@ export default function GestorDashboard() {
         </div>
       </div>
 
-      {/* Live metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("gcx_open_registers")}</CardTitle>
-            <Banknote className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openRegisters}</div>
-            <p className="text-xs text-muted-foreground">{t("gcx_open_registers_desc")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas no Caixa</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{fmt(salesToday)}</div>
-            <p className="text-xs text-muted-foreground">{t("gcx_sales_today_desc")}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("gw_active_waiters" as any)}</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeWaiters}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("gw_pending_cancellations" as any)}</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center gap-2">
-              {pendingCancellations}
-              {pendingCancellations > 0 && (
-                <Badge variant="destructive" className="text-xs">{pendingCancellations}</Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Financial metrics */}
-      <div>
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
-          <DollarSign className="h-5 w-5 text-primary" />
-          Financeiro
-        </h2>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {finLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{fmt(finRevenue)}</div>
-              )}
-              <p className="text-xs text-muted-foreground">Pagamentos confirmados</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recebido (líquido)</CardTitle>
-              <Banknote className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {finLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{fmt(finNet)}</div>
-              )}
-              <p className="text-xs text-muted-foreground">Valor repassado ao estabelecimento</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa Close Out</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {finLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{fmt(finCloseout)}</div>
-              )}
-              <p className="text-xs text-muted-foreground">Retido pela plataforma</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa Gateway</CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {finLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{fmt(finAsaasFee)}</div>
-              )}
-              <p className="text-xs text-muted-foreground">{finAsaasFeePercent}% médio · Asaas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Hourglass className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {finLoading ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold flex items-center gap-2">
-                  {finPending}
-                  {finPending > 0 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Aguardando</Badge>}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">Pagamentos não confirmados</p>
-            </CardContent>
-          </Card>
+      {/* Hero financial strip */}
+      <div className="flex items-stretch rounded-2xl border border-border/30 overflow-hidden">
+        <div className="flex-[2] p-6 bg-primary/[0.03] text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/50 mb-3">
+            Faturamento confirmado
+          </p>
+          {finLoading ? (
+            <Skeleton className="h-12 w-48 mx-auto" />
+          ) : (
+            <p className="text-5xl font-extrabold text-foreground tracking-tight tabular-nums">
+              {fmt(finRevenue)}
+            </p>
+          )}
+          <p className="text-[11px] text-muted-foreground/40 mt-2">Pagamentos confirmados</p>
         </div>
-
-        {feeBreakdown && !finLoading && (Number(feeBreakdown.pix_count) > 0 || Number(feeBreakdown.credit_count) > 0) && (
-          <div className="grid gap-3 sm:grid-cols-3 mt-3">
-            {Number(feeBreakdown.pix_count) > 0 && (
-              <Card className="border-border/40">
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">PIX</span>
-                    <Badge variant="outline" className="text-xs">{feeBreakdown.pix_count} transações</Badge>
-                  </div>
-                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.pix_bruto))}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.pix_taxa_asaas))}</span>
-                    {" · "}Close Out: {fmt(Number(feeBreakdown.pix_taxa_closeout))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {Number(feeBreakdown.credit_count) > 0 && (
-              <Card className="border-border/40">
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">Cartão de Crédito</span>
-                    <Badge variant="outline" className="text-xs">{feeBreakdown.credit_count} transações</Badge>
-                  </div>
-                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.credit_bruto))}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.credit_taxa_asaas))}</span>
-                    {" · "}Close Out: {fmt(Number(feeBreakdown.credit_taxa_closeout))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {Number(feeBreakdown.debit_count) > 0 && (
-              <Card className="border-border/40">
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">Cartão de Débito</span>
-                    <Badge variant="outline" className="text-xs">{feeBreakdown.debit_count} transações</Badge>
-                  </div>
-                  <div className="text-sm font-semibold">{fmt(Number(feeBreakdown.debit_bruto))}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Taxa Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.debit_taxa_asaas))}</span>
-                    {" · "}Close Out: {fmt(Number(feeBreakdown.debit_taxa_closeout))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Top 3 Products */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-primary" />
-          Top 3 Produtos
-        </h2>
-        {topProductsLoading ? (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-          </div>
-        ) : topProducts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma venda no período</p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {topProducts.map((p: any, idx: number) => (
-              <Card key={p.item_id} className="border-border/60 hover:border-primary/30 transition-colors">
-                <CardContent className="pt-4 pb-3 px-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        idx === 0 ? "bg-primary/15 text-primary" :
-                        idx === 1 ? "bg-muted text-muted-foreground" :
-                        "bg-muted/50 text-muted-foreground/70"
-                      }`}>
-                        #{idx + 1}
-                      </span>
-                      <Badge variant="outline" className="text-[9px]">
-                        {p.item_type === "combo" ? "Combo" : "Produto"}
-                      </Badge>
-                    </div>
-                    <span className="text-sm font-bold text-primary">{fmt(p.gmv)}</span>
-                  </div>
-                  <p className="text-sm font-semibold truncate">{p.item_name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{p.units_sold} un. vendidas</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bar metrics */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <Beer className="h-5 w-5 text-primary" />
-          {t("gbar_section_title" as any)}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_queue" as any)}</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold flex items-center gap-2">
-                {barQueue}
-                {barQueue > 10 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Alto</Badge>}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_ready" as any)}</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold flex items-center gap-2">
-                {barReady}
-                {barReady > 0 && <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_avg_prep" as any)}</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {barAvgPrepMin !== null ? `${barAvgPrepMin} min` : "—"}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_delivered_today" as any)}</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{barDeliveredToday}</div>
-            </CardContent>
-          </Card>
+        <div className="w-px bg-border/20" />
+        <div className="flex-1 p-5 bg-card/30">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Recebido líquido</p>
+          {finLoading ? <Skeleton className="h-6 w-20" /> : (
+            <p className="text-xl font-semibold text-foreground tabular-nums">{fmt(finNet)}</p>
+          )}
+          <p className="text-[11px] text-muted-foreground/40 mt-1">Valor repassado</p>
+        </div>
+        <div className="w-px bg-border/20" />
+        <div className="flex-1 p-5 bg-card/30">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Taxa Close Out</p>
+          {finLoading ? <Skeleton className="h-6 w-20" /> : (
+            <p className="text-xl font-semibold text-primary tabular-nums">{fmt(finCloseout)}</p>
+          )}
+          <p className="text-[11px] text-muted-foreground/40 mt-1">Retido pela plataforma</p>
+        </div>
+        <div className="w-px bg-border/20" />
+        <div className="flex-1 p-5 bg-card/30">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Taxa Gateway</p>
+          {finLoading ? <Skeleton className="h-6 w-20" /> : (
+            <p className="text-xl font-semibold text-foreground tabular-nums">{fmt(finAsaasFee)}</p>
+          )}
+          <p className="text-[11px] text-muted-foreground/40 mt-1">{finAsaasFeePercent}% médio · Asaas</p>
+        </div>
+        <div className="w-px bg-border/20" />
+        <div className="flex-1 p-5 bg-card/30">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Pendentes</p>
+          {finLoading ? <Skeleton className="h-6 w-20" /> : (
+            <p className="text-xl font-semibold text-foreground tabular-nums flex items-center gap-2">
+              {finPending}
+              {finPending > 0 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Aguardando</Badge>}
+            </p>
+          )}
+          <p className="text-[11px] text-muted-foreground/40 mt-1">Pagamentos não confirmados</p>
         </div>
       </div>
 
@@ -604,6 +393,226 @@ export default function GestorDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Two-column grid: Operacional + Bar (left) | Top Products + Pagamentos (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left column */}
+        <div className="space-y-6">
+          {/* Operacional */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-[3px] h-3.5 rounded-full bg-green-500" />
+              <h2 className="text-sm font-semibold text-muted-foreground">Operacional</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Caixas abertos</span>
+                  <Banknote className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold">{openRegisters}</div>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">Em operação agora</p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Vendas no caixa</span>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold text-primary tabular-nums">{fmt(salesToday)}</div>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">No período selecionado</p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Garçons ativos</span>
+                  <UserCheck className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold">{activeWaiters}</div>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">Sessões abertas</p>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Cancelamentos</span>
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold flex items-center gap-2">
+                  {pendingCancellations}
+                  {pendingCancellations > 0 && (
+                    <Badge variant="destructive" className="text-xs">{pendingCancellations}</Badge>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">Aguardando aprovação</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Operação do Bar */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-[3px] h-3.5 rounded-full bg-primary" />
+              <h2 className="text-sm font-semibold text-muted-foreground">Operação do Bar</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Na fila</span>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold flex items-center gap-2">
+                  {barQueue}
+                  {barQueue > 10 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Alto</Badge>}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Prontos</span>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold flex items-center gap-2">
+                  {barReady}
+                  {barReady > 0 && <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Tempo médio</span>
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold">
+                  {barAvgPrepMin !== null ? `${barAvgPrepMin} min` : "—"}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+                <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 mb-2">
+                  <span>Entregues</span>
+                  <Package className="h-3.5 w-3.5" />
+                </div>
+                <div className="text-2xl font-bold">{barDeliveredToday}</div>
+              </div>
+            </div>
+
+            {/* Ring gauge — taxa de entrega */}
+            {(() => {
+              const totalPedidos = barDeliveredToday + barQueue + barReady;
+              const pctEntregue = totalPedidos > 0 ? Math.round((barDeliveredToday / totalPedidos) * 100) : 0;
+              const radius = 22;
+              const circumference = 2 * Math.PI * radius;
+              const dash = (pctEntregue / 100) * circumference;
+              return (
+                <div className="mt-2.5 rounded-xl border border-border/40 bg-card/30 p-4 flex items-center gap-4">
+                  <svg width="52" height="52" viewBox="0 0 52 52" className="shrink-0">
+                    <circle cx="26" cy="26" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="4" opacity="0.3" />
+                    <circle
+                      cx="26"
+                      cy="26"
+                      r={radius}
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={`${dash} ${circumference}`}
+                      transform="rotate(-90 26 26)"
+                    />
+                  </svg>
+                  <div className="flex flex-col">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">Taxa de entrega</p>
+                    <p className="text-lg font-bold tabular-nums">
+                      {pctEntregue}% <span className="text-sm font-normal text-muted-foreground">· {barDeliveredToday}/{totalPedidos}</span>
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-6">
+          {/* Top 3 Products */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-muted-foreground">Top 3 Produtos</h2>
+            </div>
+            {topProductsLoading ? (
+              <div className="space-y-2">
+                {[1,2,3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
+              </div>
+            ) : topProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma venda no período</p>
+            ) : (
+              <div className="space-y-2">
+                {topProducts.map((p: any, idx: number) => (
+                  <div key={p.item_id} className="rounded-xl border border-border/40 bg-card/30 p-3 flex items-center gap-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      idx === 0 ? "bg-primary/15 text-primary" :
+                      idx === 1 ? "bg-muted text-muted-foreground" :
+                      "bg-muted/50 text-muted-foreground/70"
+                    }`}>
+                      #{idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{p.item_name}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.units_sold} un. · {p.item_type === "combo" ? "Combo" : "Produto"}</p>
+                    </div>
+                    <span className="text-sm font-bold text-primary tabular-nums">{fmt(p.gmv)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pagamentos */}
+          {feeBreakdown && !finLoading && (Number(feeBreakdown.pix_count) > 0 || Number(feeBreakdown.credit_count) > 0 || Number(feeBreakdown.debit_count) > 0) && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-muted-foreground">Pagamentos</h2>
+              </div>
+              <div className="space-y-2">
+                {Number(feeBreakdown.pix_count) > 0 && (
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">PIX</span>
+                      <Badge variant="outline" className="text-xs">{feeBreakdown.pix_count} transações</Badge>
+                    </div>
+                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.pix_bruto))}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.pix_taxa_asaas))}</span>
+                      {" · "}Close Out: {fmt(Number(feeBreakdown.pix_taxa_closeout))}
+                    </div>
+                  </div>
+                )}
+                {Number(feeBreakdown.credit_count) > 0 && (
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">Cartão de Crédito</span>
+                      <Badge variant="outline" className="text-xs">{feeBreakdown.credit_count} transações</Badge>
+                    </div>
+                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.credit_bruto))}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.credit_taxa_asaas))}</span>
+                      {" · "}Close Out: {fmt(Number(feeBreakdown.credit_taxa_closeout))}
+                    </div>
+                  </div>
+                )}
+                {Number(feeBreakdown.debit_count) > 0 && (
+                  <div className="rounded-xl border border-border/40 bg-card/30 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">Cartão de Débito</span>
+                      <Badge variant="outline" className="text-xs">{feeBreakdown.debit_count} transações</Badge>
+                    </div>
+                    <div className="text-sm font-semibold tabular-nums">{fmt(Number(feeBreakdown.debit_bruto))}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      Asaas: <span className="text-orange-400">{fmt(Number(feeBreakdown.debit_taxa_asaas))}</span>
+                      {" · "}Close Out: {fmt(Number(feeBreakdown.debit_taxa_closeout))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Feature cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
