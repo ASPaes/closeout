@@ -779,8 +779,8 @@ function EventSheet({ group, returns, loadingReturns, onOpenRegister, onCloseReg
   })();
 
   const summaryChips = [
-    { label: "Saldo total", value: fmt(group.totalSaldo), highlight: true },
-    { label: "Faturamento", value: fmt(group.totalVendas), highlight: false },
+    { label: "Faturamento total", value: fmt(group.totalVendas), highlight: true },
+    { label: "Saldo em caixa", value: fmt(group.totalSaldo), highlight: false },
     { label: "Ticket médio", value: fmt(group.ticketMedio), highlight: false },
     { label: "Sangrias", value: fmt(group.totalSangrias), highlight: false },
   ];
