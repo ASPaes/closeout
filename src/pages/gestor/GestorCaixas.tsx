@@ -69,8 +69,6 @@ export default function GestorCaixas() {
   const [returns, setReturns] = useState<ReturnRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingReturns, setLoadingReturns] = useState(true);
-  const [filterEvent, setFilterEvent] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [events, setEvents] = useState<{ id: string; name: string; start_at: string | null }[]>([]);
   const [detailModal, setDetailModal] = useState<CashRegisterRow | null>(null);
   const [closeConfirm, setCloseConfirm] = useState<CashRegisterRow | null>(null);
@@ -85,6 +83,7 @@ export default function GestorCaixas() {
   const [operators, setOperators] = useState<{ id: string; name: string }[]>([]);
   const [activeTab, setActiveTab] = useState<"ativos" | "encerrados">("ativos");
   const [selectedGroup, setSelectedGroup] = useState<EventGroup | null>(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -161,9 +160,6 @@ export default function GestorCaixas() {
       .order("opened_at", { ascending: false })
       .limit(200);
 
-    if (filterEvent !== "all") query = query.eq("event_id", filterEvent);
-    if (filterStatus !== "all") query = query.eq("status", filterStatus);
-
     const { data: regs } = await query;
     if (!regs) { setLoading(false); return; }
 
@@ -205,9 +201,16 @@ export default function GestorCaixas() {
       refunds: refundMap[r.id] || 0,
     })));
     setLoading(false);
+    setLastRefresh(new Date());
   };
 
-  useEffect(() => { fetchRegisters(); }, [effectiveClientId, filterEvent, filterStatus]);
+  useEffect(() => { fetchRegisters(); }, [effectiveClientId]);
+
+  useEffect(() => {
+    if (activeTab !== "ativos") return;
+    const interval = setInterval(() => { fetchRegisters(); }, 60000);
+    return () => clearInterval(interval);
+  }, [activeTab, effectiveClientId]);
 
   useEffect(() => {
     if (!effectiveClientId) return;
@@ -329,6 +332,13 @@ export default function GestorCaixas() {
   );
   const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
 
+  useEffect(() => {
+    if (!selectedGroup) return;
+    const updated = groups.find((g) => g.eventId === selectedGroup.eventId);
+    if (updated) setSelectedGroup(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
+
   const eventReturns = useMemo(() => {
     if (!selectedGroup) return [];
     const ids = new Set(selectedGroup.caixas.map((c) => c.id));
@@ -337,6 +347,12 @@ export default function GestorCaixas() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -381,24 +397,48 @@ export default function GestorCaixas() {
       {activeTab === "ativos" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <RefreshCw className="h-3.5 w-3.5" />
-          Atualiza automaticamente a cada 1 minuto
+          Atualiza a cada 1 min · Última: {lastRefresh.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </div>
       )}
 
-      {/* Cards horizontais */}
-      <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
-        {currentGroups.map((group, i) => (
-          <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
-        ))}
-      </div>
-
-      {currentGroups.length === 0 && !loading && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Banknote className="h-12 w-12 text-muted-foreground/40 mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Nenhum evento {activeTab === "ativos" ? "ativo" : "encerrado"} com caixas
-          </p>
+      {loading && registers.length === 0 && (
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="shrink-0 min-w-[400px] rounded-2xl border border-border bg-card p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2 flex-1">
+                  <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="h-6 w-16 rounded-full bg-muted animate-pulse" />
+              </div>
+              <div className="h-20 rounded-xl bg-muted animate-pulse" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-12 rounded-lg bg-muted animate-pulse" />
+                <div className="h-12 rounded-lg bg-muted animate-pulse" />
+              </div>
+            </div>
+          ))}
         </div>
+      )}
+
+      {(!loading || registers.length > 0) && (
+        <>
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+            {currentGroups.map((group, i) => (
+              <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
+            ))}
+          </div>
+
+          {currentGroups.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Banknote className="h-12 w-12 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">
+                Nenhum evento {activeTab === "ativos" ? "ativo" : "encerrado"} com caixas
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Event drill-down sheet */}
