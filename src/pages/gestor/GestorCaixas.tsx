@@ -358,6 +358,10 @@ export default function GestorCaixas() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes valueFade {
+          0% { opacity: 0; transform: translateY(6px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -369,6 +373,11 @@ export default function GestorCaixas() {
           <p className="text-sm text-muted-foreground">{t("gcx_description")}</p>
         </div>
       </div>
+
+      {/* Summary Strip */}
+      {(!loading || registers.length > 0) && (
+        <SummaryStrip groups={currentGroups} tab={activeTab} />
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-border">
@@ -611,6 +620,75 @@ export default function GestorCaixas() {
           </div>
         </ModalForm>
       )}
+    </div>
+  );
+}
+
+function SummaryStrip({ groups, tab }: { groups: EventGroup[]; tab: string }) {
+  const totalVendas = Math.round(groups.reduce((s, g) => s + g.totalVendas, 0) * 100) / 100;
+  const totalSaldo = Math.round(groups.reduce((s, g) => s + g.totalSaldo, 0) * 100) / 100;
+  const totalSangrias = Math.round(groups.reduce((s, g) => s + g.totalSangrias, 0) * 100) / 100;
+  const totalCaixas = groups.reduce((s, g) => s + g.caixas.length, 0);
+  const caixasAbertos = groups.reduce((s, g) => s + g.caixasAbertos, 0);
+
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  return (
+    <div
+      key={tab}
+      className="flex items-stretch gap-0 border border-border/30 rounded-2xl overflow-hidden"
+      style={{ animation: "valueFade 0.35s ease-out" }}
+    >
+      {/* Hero — Faturamento total */}
+      <div className="flex-[1.5] p-5 bg-primary/[0.03]">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Faturamento total
+        </div>
+        <div className="text-primary text-3xl font-bold mb-1">
+          {fmt(totalVendas)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {tab === "ativos"
+            ? `${groups.length} evento${groups.length !== 1 ? "s" : ""} ativo${groups.length !== 1 ? "s" : ""}`
+            : `${groups.length} evento${groups.length !== 1 ? "s" : ""} encerrado${groups.length !== 1 ? "s" : ""}`
+          }
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Saldo em caixa */}
+      <div className="flex-1 p-5 bg-card/30">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Saldo em caixa
+        </div>
+        <div className="text-foreground text-xl font-semibold mb-1">
+          {fmt(totalSaldo)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          {caixasAbertos > 0
+            ? `${caixasAbertos} aberto${caixasAbertos > 1 ? "s" : ""}`
+            : `${totalCaixas} caixa${totalCaixas > 1 ? "s" : ""}`
+          }
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="w-px bg-border/20 shrink-0" />
+
+      {/* Sangrias */}
+      <div className="flex-1 p-5 bg-card/30">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          Sangrias
+        </div>
+        <div className="text-foreground text-xl font-semibold mb-1">
+          {fmt(totalSangrias)}
+        </div>
+        <div className="text-[11px] text-muted-foreground/40">
+          Acumulado
+        </div>
+      </div>
     </div>
   );
 }
