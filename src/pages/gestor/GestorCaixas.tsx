@@ -4,7 +4,7 @@ import { useGestor } from "@/contexts/GestorContext";
 import { useTranslation } from "@/i18n/use-translation";
 import { ModalForm } from "@/components/ModalForm";
 import { Banknote, Play, Check, RefreshCw, Calendar, ChevronRight, Plus, ReceiptText, Eye, Lock, FileText, User } from "lucide-react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,7 @@ type CashRegisterRow = {
   movements_out: number;
   movements_in: number;
   refunds: number;
+  sales_count: number;
 };
 
 type ReturnRow = {
@@ -179,11 +180,15 @@ export default function GestorCaixas() {
     const eventMap = Object.fromEntries((evtsRes.data ?? []).map(e => [e.id, e.name]));
 
     const salesMap: Record<string, number> = {};
+    const salesCountMap: Record<string, number> = {};
     const movInMap: Record<string, number> = {};
     const movOutMap: Record<string, number> = {};
     const refundMap: Record<string, number> = {};
 
-    (ordersRes.data ?? []).forEach(o => { salesMap[o.cash_register_id] = (salesMap[o.cash_register_id] || 0) + Number(o.total); });
+    (ordersRes.data ?? []).forEach(o => {
+      salesMap[o.cash_register_id] = (salesMap[o.cash_register_id] || 0) + Number(o.total);
+      salesCountMap[o.cash_register_id] = (salesCountMap[o.cash_register_id] || 0) + 1;
+    });
     (movRes.data ?? []).forEach(m => {
       if (m.direction === "in") movInMap[m.cash_register_id] = (movInMap[m.cash_register_id] || 0) + Number(m.amount);
       else movOutMap[m.cash_register_id] = (movOutMap[m.cash_register_id] || 0) + Number(m.amount);
@@ -199,6 +204,7 @@ export default function GestorCaixas() {
       movements_out: movOutMap[r.id] || 0,
       movements_in: movInMap[r.id] || 0,
       refunds: refundMap[r.id] || 0,
+      sales_count: salesCountMap[r.id] || 0,
     })));
     setLoading(false);
     setLastRefresh(new Date());
@@ -254,7 +260,7 @@ export default function GestorCaixas() {
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const currentBalance = (r: CashRegisterRow) =>
-    r.opening_balance + r.sales_total + r.movements_in - r.movements_out - r.refunds;
+    Math.round((r.opening_balance + r.sales_total + r.movements_in - r.movements_out - r.refunds) * 100) / 100;
 
   const handleCloseRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,8 +309,8 @@ export default function GestorCaixas() {
       const totalSaldo = caixas.reduce((s, c) => s + currentBalance(c), 0);
       const totalVendas = caixas.reduce((s, c) => s + c.sales_total, 0);
       const totalSangrias = caixas.reduce((s, c) => s + c.movements_out, 0);
-      const caixasComVendas = caixas.filter((c) => c.sales_total > 0).length;
-      const ticketMedio = caixasComVendas > 0 ? totalVendas / caixasComVendas : 0;
+      const totalTransacoes = caixas.reduce((s, c) => s + c.sales_count, 0);
+      const ticketMedio = totalTransacoes > 0 ? Math.round((totalVendas / totalTransacoes) * 100) / 100 : 0;
       const caixasAbertos = caixas.filter((c) => c.status === "open").length;
       out.push({
         eventId,
@@ -451,7 +457,7 @@ export default function GestorCaixas() {
             <EventSheet
               group={selectedGroup}
               returns={eventReturns}
-              onClose={() => setSelectedGroup(null)}
+              loadingReturns={loadingReturns}
               onOpenRegister={(eventId) => { setOpenEventId(eventId); setOpenModal(true); setSelectedGroup(null); }}
               onCloseRegister={(reg) => { setCloseConfirm(reg); setSelectedGroup(null); }}
               onViewDetail={(reg) => { setDetailModal(reg); setSelectedGroup(null); }}
@@ -681,14 +687,14 @@ function EventCard({ group, index, onClick }: { group: EventGroup; index: number
 interface EventSheetProps {
   group: EventGroup;
   returns: ReturnRow[];
-  onClose: () => void;
+  loadingReturns: boolean;
   onOpenRegister: (eventId: string) => void;
   onCloseRegister: (register: CashRegisterRow) => void;
   onViewDetail: (register: CashRegisterRow) => void;
   currentBalance: (r: CashRegisterRow) => number;
 }
 
-function EventSheet({ group, returns, onOpenRegister, onCloseRegister, onViewDetail, currentBalance }: EventSheetProps) {
+function EventSheet({ group, returns, loadingReturns, onOpenRegister, onCloseRegister, onViewDetail, currentBalance }: EventSheetProps) {
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dateLabel = (() => {
     try { return format(new Date(group.eventDate), "dd/MM/yyyy · HH:mm"); } catch { return ""; }
@@ -707,8 +713,8 @@ function EventSheet({ group, returns, onOpenRegister, onCloseRegister, onViewDet
         <div className="h-1.5 w-12 rounded-full bg-border" />
       </div>
 
-      <div className="mb-5">
-        <h2 className="text-2xl font-bold text-foreground">{group.eventName}</h2>
+      <SheetHeader className="mb-5 text-left">
+        <SheetTitle className="text-2xl font-bold text-foreground">{group.eventName}</SheetTitle>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5" />
@@ -725,7 +731,7 @@ function EventSheet({ group, returns, onOpenRegister, onCloseRegister, onViewDet
             </span>
           )}
         </div>
-      </div>
+      </SheetHeader>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {summaryChips.map((chip) => (
@@ -780,7 +786,19 @@ function EventSheet({ group, returns, onOpenRegister, onCloseRegister, onViewDet
 
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">Devoluções do evento</h3>
-        {returns.length === 0 ? (
+        {loadingReturns ? (
+          <div className="space-y-2">
+            {[0, 1].map((i) => (
+              <div key={i} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-2/3 rounded bg-muted animate-pulse" />
+                </div>
+                <div className="h-6 w-16 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+        ) : returns.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center rounded-xl border border-dashed border-border">
             <ReceiptText className="h-8 w-8 text-muted-foreground/40 mb-2" />
             <p className="text-xs text-muted-foreground">Nenhuma devolução registrada</p>
