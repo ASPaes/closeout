@@ -510,6 +510,7 @@ export default function GestorBarOperacao() {
       </Dialog>
 
       {/* Create Bar Dialog */}
+      {/* placeholder-marker */}
       <Dialog open={createBarOpen} onOpenChange={handleCloseCreateDialog}>
         <DialogContent>
           {!createdStation ? (
