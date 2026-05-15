@@ -1,53 +1,71 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "@/i18n/use-translation";
 import { useGestor } from "@/contexts/GestorContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { logAudit } from "@/lib/audit";
-import { AUDIT_ACTION } from "@/config/audit-actions";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Beer, ShoppingCart, CheckCircle2, Package,
-  AlertTriangle, CalendarDays, Loader2, Ban, Copy, Plus, X, Check, Clock,
+  Beer, ShoppingCart, CheckCircle2,
+  AlertTriangle, Loader2, Copy, X, Check,
+  Play, RefreshCw, Calendar, ChevronRight,
 } from "lucide-react";
 
 type EventRow = { id: string; name: string; start_at: string | null; status: string };
-
-type Counts = {
-  total: number;
-  delivered: number;
-  ready: number;
-  late: number;
-};
 
 type StationRow = {
   id: string;
   name: string;
   join_code: string;
   created_at: string;
+  event_id: string;
+  status: string;
+  closed_at: string | null;
   bar_station_members: { name: string }[] | null;
+};
+
+type OrderSummary = {
+  id: string;
+  event_id: string;
+  status: string;
+  total: number;
+  paid_at: string | null;
+  order_number: number | null;
+  origin: string | null;
+  delivered_by_station_id: string | null;
 };
 
 type LateOrder = {
   id: string;
   order_number: number | null;
-  status: string;
+  origin: string | null;
   total: number;
   paid_at: string;
-  origin: string | null;
+  minutesAgo: number;
+};
+
+type EventBarGroup = {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  stations: StationRow[];
+  isActive: boolean;
+  faturamentoEntregue: number;
+  ordersTotal: number;
+  ordersDelivered: number;
+  ordersReady: number;
+  ordersLate: number;
+  activeStations: number;
+  lateOrders: LateOrder[];
+  stationDeliveries: Map<string, { count: number; gmv: number }>;
 };
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -76,18 +94,19 @@ export default function GestorBarOperacao() {
   };
 
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string>("all");
-  const [eventSearch, setEventSearch] = useState("");
-  const [counts, setCounts] = useState<Counts>({ total: 0, delivered: 0, ready: 0, late: 0 });
+  const [allStations, setAllStations] = useState<StationRow[]>([]);
+  const [allOrders, setAllOrders] = useState<OrderSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"ativos" | "encerrados">("ativos");
+  const [selectedGroup, setSelectedGroup] = useState<EventBarGroup | null>(null);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
   const [lateOrdersOpen, setLateOrdersOpen] = useState(false);
-  const [lateOrders, setLateOrders] = useState<LateOrder[]>([]);
   const [bulkCancelling, setBulkCancelling] = useState(false);
-  const [stations, setStations] = useState<StationRow[]>([]);
-  const [stationDeliveries, setStationDeliveries] = useState<Map<string, number>>(new Map());
-  const [, setLoadingStations] = useState(false);
 
   // Create bar dialog
   const [createBarOpen, setCreateBarOpen] = useState(false);
+  const [createBarEventId, setCreateBarEventId] = useState("");
   const [barName, setBarName] = useState("");
   const [memberNames, setMemberNames] = useState<string[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
@@ -110,138 +129,128 @@ export default function GestorBarOperacao() {
       .in("status", ["active", "completed"])
       .order("start_at", { ascending: false })
       .then(({ data }) => {
-        const sorted = ((data as EventRow[]) ?? []).sort((a, b) => {
-          if (a.status === "active" && b.status !== "active") return -1;
-          if (a.status !== "active" && b.status === "active") return 1;
-          return new Date(b.start_at ?? 0).getTime() - new Date(a.start_at ?? 0).getTime();
-        });
-        setEvents(sorted);
+        setEvents((data as EventRow[]) ?? []);
       });
   }, [effectiveClientId]);
 
-  // Fetch counts + stations + deliveries per station
-  const refetchAll = useCallback(async () => {
-    if (!selectedEventId || !effectiveClientId) return;
-    const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
+  const fetchAllData = async () => {
+    if (!effectiveClientId) return;
+    setLoading(true);
 
-    let totalQ = supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", effectiveClientId)
-      .not("status", "in", "(cancelled,pending,processing_payment)");
-    if (selectedEventId !== "all") totalQ = totalQ.eq("event_id", selectedEventId);
-
-    let deliveredQ = supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", effectiveClientId)
-      .eq("status", "delivered");
-    if (selectedEventId !== "all") deliveredQ = deliveredQ.eq("event_id", selectedEventId);
-
-    let readyQ = supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", effectiveClientId)
-      .in("status", ["ready", "partially_delivered"]);
-    if (selectedEventId !== "all") readyQ = readyQ.eq("event_id", selectedEventId);
-
-    let lateQ = supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("client_id", effectiveClientId)
-      .not("paid_at", "is", null)
-      .lt("paid_at", lateThreshold)
-      .not("status", "in", "(delivered,cancelled)");
-    if (selectedEventId !== "all") lateQ = lateQ.eq("event_id", selectedEventId);
-
-    const [totalRes, deliveredRes, readyRes, lateRes] = await Promise.all([
-      totalQ, deliveredQ, readyQ, lateQ,
+    const [stationsRes, ordersRes] = await Promise.all([
+      supabase
+        .from("bar_stations")
+        .select("id, name, join_code, created_at, event_id, status, closed_at, bar_station_members(name)")
+        .eq("client_id", effectiveClientId)
+        .order("created_at"),
+      supabase
+        .from("orders")
+        .select("id, event_id, status, total, paid_at, order_number, origin, delivered_by_station_id")
+        .eq("client_id", effectiveClientId)
+        .not("status", "in", "(cancelled,pending,processing_payment)")
+        .order("created_at", { ascending: false })
+        .limit(2000),
     ]);
 
-    setCounts({
-      total: totalRes.count ?? 0,
-      delivered: deliveredRes.count ?? 0,
-      ready: readyRes.count ?? 0,
-      late: lateRes.count ?? 0,
+    setAllStations((stationsRes.data as StationRow[]) ?? []);
+    setAllOrders((ordersRes.data as OrderSummary[]) ?? []);
+    setLoading(false);
+    setLastRefresh(new Date());
+  };
+
+  useEffect(() => { fetchAllData(); }, [effectiveClientId]);
+
+  const eventDateMap = useMemo(
+    () => Object.fromEntries(events.map((e) => [e.id, { name: e.name, start_at: e.start_at }])),
+    [events]
+  );
+
+  const groups: EventBarGroup[] = useMemo(() => {
+    const stationsByEvent = new Map<string, StationRow[]>();
+    allStations.forEach((s) => {
+      if (!stationsByEvent.has(s.event_id)) stationsByEvent.set(s.event_id, []);
+      stationsByEvent.get(s.event_id)!.push(s);
     });
 
-    // Stations
-    setLoadingStations(true);
-    let stationsQ = supabase
-      .from("bar_stations")
-      .select("id, name, join_code, created_at, bar_station_members(name)")
-      .eq("status", "active")
-      .order("created_at");
-    if (selectedEventId !== "all") {
-      stationsQ = stationsQ.eq("event_id", selectedEventId);
-    } else {
-      stationsQ = stationsQ.eq("client_id", effectiveClientId);
-    }
-    const { data: stationsData } = await stationsQ;
-    const stationList = (stationsData as StationRow[]) ?? [];
-    setStations(stationList);
+    const lateThreshold = Date.now() - 35 * 60 * 1000;
+    const out: EventBarGroup[] = [];
 
-    // Per-station delivery counts
-    const counts = await Promise.all(
-      stationList.map((s) => {
-        let q = supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", effectiveClientId)
-          .eq("status", "delivered")
-          .eq("delivered_by_station_id", s.id);
-        if (selectedEventId !== "all") q = q.eq("event_id", selectedEventId);
-        return q.then((r) => [s.id, r.count ?? 0] as [string, number]);
-      })
-    );
-    setStationDeliveries(new Map(counts));
-    setLoadingStations(false);
-  }, [selectedEventId, effectiveClientId]);
+    stationsByEvent.forEach((stations, eventId) => {
+      const eventInfo = eventDateMap[eventId];
+      const eventOrders = allOrders.filter((o) => o.event_id === eventId);
 
-  useEffect(() => { refetchAll(); }, [refetchAll]);
+      const ordersTotal = eventOrders.length;
+      const ordersDelivered = eventOrders.filter((o) => o.status === "delivered").length;
+      const ordersReady = eventOrders.filter((o) => o.status === "ready" || o.status === "partially_delivered").length;
 
-  // Realtime
-  useEffect(() => {
-    if (!selectedEventId) return;
-    const channel = supabase
-      .channel(`gestor-bar-orders-${selectedEventId}`)
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "orders",
-        ...(selectedEventId !== "all" ? { filter: `event_id=eq.${selectedEventId}` } : {}),
-      } as any, () => { refetchAll(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedEventId, refetchAll]);
+      const lateList: LateOrder[] = eventOrders
+        .filter((o) => o.paid_at && new Date(o.paid_at).getTime() < lateThreshold && o.status !== "delivered")
+        .map((o) => ({
+          id: o.id,
+          order_number: o.order_number,
+          origin: o.origin,
+          total: Number(o.total),
+          paid_at: o.paid_at!,
+          minutesAgo: Math.round((Date.now() - new Date(o.paid_at!).getTime()) / 60000),
+        }))
+        .sort((a, b) => b.minutesAgo - a.minutesAgo);
 
-  // Realtime for stations
-  useEffect(() => {
-    if (!selectedEventId) return;
-    const channel = supabase
-      .channel(`gestor-bar-stations-${selectedEventId}`)
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "bar_stations",
-        ...(selectedEventId !== "all" ? { filter: `event_id=eq.${selectedEventId}` } : {}),
-      } as any, () => { refetchAll(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedEventId, refetchAll]);
+      const faturamentoEntregue = Math.round(
+        eventOrders
+          .filter((o) => o.status === "delivered")
+          .reduce((sum, o) => sum + Number(o.total), 0) * 100
+      ) / 100;
 
-  // Refresh late count every minute (time-based threshold)
-  useEffect(() => {
-    if (!selectedEventId) return;
-    const interval = setInterval(refetchAll, 60_000);
-    return () => clearInterval(interval);
-  }, [selectedEventId, refetchAll]);
+      const stationDeliveries = new Map<string, { count: number; gmv: number }>();
+      eventOrders
+        .filter((o) => o.status === "delivered" && o.delivered_by_station_id)
+        .forEach((o) => {
+          const sid = o.delivered_by_station_id!;
+          const prev = stationDeliveries.get(sid) || { count: 0, gmv: 0 };
+          stationDeliveries.set(sid, {
+            count: prev.count + 1,
+            gmv: Math.round((prev.gmv + Number(o.total)) * 100) / 100,
+          });
+        });
 
-  // Bulk cancel open QRs (preserved from previous version)
-  const handleBulkCancelQRs = async () => {
+      const activeStations = stations.filter((s) => s.status === "active").length;
+
+      out.push({
+        eventId,
+        eventName: eventInfo?.name || eventId.slice(0, 8),
+        eventDate: eventInfo?.start_at || stations[0].created_at,
+        stations,
+        isActive: activeStations > 0,
+        faturamentoEntregue,
+        ordersTotal,
+        ordersDelivered,
+        ordersReady,
+        ordersLate: lateList.length,
+        activeStations,
+        lateOrders: lateList,
+        stationDeliveries,
+      });
+    });
+
+    return out;
+  }, [allStations, allOrders, eventDateMap]);
+
+  const activeGroups = useMemo(
+    () => groups.filter((g) => g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const closedGroups = useMemo(
+    () => groups.filter((g) => !g.isActive).sort((a, b) => +new Date(b.eventDate) - +new Date(a.eventDate)),
+    [groups]
+  );
+  const currentGroups = activeTab === "ativos" ? activeGroups : closedGroups;
+
+  // Bulk cancel open QRs
+  const handleBulkCancelQRs = async (eventId: string) => {
+    setBulkCancelling(true);
     try {
       const { data, error } = await (supabase.rpc as any)("bulk_cancel_open_qrs", {
-        p_event_id: selectedEventId !== "all" ? selectedEventId : null,
+        p_event_id: eventId,
         p_client_id: effectiveClientId,
       });
       if (error) throw error;
@@ -251,13 +260,13 @@ export default function GestorBarOperacao() {
       } else {
         toast.success(result.message);
       }
-      refetchAll();
+      fetchAllData();
     } catch (err: any) {
       toast.error("Erro ao cancelar QRs: " + (err.message || "erro desconhecido"));
+    } finally {
+      setBulkCancelling(false);
     }
   };
-
-  const lateActive = counts.late > 0;
 
   const copyStationLink = (joinCode: string) => {
     const url = `${window.location.origin}/bar?station=${joinCode}`;
@@ -287,14 +296,14 @@ export default function GestorBarOperacao() {
   };
 
   const handleCreateBar = async () => {
-    if (!barName.trim() || selectedEventId === "all" || !effectiveClientId || !session?.user?.id) return;
+    if (!barName.trim() || !createBarEventId || !effectiveClientId || !session?.user?.id) return;
     setCreating(true);
     try {
       const { data: station, error } = await supabase
         .from("bar_stations")
         .insert({
           name: barName.trim(),
-          event_id: selectedEventId,
+          event_id: createBarEventId,
           client_id: effectiveClientId,
           created_by: session.user.id,
         } as any)
@@ -310,7 +319,7 @@ export default function GestorBarOperacao() {
 
       setCreatedStation({ name: station.name, join_code: station.join_code });
       toast.success(t("gbar_bar_created_success" as any));
-      refetchAll();
+      fetchAllData();
     } catch (err) {
       console.error(err);
       toast.error("Erro ao criar bar");
@@ -351,223 +360,99 @@ export default function GestorBarOperacao() {
     toast.success(`Bar "${closingStation.name}" fechado`);
     setClosingStation(null);
     setCloseReport(null);
-    refetchAll();
+    fetchAllData();
   };
 
-  // Fetch late orders when dialog opens
-  useEffect(() => {
-    if (!lateOrdersOpen || !selectedEventId || !effectiveClientId) return;
-    const lateThreshold = new Date(Date.now() - 35 * 60 * 1000).toISOString();
-    let q = supabase
-      .from("orders")
-      .select("id, order_number, status, total, paid_at, origin")
-      .eq("client_id", effectiveClientId)
-      .not("status", "in", "(delivered,cancelled)")
-      .not("paid_at", "is", null)
-      .lt("paid_at", lateThreshold)
-      .order("paid_at", { ascending: true });
-    if (selectedEventId !== "all") q = q.eq("event_id", selectedEventId);
-    q.then(({ data }) => setLateOrders((data as LateOrder[]) ?? []));
-  }, [lateOrdersOpen, selectedEventId, effectiveClientId]);
+  const lateOrdersList = selectedGroup?.lateOrders ?? [];
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t("gbar_ops_title" as any)}
-        subtitle={t("gbar_ops_desc" as any)}
-        icon={Beer}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setCreateBarOpen(true)}
-              disabled={selectedEventId === "all"}
-              className={selectedEventId === "all" ? "opacity-40 cursor-not-allowed" : ""}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t("gbar_create_bar" as any)}
-            </Button>
-            <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" disabled={bulkCancelling}>
-                {bulkCancelling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Ban className="h-4 w-4 mr-2" />}
-                {t("gbar_bulk_cancel_qr" as any)}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {selectedEventId === "all"
-                    ? "Cancelar QRs de TODOS os eventos?"
-                    : "Cancelar QRs em aberto?"}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {selectedEventId === "all"
-                    ? "Atenção: isso cancelará TODOS os QRs em aberto de TODOS os eventos. Tem certeza que deseja continuar?"
-                    : "Isso cancelará todos os QRs em aberto do evento selecionado. Pedidos serão cancelados e estoque liberado."}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkCancelQRs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  {t("confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-            </AlertDialog>
-          </div>
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-      />
+      `}</style>
 
-      {/* Event selector */}
-      <div className="max-w-md">
-        <Select
-          value={selectedEventId ?? undefined}
-          onValueChange={(v) => setSelectedEventId(v)}
-        >
-          <SelectTrigger className="h-12">
-            <SelectValue placeholder={t("gbar_select_event" as any)} />
-          </SelectTrigger>
-          <SelectContent>
-            <div className="px-2 pb-2">
-              <Input
-                placeholder="Buscar evento..."
-                value={eventSearch}
-                onChange={(e) => setEventSearch(e.target.value)}
-                className="h-9"
-                onKeyDown={(e) => e.stopPropagation()}
-              />
-            </div>
-            <SelectItem value="all">Todos os eventos</SelectItem>
-            {events
-              .filter((ev) => !eventSearch.trim() || ev.name.toLowerCase().includes(eventSearch.toLowerCase().trim()))
-              .map((ev) => (
-                <SelectItem key={ev.id} value={ev.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{ev.name}</span>
-                    {ev.status === "active" ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">(encerrado)</span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            {events.filter((ev) => !eventSearch.trim() || ev.name.toLowerCase().includes(eventSearch.toLowerCase().trim())).length === 0 && (
-              <div className="py-3 text-center text-xs text-muted-foreground">Nenhum evento encontrado</div>
-            )}
-          </SelectContent>
-        </Select>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Beer className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("gbar_ops_title" as any)}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("gbar_ops_desc" as any)}</p>
+        </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_total_orders" as any)}</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{counts.total}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_delivered" as any)}</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{counts.delivered}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_ready_pickup" as any)}</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{counts.ready}</div>
-            </CardContent>
-          </Card>
-
-          <Card
-            onClick={() => setLateOrdersOpen(true)}
-            className={`cursor-pointer transition-colors ${lateActive ? "border-destructive/50" : ""}`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("gbar_late_orders" as any)}</CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${lateActive ? "text-destructive animate-pulse" : "text-muted-foreground"}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${lateActive ? "text-destructive" : ""}`}>{counts.late}</div>
-            </CardContent>
-          </Card>
-      </div>
-
-      {/* Bars section */}
-      {selectedEventId && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">{t("gbar_bars_section" as any)}</h2>
-          {stations.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground border border-border/60 rounded-lg">
-              <p className="text-sm">{t("gbar_no_bars" as any)}</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {stations.map((station) => {
-                const delivered = stationDeliveries.get(station.id) ?? 0;
-                const members = (station.bar_station_members ?? []).map((m) => m.name).join(", ");
-                return (
-                  <Card
-                    key={station.id}
-                    className="border-border/60 hover:bg-muted/30 transition-colors relative"
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-lg font-bold truncate">{station.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {members || t("gbar_no_operators" as any)}
-                          </div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            Aberto há {formatTimeOpen(station.created_at)}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={() => copyStationLink(station.join_code)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 hover:text-destructive"
-                            onClick={() => handleOpenCloseStation(station)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className={`text-3xl font-bold ${delivered > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                        {delivered}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{t("gbar_delivered_by_bar" as any)}</div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-border">
+        <button
+          onClick={() => setActiveTab("ativos")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+            activeTab === "ativos"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           )}
+        >
+          <Play className="h-4 w-4" />
+          Ativos
+          <span className="text-xs text-muted-foreground">({activeGroups.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("encerrados")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+            activeTab === "encerrados"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Check className="h-4 w-4" />
+          Encerrados
+          <span className="text-xs text-muted-foreground">({closedGroups.length})</span>
+        </button>
+      </div>
+
+      {/* Refresh note */}
+      {activeTab === "ativos" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className="h-3 w-3" />
+          Atualizado às {format(lastRefresh, "HH:mm:ss")}
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && allStations.length === 0 && (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="min-w-[400px] h-[260px] rounded-xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {(!loading || allStations.length > 0) && currentGroups.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground border border-border/60 rounded-lg">
+          <Beer className="h-10 w-10 mx-auto mb-3 opacity-40" />
+          <p className="text-sm">
+            {activeTab === "ativos" ? "Nenhum bar ativo no momento" : "Nenhum evento encerrado com bares"}
+          </p>
+        </div>
+      )}
+
+      {/* Event cards horizontal scroll */}
+      {(!loading || allStations.length > 0) && currentGroups.length > 0 && (
+        <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2">
+          {currentGroups.map((group, idx) => (
+            <EventCard
+              key={group.eventId}
+              group={group}
+              index={idx}
+              onSelect={() => setSelectedGroup(group)}
+            />
+          ))}
         </div>
       )}
 
@@ -580,13 +465,13 @@ export default function GestorBarOperacao() {
               {t("gbar_late_title" as any)}
             </DialogTitle>
           </DialogHeader>
-          {lateOrders.length === 0 ? (
+          {lateOrdersList.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               {t("gbar_late_empty" as any)}
             </div>
           ) : (
             <div className="max-h-[400px] overflow-y-auto space-y-2">
-              {lateOrders.map((o) => (
+              {lateOrdersList.map((o) => (
                 <div
                   key={o.id}
                   className="flex justify-between items-center border border-border/60 rounded-lg p-3"
@@ -763,5 +648,119 @@ export default function GestorBarOperacao() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ============================================================
+// EventCard — horizontal card per event
+// ============================================================
+function EventCard({
+  group,
+  index,
+  onSelect,
+}: {
+  group: EventBarGroup;
+  index: number;
+  onSelect: () => void;
+}) {
+  const lateActive = group.ordersLate > 0;
+
+  return (
+    <button
+      onClick={onSelect}
+      className="opacity-0 text-left min-w-[400px] max-w-[400px] rounded-xl border border-border bg-card hover:bg-card/80 transition-colors p-5 flex flex-col gap-4"
+      style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 80}ms both` }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-base font-bold text-foreground truncate">{group.eventName}</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+            <Calendar className="h-3 w-3" />
+            {group.eventDate
+              ? format(new Date(group.eventDate), "dd MMM yyyy", { locale: ptBR })
+              : "—"}
+          </div>
+        </div>
+        <Badge
+          variant="outline"
+          className={cn(
+            "shrink-0 text-[10px]",
+            group.isActive
+              ? "border-primary/40 text-primary bg-primary/10"
+              : "border-border text-muted-foreground"
+          )}
+        >
+          {group.isActive ? "Ativo" : "Encerrado"}
+        </Badge>
+      </div>
+
+      {/* Faturamento entregue — destaque laranja */}
+      <div className="rounded-lg bg-primary/[0.07] border border-primary/[0.12] p-3">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          Faturamento entregue
+        </div>
+        <div className="text-2xl font-bold text-primary mt-0.5">
+          {formatCurrency(group.faturamentoEntregue)}
+        </div>
+      </div>
+
+      {/* KPIs grid */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg border border-border/60 p-2.5">
+          <div className="flex items-center gap-1 text-muted-foreground text-[10px] uppercase tracking-wide">
+            <ShoppingCart className="h-3 w-3" />
+            Pedidos
+          </div>
+          <div className="text-lg font-bold mt-0.5">{group.ordersTotal}</div>
+        </div>
+        <div className="rounded-lg border border-border/60 p-2.5">
+          <div className="flex items-center gap-1 text-muted-foreground text-[10px] uppercase tracking-wide">
+            <CheckCircle2 className="h-3 w-3" />
+            Entregues
+          </div>
+          <div className="text-lg font-bold mt-0.5">{group.ordersDelivered}</div>
+        </div>
+        <div
+          className={cn(
+            "rounded-lg border p-2.5",
+            lateActive ? "border-destructive/50 bg-destructive/5" : "border-border/60"
+          )}
+        >
+          <div
+            className={cn(
+              "flex items-center gap-1 text-[10px] uppercase tracking-wide",
+              lateActive ? "text-destructive" : "text-muted-foreground"
+            )}
+          >
+            <AlertTriangle className={cn("h-3 w-3", lateActive && "animate-pulse")} />
+            Atrasados
+          </div>
+          <div
+            className={cn(
+              "text-lg font-bold mt-0.5",
+              lateActive ? "text-destructive" : ""
+            )}
+          >
+            {group.ordersLate}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-border/40">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Beer className="h-3.5 w-3.5" />
+          {group.stations.length} {group.stations.length === 1 ? "bar" : "bares"}
+          {group.isActive && group.activeStations !== group.stations.length && (
+            <span className="text-[10px]">({group.activeStations} ativos)</span>
+          )}
+        </div>
+        <div className="text-xs text-primary font-medium flex items-center gap-1">
+          Ver detalhes
+          <ChevronRight className="h-3.5 w-3.5" />
+        </div>
+      </div>
+    </button>
   );
 }
