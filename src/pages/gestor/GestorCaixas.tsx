@@ -539,3 +539,72 @@ export default function GestorCaixas() {
     </div>
   );
 }
+
+function EventCard({ group, index, onClick }: { group: EventGroup; index: number; onClick: () => void }) {
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const dateLabel = (() => {
+    try {
+      return format(new Date(group.eventDate), "dd/MM/yyyy · HH:mm");
+    } catch {
+      return "";
+    }
+  })();
+  return (
+    <button
+      onClick={onClick}
+      style={{ animationDelay: `${index * 60}ms` }}
+      className="relative shrink-0 min-w-[400px] text-left rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group"
+    >
+      <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+
+      <div className="relative flex items-start justify-between gap-4 mb-5">
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold text-foreground truncate">{group.eventName}</h3>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {dateLabel}
+          </div>
+        </div>
+        {group.isActive ? (
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            Ativo
+          </span>
+        ) : (
+          <span className="shrink-0 inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            Encerrado
+          </span>
+        )}
+      </div>
+
+      <div className="relative mb-5">
+        <div className="text-xs text-muted-foreground mb-1">Saldo total em caixa</div>
+        <div className="text-3xl font-bold text-foreground">{fmt(group.totalSaldo)}</div>
+      </div>
+
+      <div className="relative grid grid-cols-2 gap-3 mb-5">
+        <div className="rounded-lg bg-secondary/50 p-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Faturamento</div>
+          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.totalVendas)}</div>
+        </div>
+        <div className="rounded-lg bg-secondary/50 p-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Ticket médio</div>
+          <div className="mt-1 text-base font-semibold text-foreground">{fmt(group.ticketMedio)}</div>
+        </div>
+      </div>
+
+      <div className="relative flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Banknote className="h-3.5 w-3.5" />
+          {group.caixasAbertos > 0
+            ? `${group.caixasAbertos} caixa${group.caixasAbertos > 1 ? "s" : ""} aberto${group.caixasAbertos > 1 ? "s" : ""}`
+            : `${group.caixas.length} caixa${group.caixas.length > 1 ? "s" : ""}`}
+        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:gap-2 transition-all">
+          Ver caixas
+          <ChevronRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </button>
+  );
+}
