@@ -408,9 +408,9 @@ export default function GestorCaixas() {
       )}
 
       {loading && registers.length === 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="shrink-0 min-w-[400px] rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div key={i} className="w-full rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2 flex-1">
                   <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
@@ -430,7 +430,7 @@ export default function GestorCaixas() {
 
       {(!loading || registers.length > 0) && (
         <>
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             {currentGroups.map((group, i) => (
               <EventCard key={group.eventId} group={group} index={i} onClick={() => setSelectedGroup(group)} />
             ))}
@@ -628,7 +628,7 @@ function EventCard({ group, index, onClick }: { group: EventGroup; index: number
     <button
       onClick={onClick}
       style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 80}ms both` }}
-      className="relative shrink-0 min-w-[400px] text-left rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group opacity-0"
+      className="relative text-left w-full rounded-2xl border border-border bg-card p-6 overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 group opacity-0"
     >
       <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 
