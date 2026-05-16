@@ -85,6 +85,10 @@ export default function GestorDashboard() {
   const [eventOps, setEventOps] = useState<EventOpsRow[]>([]);
   const [eventOpsLoading, setEventOpsLoading] = useState(false);
 
+  const [fatApp, setFatApp] = useState(0);
+  const [fatWaiter, setFatWaiter] = useState(0);
+  const [fatChannelLoading, setFatChannelLoading] = useState(false);
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
     to: new Date(),
