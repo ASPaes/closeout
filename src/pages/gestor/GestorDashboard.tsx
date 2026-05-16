@@ -394,9 +394,9 @@ export default function GestorDashboard() {
 
       let query = supabase
         .from("orders")
-        .select("origin, total")
+        .select("origin, total, status")
         .eq("client_id", effectiveClientId)
-        .eq("status", "delivered")
+        .not("status", "in", "(pending,cancelled,processing_payment)")
         .gte("created_at", filterStart.toISOString())
         .lte("created_at", filterEnd.toISOString());
       if (selectedEventId !== "all") query = query.eq("event_id", selectedEventId);
@@ -405,14 +405,29 @@ export default function GestorDashboard() {
 
       let appTotal = 0;
       let waiterTotal = 0;
+      let paidNotDeliveredTotal = 0;
+      let paidNotDeliveredCount = 0;
+
       (data ?? []).forEach((o) => {
         const val = Number(o.total);
-        if (o.origin === "consumer_app") appTotal += val;
-        else if (o.origin === "waiter_app") waiterTotal += val;
+        const isDelivered = o.status === "delivered";
+        const isPaidNotDelivered = ["paid", "ready", "partially_delivered", "partially_paid"].includes(o.status);
+
+        if (isDelivered) {
+          if (o.origin === "consumer_app") appTotal += val;
+          else if (o.origin === "waiter_app") waiterTotal += val;
+        }
+
+        if (isPaidNotDelivered) {
+          paidNotDeliveredTotal += val;
+          paidNotDeliveredCount++;
+        }
       });
 
       setFatApp(Math.round(appTotal * 100) / 100);
       setFatWaiter(Math.round(waiterTotal * 100) / 100);
+      setFatPaidNotDelivered(Math.round(paidNotDeliveredTotal * 100) / 100);
+      setCountPaidNotDelivered(paidNotDeliveredCount);
       setFatChannelLoading(false);
     };
 
