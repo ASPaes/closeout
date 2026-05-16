@@ -696,6 +696,26 @@ export default function GestorDashboard() {
             <p className="text-[10px] text-muted-foreground/40 mt-1">Vendas no caixa físico</p>
           </div>
         </div>
+
+        {/* Banner pago não entregue */}
+        {!fatChannelLoading && fatPaidNotDelivered > 0 && (
+          <div className="mt-3 rounded-xl border border-yellow-500/15 bg-yellow-500/[0.03] p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-yellow-400">
+                  Pago, aguardando entrega
+                </p>
+                <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                  {countPaidNotDelivered} pedido{countPaidNotDelivered !== 1 ? "s" : ""} pago{countPaidNotDelivered !== 1 ? "s" : ""} que ainda não foram entregues pelo bar
+                </p>
+              </div>
+            </div>
+            <p className="text-xl font-bold text-yellow-400 tabular-nums">{fmt(fatPaidNotDelivered)}</p>
+          </div>
+        )}
       </div>
 
       {/* Two-column grid: Operacional + Bar (left) | Top Products + Pagamentos (right) */}
