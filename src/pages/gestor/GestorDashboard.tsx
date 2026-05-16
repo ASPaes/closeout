@@ -24,6 +24,15 @@ const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url
   { titleKey: "events", descKey: "manage_events", icon: CalendarDays, url: "/gestor/eventos" },
 ];
 
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+  return <span className="tabular-nums">{now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>;
+}
+
 type ActiveEvent = { id: string; name: string };
 
 export default function GestorDashboard() {
@@ -257,22 +266,28 @@ export default function GestorDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">C</div>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-sm">C</div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("gestor_panel")}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-base font-semibold text-foreground">
+              <span className="font-bold">{clientName || "Close Out"}</span>
+              <span className="text-muted-foreground font-normal"> · Painel</span>
+            </h1>
+            <p className="text-xs text-muted-foreground">
               {t("welcome_back")}, {profile?.name || "Gestor"}
-              {clientName && (
-                <span className="ml-2 text-sm font-medium text-foreground">
-                  — {clientName}
-                </span>
-              )}
             </p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex items-center gap-2">
+          <div className="h-9 px-3 rounded-lg border border-border/40 bg-card/30 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+            </span>
+            <LiveClock />
+          </div>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -316,81 +331,71 @@ export default function GestorDashboard() {
         </div>
       </div>
 
-      {/* Hero financial strip */}
-      <div className="flex items-stretch rounded-2xl border border-border/30 overflow-hidden">
-        <div className="flex-[2] p-6 bg-primary/[0.03] text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/50 mb-3">
-            Faturamento confirmado
+      {/* Faturamento hero */}
+      <div className="relative py-10 text-center overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] rounded-full bg-primary/[0.06] blur-3xl pointer-events-none" />
+        <p className="relative text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/50 mb-4">
+          Faturamento confirmado
+        </p>
+        {finLoading ? (
+          <Skeleton className="h-16 w-72 mx-auto" />
+        ) : (
+          <p className="relative text-7xl font-extrabold text-foreground tracking-tighter tabular-nums leading-none">
+            {fmt(finRevenue)}
           </p>
-          {finLoading ? (
-            <Skeleton className="h-12 w-48 mx-auto" />
-          ) : (
-            <p className="text-5xl font-extrabold text-foreground tracking-tight tabular-nums">
-              {fmt(finRevenue)}
-            </p>
-          )}
-          <p className="text-[11px] text-muted-foreground/40 mt-2">Pagamentos confirmados</p>
-        </div>
-        <div className="w-px bg-border/20" />
-        <div className="flex-1 p-5 bg-card/30">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Recebido líquido</p>
-          {finLoading ? <Skeleton className="h-6 w-20" /> : (
-            <p className="text-xl font-semibold text-foreground tabular-nums">{fmt(finNet)}</p>
-          )}
-          <p className="text-[11px] text-muted-foreground/40 mt-1">Valor repassado</p>
-        </div>
-        <div className="w-px bg-border/20" />
-        <div className="flex-1 p-5 bg-card/30">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Taxa Close Out</p>
-          {finLoading ? <Skeleton className="h-6 w-20" /> : (
-            <p className="text-xl font-semibold text-primary tabular-nums">{fmt(finCloseout)}</p>
-          )}
-          <p className="text-[11px] text-muted-foreground/40 mt-1">Retido pela plataforma</p>
-        </div>
-        <div className="w-px bg-border/20" />
-        <div className="flex-1 p-5 bg-card/30">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Taxa Gateway</p>
-          {finLoading ? <Skeleton className="h-6 w-20" /> : (
-            <p className="text-xl font-semibold text-foreground tabular-nums">{fmt(finAsaasFee)}</p>
-          )}
-          <p className="text-[11px] text-muted-foreground/40 mt-1">{finAsaasFeePercent}% médio · Asaas</p>
-        </div>
-        <div className="w-px bg-border/20" />
-        <div className="flex-1 p-5 bg-card/30">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">Pendentes</p>
-          {finLoading ? <Skeleton className="h-6 w-20" /> : (
-            <p className="text-xl font-semibold text-foreground tabular-nums flex items-center gap-2">
-              {finPending}
-              {finPending > 0 && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Aguardando</Badge>}
-            </p>
-          )}
-          <p className="text-[11px] text-muted-foreground/40 mt-1">Pagamentos não confirmados</p>
-        </div>
+        )}
+        <p className="relative text-xs text-muted-foreground/30 mt-3">Pagamentos confirmados</p>
+      </div>
+
+      {/* Métricas financeiras */}
+      <div className="flex items-center justify-center gap-0 border-y border-border/20 py-0">
+        {[
+          { label: "Recebido líquido", value: fmt(finNet), sub: "Valor repassado" },
+          { label: "Taxa Close Out", value: fmt(finCloseout), sub: "Retido pela plataforma", accent: true },
+          { label: "Taxa Gateway", value: fmt(finAsaasFee), sub: `${finAsaasFeePercent}% médio · Asaas` },
+          { label: "Pendentes", value: finPending, sub: "Pagamentos não confirmados", badge: finPending > 0 },
+        ].map((m, i) => (
+          <div key={m.label} className={cn("flex-1 py-5 text-center", i < 3 && "border-r border-border/20")}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-2">{m.label}</p>
+            {finLoading ? (
+              <Skeleton className="h-5 w-20 mx-auto" />
+            ) : (
+              <p className={cn("text-lg font-semibold tabular-nums", (m as any).accent ? "text-primary" : "text-foreground")}>
+                {typeof m.value === "number" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    {m.value}
+                    {(m as any).badge && <Badge variant="outline" className="bg-yellow-500/15 text-yellow-500 border-yellow-500/30 text-xs">Aguardando</Badge>}
+                  </span>
+                ) : m.value}
+              </p>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Unretrieved orders alert */}
       {unretrievedOrders.length > 0 && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              {t("gbar_unretrieved_alert" as any)} ({unretrievedOrders.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5">
-              {unretrievedOrders.slice(0, 5).map((o) => (
-                <div key={o.order_number} className="flex items-center justify-between text-sm">
-                  <span className="font-medium">#{String(o.order_number).padStart(3, "0")}</span>
-                  <Badge variant="destructive" className="text-xs">{o.minutes} min</Badge>
-                </div>
-              ))}
-              {unretrievedOrders.length > 5 && (
-                <p className="text-xs text-muted-foreground">+{unretrievedOrders.length - 5} {t("gbar_more_orders" as any)}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/[0.03] p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+            </span>
+            <span className="text-sm font-semibold text-destructive">{t("gbar_unretrieved_alert" as any)}</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-destructive/12 text-destructive">{unretrievedOrders.length}</span>
+          </div>
+          <div className="space-y-2">
+            {unretrievedOrders.slice(0, 5).map((o) => (
+              <div key={o.order_number} className="flex items-center justify-between rounded-xl bg-destructive/[0.04] border border-destructive/10 px-4 py-3">
+                <span className="text-sm font-bold text-destructive/80">#{String(o.order_number).padStart(3, "0")}</span>
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-destructive/12 text-destructive tabular-nums">{o.minutes} min</span>
+              </div>
+            ))}
+            {unretrievedOrders.length > 5 && (
+              <p className="text-xs text-muted-foreground text-center pt-1">+{unretrievedOrders.length - 5} {t("gbar_more_orders" as any)}</p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Two-column grid: Operacional + Bar (left) | Top Products + Pagamentos (right) */}
