@@ -385,6 +385,38 @@ export default function GestorDashboard() {
     fetchTopProducts();
   }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
 
+  useEffect(() => {
+    const fetchChannelRevenue = async () => {
+      if (!effectiveClientId) return;
+      setFatChannelLoading(true);
+
+      let query = supabase
+        .from("orders")
+        .select("origin, total")
+        .eq("client_id", effectiveClientId)
+        .eq("status", "delivered")
+        .gte("created_at", filterStart.toISOString())
+        .lte("created_at", filterEnd.toISOString());
+      if (selectedEventId !== "all") query = query.eq("event_id", selectedEventId);
+
+      const { data } = await query;
+
+      let appTotal = 0;
+      let waiterTotal = 0;
+      (data ?? []).forEach((o) => {
+        const val = Number(o.total);
+        if (o.origin === "consumer_app") appTotal += val;
+        else if (o.origin === "waiter_app") waiterTotal += val;
+      });
+
+      setFatApp(Math.round(appTotal * 100) / 100);
+      setFatWaiter(Math.round(waiterTotal * 100) / 100);
+      setFatChannelLoading(false);
+    };
+
+    fetchChannelRevenue();
+  }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
+
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
