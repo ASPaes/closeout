@@ -262,7 +262,7 @@ export default function GestorDashboard() {
     fetchTopProducts();
   }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
 
-  const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
     <div className="space-y-6">
