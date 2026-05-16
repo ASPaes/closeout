@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon, Beer } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon, Beer, Smartphone, Users } from "lucide-react";
 import { format } from "date-fns";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
