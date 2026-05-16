@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon, Beer } from "lucide-react";
+import { format } from "date-fns";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
 const cards: { titleKey: TranslationKey; descKey: TranslationKey; icon: any; url: string }[] = [
@@ -34,6 +35,20 @@ function LiveClock() {
 }
 
 type ActiveEvent = { id: string; name: string };
+
+type EventOpsRow = {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  fatCaixa: number;
+  fatBar: number;
+  fatTotal: number;
+  caixasAbertos: number;
+  caixasTotal: number;
+  baresAtivos: number;
+  baresTotal: number;
+  isActive: boolean;
+};
 
 export default function GestorDashboard() {
   const { profile } = useAuth();
@@ -66,6 +81,9 @@ export default function GestorDashboard() {
 
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [topProductsLoading, setTopProductsLoading] = useState(false);
+
+  const [eventOps, setEventOps] = useState<EventOpsRow[]>([]);
+  const [eventOpsLoading, setEventOpsLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
@@ -246,6 +264,107 @@ export default function GestorDashboard() {
   useEffect(() => { fetchFinancials(); }, [fetchFinancials]);
 
   useEffect(() => {
+    const fetchEventOps = async () => {
+      if (!effectiveClientId) return;
+      setEventOpsLoading(true);
+
+      const { data: evts } = await supabase
+        .from("events")
+        .select("id, name, start_at, status")
+        .eq("client_id", effectiveClientId)
+        .in("status", ["active", "completed"])
+        .order("start_at", { ascending: false })
+        .limit(20);
+
+      if (!evts || evts.length === 0) { setEventOps([]); setEventOpsLoading(false); return; }
+
+      const eventIds = evts.map((e) => e.id);
+
+      const [cashOrdersRes, cashRegsRes, ordersRes, barStationsRes] = await Promise.all([
+        supabase
+          .from("cash_orders")
+          .select("event_id, total")
+          .eq("client_id", effectiveClientId)
+          .eq("status", "completed")
+          .in("event_id", eventIds),
+        supabase
+          .from("cash_registers")
+          .select("event_id, status")
+          .eq("client_id", effectiveClientId)
+          .in("event_id", eventIds),
+        supabase
+          .from("orders")
+          .select("event_id, total")
+          .eq("client_id", effectiveClientId)
+          .eq("status", "delivered")
+          .in("event_id", eventIds),
+        supabase
+          .from("bar_stations")
+          .select("event_id, status")
+          .eq("client_id", effectiveClientId)
+          .in("event_id", eventIds),
+      ]);
+
+      const cashByEvent = new Map<string, number>();
+      (cashOrdersRes.data ?? []).forEach((co: any) => {
+        cashByEvent.set(co.event_id, (cashByEvent.get(co.event_id) || 0) + Number(co.total));
+      });
+
+      const ordersByEvent = new Map<string, number>();
+      (ordersRes.data ?? []).forEach((o: any) => {
+        ordersByEvent.set(o.event_id, (ordersByEvent.get(o.event_id) || 0) + Number(o.total));
+      });
+
+      const caixasByEvent = new Map<string, { total: number; abertos: number }>();
+      (cashRegsRes.data ?? []).forEach((cr: any) => {
+        const prev = caixasByEvent.get(cr.event_id) || { total: 0, abertos: 0 };
+        caixasByEvent.set(cr.event_id, {
+          total: prev.total + 1,
+          abertos: prev.abertos + (cr.status === "open" ? 1 : 0),
+        });
+      });
+
+      const baresByEvent = new Map<string, { total: number; ativos: number }>();
+      (barStationsRes.data ?? []).forEach((bs: any) => {
+        const prev = baresByEvent.get(bs.event_id) || { total: 0, ativos: 0 };
+        baresByEvent.set(bs.event_id, {
+          total: prev.total + 1,
+          ativos: prev.ativos + (bs.status === "active" ? 1 : 0),
+        });
+      });
+
+      const rows: EventOpsRow[] = evts
+        .map((e: any) => {
+          const fatCaixa = Math.round((cashByEvent.get(e.id) || 0) * 100) / 100;
+          const fatBar = Math.round((ordersByEvent.get(e.id) || 0) * 100) / 100;
+          const cx = caixasByEvent.get(e.id) || { total: 0, abertos: 0 };
+          const bs = baresByEvent.get(e.id) || { total: 0, ativos: 0 };
+          return {
+            eventId: e.id,
+            eventName: e.name,
+            eventDate: e.start_at,
+            fatCaixa,
+            fatBar,
+            fatTotal: Math.round((fatCaixa + fatBar) * 100) / 100,
+            caixasAbertos: cx.abertos,
+            caixasTotal: cx.total,
+            baresAtivos: bs.ativos,
+            baresTotal: bs.total,
+            isActive: e.status === "active",
+          };
+        })
+        .filter((r) => r.fatTotal > 0 || r.caixasTotal > 0 || r.baresTotal > 0)
+        .sort((a, b) => b.fatTotal - a.fatTotal)
+        .slice(0, 3);
+
+      setEventOps(rows);
+      setEventOpsLoading(false);
+    };
+
+    fetchEventOps();
+  }, [effectiveClientId]);
+
+  useEffect(() => {
     const fetchTopProducts = async () => {
       if (!effectiveClientId) return;
       setTopProductsLoading(true);
@@ -330,6 +449,75 @@ export default function GestorDashboard() {
           </Select>
         </div>
       </div>
+
+      {/* Eventos em operação — ticker */}
+      {!eventOpsLoading && eventOps.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {eventOps.map((ev) => {
+            const isSelected = selectedEventId === ev.eventId;
+            const evDate = (() => {
+              try { return format(new Date(ev.eventDate), "dd/MM"); } catch { return ""; }
+            })();
+            return (
+              <button
+                key={ev.eventId}
+                onClick={() => setSelectedEventId(isSelected ? "all" : ev.eventId)}
+                className={cn(
+                  "relative rounded-xl border p-4 text-left transition-all overflow-hidden",
+                  isSelected
+                    ? "border-primary/30 bg-primary/[0.04]"
+                    : "border-border/30 bg-card/20 hover:border-border/50 hover:bg-card/30"
+                )}
+              >
+                <div className="absolute top-[-30px] right-[-30px] w-[80px] h-[80px] rounded-full bg-primary/[0.03] pointer-events-none" />
+                <div className="flex items-start justify-between gap-2 mb-3 relative">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{ev.eventName}</p>
+                    <p className="text-[10px] text-muted-foreground/50 mt-0.5">{evDate}</p>
+                  </div>
+                  {ev.isActive && (
+                    <span className="shrink-0 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 uppercase tracking-wide flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Ativo
+                    </span>
+                  )}
+                </div>
+                <p className="text-xl font-bold text-primary tabular-nums tracking-tight relative">
+                  {fmt(ev.fatTotal)}
+                </p>
+                <div className="flex items-center gap-3 mt-2.5 text-[10px] text-muted-foreground/50 relative">
+                  <span className="flex items-center gap-1">
+                    <Banknote className="h-3 w-3" />
+                    {ev.caixasTotal > 0 ? `${ev.caixasTotal} cx` : "—"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Beer className="h-3 w-3" />
+                    {ev.baresTotal > 0 ? `${ev.baresTotal} bar${ev.baresTotal > 1 ? "es" : ""}` : "—"}
+                  </span>
+                  {isSelected && (
+                    <span className="ml-auto text-[9px] font-semibold text-primary">Filtrado ✓</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {eventOpsLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-xl border border-border/20 bg-card/10 p-4 space-y-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-12 rounded-full" />
+              </div>
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Faturamento hero */}
       <div className="relative py-10 text-center overflow-hidden">
