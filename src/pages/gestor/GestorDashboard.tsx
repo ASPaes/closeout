@@ -87,6 +87,8 @@ export default function GestorDashboard() {
 
   const [fatApp, setFatApp] = useState(0);
   const [fatWaiter, setFatWaiter] = useState(0);
+  const [fatPaidNotDelivered, setFatPaidNotDelivered] = useState(0);
+  const [countPaidNotDelivered, setCountPaidNotDelivered] = useState(0);
   const [fatChannelLoading, setFatChannelLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -392,9 +394,9 @@ export default function GestorDashboard() {
 
       let query = supabase
         .from("orders")
-        .select("origin, total")
+        .select("origin, total, status")
         .eq("client_id", effectiveClientId)
-        .eq("status", "delivered")
+        .not("status", "in", "(pending,cancelled,processing_payment)")
         .gte("created_at", filterStart.toISOString())
         .lte("created_at", filterEnd.toISOString());
       if (selectedEventId !== "all") query = query.eq("event_id", selectedEventId);
@@ -403,14 +405,29 @@ export default function GestorDashboard() {
 
       let appTotal = 0;
       let waiterTotal = 0;
+      let paidNotDeliveredTotal = 0;
+      let paidNotDeliveredCount = 0;
+
       (data ?? []).forEach((o) => {
         const val = Number(o.total);
-        if (o.origin === "consumer_app") appTotal += val;
-        else if (o.origin === "waiter_app") waiterTotal += val;
+        const isDelivered = o.status === "delivered";
+        const isPaidNotDelivered = ["paid", "ready", "partially_delivered", "partially_paid"].includes(o.status);
+
+        if (isDelivered) {
+          if (o.origin === "consumer_app") appTotal += val;
+          else if (o.origin === "waiter_app") waiterTotal += val;
+        }
+
+        if (isPaidNotDelivered) {
+          paidNotDeliveredTotal += val;
+          paidNotDeliveredCount++;
+        }
       });
 
       setFatApp(Math.round(appTotal * 100) / 100);
       setFatWaiter(Math.round(waiterTotal * 100) / 100);
+      setFatPaidNotDelivered(Math.round(paidNotDeliveredTotal * 100) / 100);
+      setCountPaidNotDelivered(paidNotDeliveredCount);
       setFatChannelLoading(false);
     };
 
@@ -679,6 +696,26 @@ export default function GestorDashboard() {
             <p className="text-[10px] text-muted-foreground/40 mt-1">Vendas no caixa físico</p>
           </div>
         </div>
+
+        {/* Banner pago não entregue */}
+        {!fatChannelLoading && fatPaidNotDelivered > 0 && (
+          <div className="mt-3 rounded-xl border border-yellow-500/15 bg-yellow-500/[0.03] p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-yellow-400">
+                  Pago, aguardando entrega
+                </p>
+                <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                  {countPaidNotDelivered} pedido{countPaidNotDelivered !== 1 ? "s" : ""} pago{countPaidNotDelivered !== 1 ? "s" : ""} que ainda não foram entregues pelo bar
+                </p>
+              </div>
+            </div>
+            <p className="text-xl font-bold text-yellow-400 tabular-nums">{fmt(fatPaidNotDelivered)}</p>
+          </div>
+        )}
       </div>
 
       {/* Two-column grid: Operacional + Bar (left) | Top Products + Pagamentos (right) */}
