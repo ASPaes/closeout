@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useGestor } from "@/contexts/GestorContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon, Beer } from "lucide-react";
+import { Package, Tags, Layers, Megaphone, Warehouse, CalendarDays, Banknote, ShoppingCart, Clock, CheckCircle2, AlertTriangle, UserCheck, CalendarIcon, Beer, Smartphone, Users } from "lucide-react";
 import { format } from "date-fns";
 import type { TranslationKey } from "@/i18n/translations/pt-BR";
 
@@ -84,6 +84,10 @@ export default function GestorDashboard() {
 
   const [eventOps, setEventOps] = useState<EventOpsRow[]>([]);
   const [eventOpsLoading, setEventOpsLoading] = useState(false);
+
+  const [fatApp, setFatApp] = useState(0);
+  const [fatWaiter, setFatWaiter] = useState(0);
+  const [fatChannelLoading, setFatChannelLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
@@ -381,6 +385,38 @@ export default function GestorDashboard() {
     fetchTopProducts();
   }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
 
+  useEffect(() => {
+    const fetchChannelRevenue = async () => {
+      if (!effectiveClientId) return;
+      setFatChannelLoading(true);
+
+      let query = supabase
+        .from("orders")
+        .select("origin, total")
+        .eq("client_id", effectiveClientId)
+        .eq("status", "delivered")
+        .gte("created_at", filterStart.toISOString())
+        .lte("created_at", filterEnd.toISOString());
+      if (selectedEventId !== "all") query = query.eq("event_id", selectedEventId);
+
+      const { data } = await query;
+
+      let appTotal = 0;
+      let waiterTotal = 0;
+      (data ?? []).forEach((o) => {
+        const val = Number(o.total);
+        if (o.origin === "consumer_app") appTotal += val;
+        else if (o.origin === "waiter_app") waiterTotal += val;
+      });
+
+      setFatApp(Math.round(appTotal * 100) / 100);
+      setFatWaiter(Math.round(waiterTotal * 100) / 100);
+      setFatChannelLoading(false);
+    };
+
+    fetchChannelRevenue();
+  }, [effectiveClientId, selectedEventId, filterStart.getTime(), filterEnd.getTime()]);
+
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   return (
@@ -585,6 +621,65 @@ export default function GestorDashboard() {
           </div>
         </div>
       )}
+
+      {/* Faturamento por Canal */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-[3px] h-3.5 rounded-full bg-primary" />
+          <h2 className="text-sm font-semibold text-muted-foreground">Faturamento por Canal</h2>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {/* App */}
+          <div className="rounded-xl border border-border/40 bg-card/30 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Smartphone className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">App</span>
+              </div>
+            </div>
+            {fatChannelLoading ? (
+              <Skeleton className="h-7 w-28" />
+            ) : (
+              <p className="text-2xl font-bold text-primary tabular-nums">{fmt(fatApp)}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground/40 mt-1">Pedidos pelo consumidor</p>
+          </div>
+
+          {/* Garçom */}
+          <div className="rounded-xl border border-border/40 bg-card/30 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-blue-400" />
+                </div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Garçom</span>
+              </div>
+            </div>
+            {fatChannelLoading ? (
+              <Skeleton className="h-7 w-28" />
+            ) : (
+              <p className="text-2xl font-bold text-foreground tabular-nums">{fmt(fatWaiter)}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground/40 mt-1">Pedidos pelo garçom</p>
+          </div>
+
+          {/* Caixa */}
+          <div className="rounded-xl border border-border/40 bg-card/30 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <Banknote className="h-4 w-4 text-green-400" />
+                </div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Caixa</span>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{fmt(salesToday)}</p>
+            <p className="text-[10px] text-muted-foreground/40 mt-1">Vendas no caixa físico</p>
+          </div>
+        </div>
+      </div>
 
       {/* Two-column grid: Operacional + Bar (left) | Top Products + Pagamentos (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
