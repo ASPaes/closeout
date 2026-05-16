@@ -87,6 +87,8 @@ export default function GestorDashboard() {
 
   const [fatApp, setFatApp] = useState(0);
   const [fatWaiter, setFatWaiter] = useState(0);
+  const [fatPaidNotDelivered, setFatPaidNotDelivered] = useState(0);
+  const [countPaidNotDelivered, setCountPaidNotDelivered] = useState(0);
   const [fatChannelLoading, setFatChannelLoading] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
