@@ -394,7 +394,7 @@ export default function GestorDashboard() {
 
       let query = supabase
         .from("orders")
-        .select("origin, total, status")
+        .select("origin, total, status, paid_at")
         .eq("client_id", effectiveClientId)
         .not("status", "in", "(pending,cancelled,processing_payment)")
         .gte("created_at", filterStart.toISOString())
@@ -411,7 +411,8 @@ export default function GestorDashboard() {
       (data ?? []).forEach((o) => {
         const val = Number(o.total);
         const isDelivered = o.status === "delivered";
-        const isPaidNotDelivered = ["paid", "ready", "partially_delivered", "partially_paid"].includes(o.status);
+        // Só conta como "pago não entregue" se paid_at existe (exclui splits abandonados)
+        const isPaidNotDelivered = o.paid_at && ["paid", "ready", "partially_delivered"].includes(o.status);
 
         if (isDelivered) {
           if (o.origin === "consumer_app") appTotal += val;
