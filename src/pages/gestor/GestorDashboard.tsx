@@ -90,6 +90,7 @@ export default function GestorDashboard() {
   const [fatPaidNotDelivered, setFatPaidNotDelivered] = useState(0);
   const [countPaidNotDelivered, setCountPaidNotDelivered] = useState(0);
   const [fatChannelLoading, setFatChannelLoading] = useState(false);
+  const [alertsExpanded, setAlertsExpanded] = useState(false);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: (() => { const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d; })(),
@@ -618,23 +619,34 @@ export default function GestorDashboard() {
       {/* Unretrieved orders alert */}
       {unretrievedOrders.length > 0 && (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/[0.03] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="relative flex h-2 w-2">
+          <button
+            onClick={() => setAlertsExpanded(!alertsExpanded)}
+            className="flex items-center gap-2 mb-4 w-full text-left"
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
             </span>
             <span className="text-sm font-semibold text-destructive">{t("gbar_unretrieved_alert" as any)}</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-destructive/12 text-destructive">{unretrievedOrders.length}</span>
-          </div>
+            <span className={cn("ml-auto text-muted-foreground/50 transition-transform", alertsExpanded && "rotate-180")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
+          </button>
           <div className="space-y-2">
-            {unretrievedOrders.slice(0, 5).map((o) => (
+            {(alertsExpanded ? unretrievedOrders : unretrievedOrders.slice(0, 3)).map((o) => (
               <div key={o.order_number} className="flex items-center justify-between rounded-xl bg-destructive/[0.04] border border-destructive/10 px-4 py-3">
                 <span className="text-sm font-bold text-destructive/80">#{String(o.order_number).padStart(3, "0")}</span>
                 <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-destructive/12 text-destructive tabular-nums">{o.minutes} min</span>
               </div>
             ))}
-            {unretrievedOrders.length > 5 && (
-              <p className="text-xs text-muted-foreground text-center pt-1">+{unretrievedOrders.length - 5} {t("gbar_more_orders" as any)}</p>
+            {!alertsExpanded && unretrievedOrders.length > 3 && (
+              <button
+                onClick={() => setAlertsExpanded(true)}
+                className="w-full text-center text-xs text-destructive/60 hover:text-destructive pt-1 transition-colors"
+              >
+                Ver todos os {unretrievedOrders.length} pedidos
+              </button>
             )}
           </div>
         </div>
