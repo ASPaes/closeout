@@ -292,11 +292,11 @@ export default function ConsumerEventos() {
     });
   }, [events, search, cityFilter, dateInterval]);
 
-  // "Perto de você" — eventos com distance <= 25km, sem filtros aplicados
+  // "Perto de você" — eventos com distance <= 5km, sem filtros aplicados
   const nearbyEvents = useMemo(() => {
     if (!userLoc) return [];
     return events
-      .filter((e) => e.distance != null && e.distance <= 25)
+      .filter((e) => e.distance != null && e.distance <= 5)
       .sort(sortByDateThenDistance);
   }, [events, userLoc]);
 
@@ -376,6 +376,60 @@ export default function ConsumerEventos() {
       </div>
       <div className="flex items-center pr-3">
         <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+      </div>
+    </button>
+  );
+
+  const renderNearbyCard = (event: EnrichedEvent) => (
+    <button
+      key={event.id}
+      onClick={() => handleSelectEvent(event)}
+      className="relative w-[180px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.97] transition-transform snap-start"
+    >
+      {/* Thumbnail */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
+        {event.cover_url ? (
+          <img
+            src={event.cover_url}
+            alt={event.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none">
+            🎉
+          </div>
+        )}
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)" }}
+        />
+        {/* Promo badge */}
+        {event.hasPromo && (
+          <span className="absolute top-2 right-2 bg-primary/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+            PROMO
+          </span>
+        )}
+        {/* Distance badge */}
+        {event.distance != null && (
+          <span className="absolute bottom-2 left-2 bg-black/55 backdrop-blur-sm text-white/85 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            {formatDistance(event.distance)}
+          </span>
+        )}
+      </div>
+      {/* Info */}
+      <div className="flex flex-col gap-0.5 px-3 pt-2.5 pb-3">
+        <h3 className="text-[13px] font-bold text-foreground line-clamp-1 truncate">
+          {event.name}
+        </h3>
+        <span className="text-[11px] text-muted-foreground truncate">
+          {event.venue?.name || ""}
+        </span>
+        {event.start_at && (
+          <span className="text-[11px] text-muted-foreground/60">
+            {format(new Date(event.start_at), "EEE, dd MMM · HH'h'", { locale: ptBR })}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -564,7 +618,7 @@ export default function ConsumerEventos() {
 
       {!loading && (
         <>
-          {/* Seção "Perto de você" — só com GPS ativo e eventos <= 25km */}
+          {/* Seção "Perto de você" — só com GPS ativo e eventos <= 5km */}
           {userLoc && nearbyEvents.length > 0 && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-1.5">
@@ -573,7 +627,9 @@ export default function ConsumerEventos() {
                   {t("consumer_section_nearby")}
                 </h2>
               </div>
-              <div className="flex flex-col gap-3">{nearbyEvents.map(renderEventCard)}</div>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1 snap-x snap-mandatory">
+                {nearbyEvents.map(renderNearbyCard)}
+              </div>
             </div>
           )}
 
