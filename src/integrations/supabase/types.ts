@@ -1163,6 +1163,8 @@ export type Database = {
           slug: string
           status: string
           updated_at: string
+          woovi_pix_key: string | null
+          woovi_subaccount_id: string | null
         }
         Insert: {
           address?: string | null
@@ -1195,6 +1197,8 @@ export type Database = {
           slug: string
           status?: string
           updated_at?: string
+          woovi_pix_key?: string | null
+          woovi_subaccount_id?: string | null
         }
         Update: {
           address?: string | null
@@ -1227,6 +1231,8 @@ export type Database = {
           slug?: string
           status?: string
           updated_at?: string
+          woovi_pix_key?: string | null
+          woovi_subaccount_id?: string | null
         }
         Relationships: []
       }
@@ -2212,6 +2218,7 @@ export type Database = {
           created_at: string | null
           event_id: string
           failed_at: string | null
+          gateway: string | null
           gateway_ref: string | null
           gateway_response: Json | null
           id: string
@@ -2231,6 +2238,7 @@ export type Database = {
           created_at?: string | null
           event_id: string
           failed_at?: string | null
+          gateway?: string | null
           gateway_ref?: string | null
           gateway_response?: Json | null
           id?: string
@@ -2250,6 +2258,7 @@ export type Database = {
           created_at?: string | null
           event_id?: string
           failed_at?: string | null
+          gateway?: string | null
           gateway_ref?: string | null
           gateway_response?: Json | null
           id?: string
@@ -2318,6 +2327,9 @@ export type Database = {
           min_order_amount: number
           pix_expiration_minutes: number
           updated_at: string
+          woovi_fee_pix_max: number | null
+          woovi_fee_pix_min: number | null
+          woovi_fee_pix_percent: number | null
         }
         Insert: {
           asaas_fee_credit_fixed?: number | null
@@ -2337,6 +2349,9 @@ export type Database = {
           min_order_amount?: number
           pix_expiration_minutes?: number
           updated_at?: string
+          woovi_fee_pix_max?: number | null
+          woovi_fee_pix_min?: number | null
+          woovi_fee_pix_percent?: number | null
         }
         Update: {
           asaas_fee_credit_fixed?: number | null
@@ -2356,6 +2371,9 @@ export type Database = {
           min_order_amount?: number
           pix_expiration_minutes?: number
           updated_at?: string
+          woovi_fee_pix_max?: number | null
+          woovi_fee_pix_min?: number | null
+          woovi_fee_pix_percent?: number | null
         }
         Relationships: []
       }
@@ -3602,6 +3620,210 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_event_closing_report"
             referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          destination_key: string | null
+          destination_type: string
+          failed_at: string | null
+          failure_reason: string | null
+          gateway: string
+          gateway_ref: string | null
+          gateway_response: Json | null
+          id: string
+          requested_at: string | null
+          requested_by: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          destination_key?: string | null
+          destination_type?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          gateway: string
+          gateway_ref?: string | null
+          gateway_response?: Json | null
+          id?: string
+          requested_at?: string | null
+          requested_by: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          destination_key?: string | null
+          destination_type?: string
+          failed_at?: string | null
+          failure_reason?: string | null
+          gateway?: string
+          gateway_ref?: string | null
+          gateway_response?: Json | null
+          id?: string
+          requested_at?: string | null
+          requested_by?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawals_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      woovi_charges: {
+        Row: {
+          amount: number
+          client_id: string
+          closeout_amount: number | null
+          consumer_id: string
+          correlation_id: string
+          created_at: string | null
+          end_to_end_id: string | null
+          event_id: string
+          fee_amount: number | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          payment_id: string
+          pix_br_code: string | null
+          pix_expires_at: string | null
+          pix_qr_code_base64: string | null
+          pix_qr_code_url: string | null
+          split_amount: number | null
+          transaction_id: string | null
+          updated_at: string | null
+          webhook_data: Json | null
+          woovi_status: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          closeout_amount?: number | null
+          consumer_id: string
+          correlation_id: string
+          created_at?: string | null
+          end_to_end_id?: string | null
+          event_id: string
+          fee_amount?: number | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          payment_id: string
+          pix_br_code?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code_base64?: string | null
+          pix_qr_code_url?: string | null
+          split_amount?: number | null
+          transaction_id?: string | null
+          updated_at?: string | null
+          webhook_data?: Json | null
+          woovi_status?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          closeout_amount?: number | null
+          consumer_id?: string
+          correlation_id?: string
+          created_at?: string | null
+          end_to_end_id?: string | null
+          event_id?: string
+          fee_amount?: number | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          payment_id?: string
+          pix_br_code?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code_base64?: string | null
+          pix_qr_code_url?: string | null
+          split_amount?: number | null
+          transaction_id?: string | null
+          updated_at?: string | null
+          webhook_data?: Json | null
+          woovi_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "woovi_charges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_consumer_id_fkey"
+            columns: ["consumer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "woovi_charges_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
           },
         ]
       }
