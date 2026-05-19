@@ -618,7 +618,7 @@ export default function ConsumerEventos() {
 
       {!loading && (
         <>
-          {/* Seção "Perto de você" — só com GPS ativo e eventos <= 25km */}
+          {/* Seção "Perto de você" — só com GPS ativo e eventos <= 5km */}
           {userLoc && nearbyEvents.length > 0 && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-1.5">
@@ -627,7 +627,9 @@ export default function ConsumerEventos() {
                   {t("consumer_section_nearby")}
                 </h2>
               </div>
-              <div className="flex flex-col gap-3">{nearbyEvents.map(renderEventCard)}</div>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1 snap-x snap-mandatory">
+                {nearbyEvents.map(renderNearbyCard)}
+              </div>
             </div>
           )}
 
