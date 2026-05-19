@@ -380,6 +380,60 @@ export default function ConsumerEventos() {
     </button>
   );
 
+  const renderNearbyCard = (event: EnrichedEvent) => (
+    <button
+      key={event.id}
+      onClick={() => handleSelectEvent(event)}
+      className="relative w-[180px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] text-left active:scale-[0.97] transition-transform snap-start"
+    >
+      {/* Thumbnail */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
+        {event.cover_url ? (
+          <img
+            src={event.cover_url}
+            alt={event.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-4xl select-none">
+            🎉
+          </div>
+        )}
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)" }}
+        />
+        {/* Promo badge */}
+        {event.hasPromo && (
+          <span className="absolute top-2 right-2 bg-primary/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+            PROMO
+          </span>
+        )}
+        {/* Distance badge */}
+        {event.distance != null && (
+          <span className="absolute bottom-2 left-2 bg-black/55 backdrop-blur-sm text-white/85 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+            {formatDistance(event.distance)}
+          </span>
+        )}
+      </div>
+      {/* Info */}
+      <div className="flex flex-col gap-0.5 px-3 pt-2.5 pb-3">
+        <h3 className="text-[13px] font-bold text-foreground line-clamp-1 truncate">
+          {event.name}
+        </h3>
+        <span className="text-[11px] text-muted-foreground truncate">
+          {event.venue?.name || ""}
+        </span>
+        {event.start_at && (
+          <span className="text-[11px] text-muted-foreground/60">
+            {format(new Date(event.start_at), "EEE, dd MMM · HH'h'", { locale: ptBR })}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+
   return (
     <div
       ref={scrollRef}
