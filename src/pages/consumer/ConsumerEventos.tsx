@@ -292,11 +292,11 @@ export default function ConsumerEventos() {
     });
   }, [events, search, cityFilter, dateInterval]);
 
-  // "Perto de você" — eventos com distance <= 25km, sem filtros aplicados
+  // "Perto de você" — eventos com distance <= 5km, sem filtros aplicados
   const nearbyEvents = useMemo(() => {
     if (!userLoc) return [];
     return events
-      .filter((e) => e.distance != null && e.distance <= 25)
+      .filter((e) => e.distance != null && e.distance <= 5)
       .sort(sortByDateThenDistance);
   }, [events, userLoc]);
 
