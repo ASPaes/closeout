@@ -68,6 +68,11 @@ export default function ConsumerCadastro() {
   // Step 3
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  const isIOSPWA =
+    typeof navigator !== "undefined" &&
+    /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+    (window.navigator as any).standalone === true;
+
   const pwValidation = validatePassword(password);
   const showPwReqs = step === 2;
 
