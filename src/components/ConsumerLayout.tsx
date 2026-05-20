@@ -138,6 +138,7 @@ function ConsumerContent() {
       </main>
       <ChamarGarcomFAB />
       <ConsumerTabBar />
+      <IOSInstallBanner />
     </div>
   );
 }
