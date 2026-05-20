@@ -11,6 +11,7 @@ import logoMark from "@/assets/brand/logo-mark.png";
 import { ChamarGarcomFAB } from "@/components/ChamarGarcomFAB";
 import { PushPermissionBanner } from "@/components/PushPermissionBanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { IOSInstallBanner } from "@/components/IOSInstallBanner";
 
 const tabs = [
   { path: "/app", icon: Home, labelKey: "consumer_tab_events" as const },
