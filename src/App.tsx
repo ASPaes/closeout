@@ -203,6 +203,7 @@ const App = () => (
               <Route path="limites" element={<ConsumerLimites />} />
               <Route path="checkin" element={<ConsumerCheckin />} />
               <Route path="presentes" element={<ConsumerPresentes />} />
+              <Route path="meus-eventos" element={<ConsumerMeusEventos />} />
             </Route>
 
             {/* Legacy redirects */}
