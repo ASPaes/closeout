@@ -130,6 +130,7 @@ function ConsumerContent() {
     <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
       <PushPermissionBanner />
+      <OfflineBanner />
       <main className="px-5 pb-24 pt-4">
         <Outlet />
       </main>
