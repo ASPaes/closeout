@@ -530,27 +530,31 @@ export default function ConsumerCadastro() {
 
           {step === 1 && (
             <>
-              <div className="flex items-center gap-3 my-2">
-                <div className="h-px flex-1 bg-border/40" />
-                <span className="text-xs text-muted-foreground">{t("consumer_or")}</span>
-                <div className="h-px flex-1 bg-border/40" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
-                onClick={() => handleOAuth("google")}
-              >
-                {t("consumer_signup_google")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
-                onClick={() => handleOAuth("apple")}
-              >
-                {t("consumer_signup_apple")}
-              </Button>
+              {!isIOSPWA && (
+                <>
+                  <div className="flex items-center gap-3 my-2">
+                    <div className="h-px flex-1 bg-border/40" />
+                    <span className="text-xs text-muted-foreground">{t("consumer_or")}</span>
+                    <div className="h-px flex-1 bg-border/40" />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
+                    onClick={() => handleOAuth("google")}
+                  >
+                    {t("consumer_signup_google")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
+                    onClick={() => handleOAuth("apple")}
+                  >
+                    {t("consumer_signup_apple")}
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>
