@@ -293,20 +293,27 @@ export default function ConsumerCadastro() {
     if (error) toast.error(error.message);
   };
 
-  const inputClass = "h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50";
+  const inputClass = "peer h-14 rounded-xl border-border/60 bg-card pt-5 text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 focus-visible:shadow-[0_0_0_3px_hsla(24,100%,50%,0.08)]";
+  const labelClass = "absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 pointer-events-none peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs";
 
   return (
     <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col bg-background text-foreground overflow-hidden">
       {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/15 blur-[100px]" />
-      </div>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: [
+            "radial-gradient(ellipse 80% 35% at 50% -5%, hsla(24,90%,18%,0.9), transparent 70%)",
+            "radial-gradient(ellipse 60% 50% at 50% 0%, hsla(24,80%,12%,0.8), transparent 70%)",
+          ].join(", "),
+        }}
+      />
 
       {/* Header */}
       <div className="relative z-10 flex items-center px-4 pt-4">
         <button
           onClick={handleBack}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-muted-foreground active:text-foreground transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border/30 bg-white/[0.03] text-muted-foreground active:text-foreground transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -314,20 +321,18 @@ export default function ConsumerCadastro() {
       </div>
 
       {/* Stepper */}
-      <div className="relative z-10 flex items-center justify-center gap-2 py-4">
+      <div className="relative z-10 flex items-center justify-center gap-2 px-6 py-4">
         {[1, 2, 3].map((s) => (
           <div
             key={s}
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
-              s < step
-                ? "bg-primary text-primary-foreground"
-                : s === step
-                ? "bg-primary/20 text-primary ring-2 ring-primary"
-                : "bg-muted text-muted-foreground"
+            className={`flex-1 rounded-full transition-all duration-[400ms] ${
+              s === step
+                ? "h-1.5 bg-primary shadow-[0_0_12px_hsla(24,100%,50%,0.4)]"
+                : s < step
+                ? "h-1 bg-primary/30"
+                : "h-1 bg-border/30"
             }`}
-          >
-            {s < step ? <Check className="h-4 w-4" /> : s}
-          </div>
+          />
         ))}
       </div>
 
@@ -343,61 +348,73 @@ export default function ConsumerCadastro() {
         </div>
 
         {step === 1 && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {/* Nome */}
-            <Input
-              type="text"
-              placeholder={t("full_name")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
-              required
-            />
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder=" "
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputClass}
+                required
+              />
+              <label className={labelClass}>{t("full_name")}</label>
+            </div>
 
             {/* CPF */}
             <div>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Seu CPF (apenas números)"
-                value={cpf}
-                onChange={(e) => handleCpfChange(e.target.value)}
-                onBlur={handleCpfBlur}
-                maxLength={11}
-                className={`${inputClass} ${cpfError ? "border-destructive" : ""}`}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder=" "
+                  value={cpf}
+                  onChange={(e) => handleCpfChange(e.target.value)}
+                  onBlur={handleCpfBlur}
+                  maxLength={11}
+                  className={`${inputClass} ${cpfError ? "border-destructive" : ""}`}
+                  required
+                />
+                <label className={labelClass}>Seu CPF (apenas números)</label>
+              </div>
               {cpfError && <p className="mt-1 text-xs text-destructive">{cpfError}</p>}
             </div>
 
             {/* Telefone */}
             <div>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Celular com DDD (apenas números)"
-                value={phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                onBlur={handlePhoneBlur}
-                maxLength={11}
-                className={`${inputClass} ${phoneError ? "border-destructive" : ""}`}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder=" "
+                  value={phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  onBlur={handlePhoneBlur}
+                  maxLength={11}
+                  className={`${inputClass} ${phoneError ? "border-destructive" : ""}`}
+                  required
+                />
+                <label className={labelClass}>Celular com DDD (apenas números)</label>
+              </div>
               {phoneError && <p className="mt-1 text-xs text-destructive">{phoneError}</p>}
             </div>
 
             {/* CEP */}
             <div>
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="CEP (apenas números)"
-                value={cep}
-                onChange={(e) => handleCepChange(e.target.value)}
-                maxLength={8}
-                className={`${inputClass} ${cepError ? "border-destructive" : ""}`}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder=" "
+                  value={cep}
+                  onChange={(e) => handleCepChange(e.target.value)}
+                  maxLength={8}
+                  className={`${inputClass} ${cepError ? "border-destructive" : ""}`}
+                  required
+                />
+                <label className={labelClass}>CEP (apenas números)</label>
+              </div>
               {cepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
               {cepError && <p className="mt-1 text-xs text-destructive">{cepError}</p>}
               {cepAddress && (
@@ -408,32 +425,38 @@ export default function ConsumerCadastro() {
             </div>
 
             {/* Número */}
-            <Input
-              type="text"
-              placeholder="Número"
-              value={addressNumber}
-              onChange={(e) => setAddressNumber(e.target.value)}
-              className={`${inputClass} w-32`}
-              required
-            />
+            <div className="relative w-32">
+              <Input
+                type="text"
+                placeholder=" "
+                value={addressNumber}
+                onChange={(e) => setAddressNumber(e.target.value)}
+                className={`${inputClass} w-32`}
+                required
+              />
+              <label className={labelClass}>Nº</label>
+            </div>
           </div>
         )}
 
         {step === 2 && (
-          <div className="flex flex-col gap-3">
-            <Input
-              type="email"
-              placeholder={t("email")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              required
-            />
+          <div className="flex flex-col gap-4">
+            <div className="relative">
+              <Input
+                type="email"
+                placeholder=" "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+                required
+              />
+              <label className={labelClass}>{t("email")}</label>
+            </div>
             <div>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder={t("password")}
+                  placeholder=" "
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setPwFocused(true)}
@@ -444,6 +467,7 @@ export default function ConsumerCadastro() {
                   minLength={6}
                   required
                 />
+                <label className={labelClass}>{t("password")}</label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -454,34 +478,37 @@ export default function ConsumerCadastro() {
               </div>
               <PasswordRequirements password={password} show={showPwReqs} />
             </div>
-            <Input
-              type="password"
-              placeholder={t("consumer_confirm_password")}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={inputClass}
-              minLength={6}
-              required
-            />
+            <div className="relative">
+              <Input
+                type="password"
+                placeholder=" "
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={inputClass}
+                minLength={6}
+                required
+              />
+              <label className={labelClass}>{t("consumer_confirm_password")}</label>
+            </div>
           </div>
         )}
 
         {step === 3 && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
-              <div className="flex justify-between">
+            <div className="rounded-2xl border border-border/40 bg-white/[0.03] backdrop-blur-sm p-4 space-y-3">
+              <div className="flex justify-between border-b border-border/20 pb-3">
                 <span className="text-xs text-muted-foreground">{t("full_name")}</span>
                 <span className="text-sm font-medium text-foreground">{name}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-border/20 pb-3">
                 <span className="text-xs text-muted-foreground">CPF</span>
                 <span className="text-sm font-medium text-foreground">{cpf}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-border/20 pb-3">
                 <span className="text-xs text-muted-foreground">Celular</span>
                 <span className="text-sm font-medium text-foreground">{phone}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-border/20 pb-3">
                 <span className="text-xs text-muted-foreground">Endereço</span>
                 <span className="text-sm font-medium text-foreground text-right max-w-[60%]">
                   {cepAddress ? `${cepAddress.logradouro}, ${addressNumber} - ${cepAddress.bairro}, ${cepAddress.localidade}/${cepAddress.uf}` : ""}
@@ -538,7 +565,7 @@ export default function ConsumerCadastro() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
+                className="h-[50px] w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
                 onClick={() => handleOAuth("google")}
               >
                 {t("consumer_signup_google")}
@@ -546,7 +573,7 @@ export default function ConsumerCadastro() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
+                className="h-[50px] w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
                 onClick={() => handleOAuth("apple")}
               >
                 {t("consumer_signup_apple")}
