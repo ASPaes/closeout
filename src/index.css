@@ -102,7 +102,10 @@
   body::before {
     content: '';
     position: fixed;
-    inset: 0;
+    top: calc(-1 * env(safe-area-inset-top, 0px));
+    left: 0;
+    right: 0;
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
     z-index: 0;
     pointer-events: none;
     opacity: 0.03;
@@ -124,6 +127,8 @@
 /* Touch-friendly global rules */
 html, body {
   touch-action: manipulation;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 button, [role="button"], a {
   touch-action: manipulation;
