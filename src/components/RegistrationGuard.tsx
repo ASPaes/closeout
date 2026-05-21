@@ -46,6 +46,10 @@ export function RegistrationGuard({ children }: RegistrationGuardProps) {
     );
   }
 
+  if (!user) {
+    return <Navigate to="/app/login" replace />;
+  }
+
   if (!complete) return null;
 
   return <>{children}</>;
