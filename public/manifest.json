@@ -3,7 +3,7 @@
   "short_name": "Close Out",
   "description": "Peça pelo app, pague na hora, sem fila.",
   "start_url": "/app",
-  "scope": "/app/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0A0A0A",
