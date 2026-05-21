@@ -52,6 +52,11 @@ export default function ConsumerCompletarCadastro() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepAddress, setCepAddress] = useState<CepData | null>(null);
   const [addressNumber, setAddressNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const isGoogleUser = user?.app_metadata?.provider === "google";
 
   // Pre-fill from existing profile
   useEffect(() => {
@@ -110,6 +115,17 @@ export default function ConsumerCompletarCadastro() {
     }
   };
 
+  const handlePasswordBlur = () => {
+    if (!isGoogleUser) return;
+    if (password.length > 0 && password.length < 6) {
+      setPasswordError("Mínimo 6 caracteres");
+    } else if (passwordConfirm.length > 0 && password !== passwordConfirm) {
+      setPasswordError("As senhas não coincidem");
+    } else {
+      setPasswordError("");
+    }
+  };
+
   // CEP handlers
   const fetchCep = useCallback(async (digits: string) => {
     setCepLoading(true);
@@ -151,7 +167,8 @@ export default function ConsumerCompletarCadastro() {
     cep.length === 8 &&
     !!cepAddress &&
     !cepError &&
-    addressNumber.trim().length > 0;
+    addressNumber.trim().length > 0 &&
+    (!isGoogleUser || (password.length >= 6 && password === passwordConfirm));
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -188,6 +205,16 @@ export default function ConsumerCompletarCadastro() {
     if (error) {
       toast.error("Erro ao salvar cadastro. Tente novamente.");
       return;
+    }
+
+    // Set password for Google users so they can login via email/password in PWA
+    if (isGoogleUser && password) {
+      const { error: pwError } = await supabase.auth.updateUser({ password });
+      if (pwError) {
+        toast.error("Cadastro salvo, mas houve erro ao definir a senha. Você pode definir depois em 'Esqueci minha senha'.");
+        navigate("/app", { replace: true });
+        return;
+      }
     }
 
     toast.success("Cadastro completo!");
@@ -301,6 +328,42 @@ export default function ConsumerCompletarCadastro() {
             className={`${inputClass} w-32`}
             required
           />
+
+          {/* Senha — apenas para Google users */}
+          {isGoogleUser && (
+            <>
+              <div className="mt-2 pt-3 border-t border-border/30">
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Defina uma senha para acessar sua conta sem o Google
+                </p>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <Input
+                      type="password"
+                      placeholder="Criar senha (mín. 6 caracteres)"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
+                      onBlur={handlePasswordBlur}
+                      className={`${inputClass} ${passwordError ? "border-destructive" : ""}`}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="password"
+                      placeholder="Confirmar senha"
+                      value={passwordConfirm}
+                      onChange={(e) => { setPasswordConfirm(e.target.value); setPasswordError(""); }}
+                      onBlur={handlePasswordBlur}
+                      className={`${inputClass} ${passwordError ? "border-destructive" : ""}`}
+                      required
+                    />
+                    {passwordError && <p className="mt-1 text-xs text-destructive">{passwordError}</p>}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Action */}
