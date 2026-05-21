@@ -286,12 +286,6 @@ export default function ConsumerCadastro() {
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
-    if (isIOSPWA) {
-      toast.info("Você será redirecionado ao Safari para entrar com Google. Após o login, volte ao app.", {
-        duration: 4000,
-      });
-      await new Promise((r) => setTimeout(r, 1500));
-    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: window.location.origin + "/app/login" },
@@ -534,7 +528,7 @@ export default function ConsumerCadastro() {
             </Button>
           )}
 
-          {step === 1 && (
+          {step === 1 && !isIOSPWA && (
             <>
               <div className="flex items-center gap-3 my-2">
                 <div className="h-px flex-1 bg-border/40" />
