@@ -230,7 +230,8 @@ export default function ConsumerEventos() {
 
   // Touch-based pull-to-refresh
   const onTouchStart = (e: React.TouchEvent) => {
-    if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
+    const scrollContainer = document.getElementById('root');
+    if (scrollContainer && scrollContainer.scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
       pulling.current = true;
     }

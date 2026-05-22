@@ -37,8 +37,9 @@ function ConsumerTabBar() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.85) 20%, #0a0a0a 45%)" }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
+      <div className="pointer-events-none absolute left-0 right-0 bottom-full h-24" style={{ background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)' }} />
       <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-5">
         {/* Floating pill */}
         <div
@@ -130,9 +131,9 @@ function ConsumerHeader() {
 function ConsumerContent() {
   useConsumerNotifications();
   return (
-    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
+    <div className="dark mx-auto min-h-full max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
-      <main className="px-5 pb-36" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
+      <main className="px-5" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(10rem + env(safe-area-inset-bottom, 0px))' }}>
         <PushPermissionBanner />
         <OfflineBanner />
         <Outlet />
