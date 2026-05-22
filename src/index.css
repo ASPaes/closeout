@@ -135,7 +135,7 @@ html, body {
   inset: 0;
   width: 100%;
   height: 100%;
-  background-color: #000000;
+  background-color: #0a0a0a;
 }
 button, [role="button"], a {
   touch-action: manipulation;
