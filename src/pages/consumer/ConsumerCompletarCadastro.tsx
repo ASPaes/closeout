@@ -227,7 +227,11 @@ export default function ConsumerCompletarCadastro() {
     navigate("/app/login", { replace: true });
   };
 
-  const inputClass = "h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50";
+  const inputBase =
+    "peer h-14 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] px-4 pt-6 pb-2 text-[15px] text-[#f5f0eb] placeholder-transparent outline-none transition-all duration-300 focus:bg-white/[0.07] focus:border-[hsla(24,100%,50%,0.4)] focus:shadow-[0_0_0_3px_hsla(24,100%,50%,0.08),0_0_20px_hsla(24,100%,50%,0.05)] disabled:opacity-50";
+  const labelBase =
+    "absolute left-4 top-2 text-[11px] uppercase tracking-wider text-muted-foreground/60 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-[15px] peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground/50 peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-[11px] peer-focus:uppercase peer-focus:tracking-wider peer-focus:text-primary";
+  const caret = { caretColor: "hsl(24,100%,50%)" } as const;
 
   return (
     <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col bg-background text-foreground overflow-hidden">
