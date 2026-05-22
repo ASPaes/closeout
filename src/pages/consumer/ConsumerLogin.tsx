@@ -71,7 +71,7 @@ export default function ConsumerLogin() {
           />
           <h1
             className="text-3xl font-bold tracking-tight"
-            style={{ fontFamily: "'Mustica Pro', sans-serif" }}
+            style={{ fontFamily: "'Outfit', sans-serif" }}
           >
             CLOSE OUT
           </h1>
