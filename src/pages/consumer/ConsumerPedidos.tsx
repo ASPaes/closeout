@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Clock, CheckCircle2, XCircle, ChefHat, Package, Search, Inbox,
   CalendarX, ChevronDown, QrCode, CreditCard, Smartphone,
-  Banknote, ArrowDown, Split, Loader2, RefreshCw,
+  Banknote, Split, Loader2, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 type PaymentRow = {
   payment_method: string;
@@ -99,7 +100,6 @@ export default function ConsumerPedidos() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     if (!user || !activeEvent) { setLoading(false); return; }
@@ -154,7 +154,6 @@ export default function ConsumerPedidos() {
       })));
     }
     setLoading(false);
-    setRefreshing(false);
   }, [user, activeEvent?.id]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
@@ -169,8 +168,6 @@ export default function ConsumerPedidos() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeEvent?.id, fetchOrders]);
-
-  const handleRefresh = () => { setRefreshing(true); fetchOrders(); };
 
   const statusPriority: Record<string, number> = {
     pending: 0,
@@ -295,16 +292,7 @@ export default function ConsumerPedidos() {
         ))}
       </div>
 
-      {/* Pull to refresh */}
-      <button
-        onClick={handleRefresh}
-        disabled={refreshing}
-        className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground active:scale-95 transition-transform"
-      >
-        <ArrowDown className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-        {refreshing ? "Atualizando..." : "Puxar para atualizar"}
-      </button>
-
+      <PullToRefresh onRefresh={fetchOrders}>
       {/* Loading */}
       {loading && (
         <div className="flex flex-col gap-3">
@@ -556,6 +544,7 @@ export default function ConsumerPedidos() {
           })}
         </div>
       )}
+      </PullToRefresh>
       </>
       )}
     </div>
