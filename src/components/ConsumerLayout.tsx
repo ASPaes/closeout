@@ -37,9 +37,9 @@ function ConsumerTabBar() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "#0A0A0A" }}
     >
-      <div className="pointer-events-none absolute left-0 right-0 bottom-full h-24" style={{ background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)' }} />
+      <div className="pointer-events-none absolute left-0 right-0 bottom-full h-10" style={{ background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)' }} />
       <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-5">
         {/* Floating pill */}
         <div

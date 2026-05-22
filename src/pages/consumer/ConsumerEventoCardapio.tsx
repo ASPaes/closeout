@@ -357,8 +357,8 @@ export default function ConsumerEventoCardapio() {
 
       {/* ── Sticky CTA bar ── */}
       <div
-        className="fixed bottom-[76px] left-0 right-0 z-40"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed left-0 right-0 z-40"
+        style={{ bottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}
       >
         <div
           className="mx-auto max-w-[480px] px-5"
