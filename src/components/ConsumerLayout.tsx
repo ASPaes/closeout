@@ -36,49 +36,44 @@ function ConsumerTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06]"
-      style={{
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        background: "rgba(10, 10, 10, 0.85)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div
-        className="mx-auto flex max-w-[480px] items-center justify-around px-2"
-      >
-        {tabs.map((tab) => {
-          const active = isActive(tab.path);
-          const isQr = tab.path === "/app/qr";
-          return (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              className={cn(
-                "relative flex min-h-[52px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-2 transition-all",
-                "active:scale-95 active:opacity-80",
-                active ? "text-primary" : "text-white/40"
-              )}
-            >
-              <tab.icon
+      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-2">
+        {/* Floating pill */}
+        <div
+          className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.06] px-2 py-2"
+          style={{
+            background: "#0A0A0A",
+            boxShadow: "0 -2px 20px rgba(0,0,0,0.6)",
+          }}
+        >
+          {tabs.map((tab) => {
+            const active = isActive(tab.path);
+            const isQr = tab.path === "/app/qr";
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
                 className={cn(
-                  "h-[22px] w-[22px]",
-                  active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]"
+                  "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 transition-all",
+                  "active:scale-95 active:opacity-80",
+                  active ? "text-primary" : "text-white/40"
                 )}
-              />
-              {active && (
-                <span className="text-[10px] font-semibold tracking-wide">
-                  {t(tab.labelKey)}
-                </span>
-              )}
-              {isQr && orderReady && (
-                <span className="absolute right-1 top-1 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
-                </span>
-              )}
-            </button>
-          );
-        })}
+              >
+                <tab.icon className={cn("h-[22px] w-[22px]", active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]")} />
+                {active && (
+                  <span className="text-[10px] font-semibold tracking-wide">{t(tab.labelKey)}</span>
+                )}
+                {isQr && orderReady && (
+                  <span className="absolute right-1 top-0.5 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
@@ -135,9 +130,9 @@ function ConsumerHeader() {
 function ConsumerContent() {
   useConsumerNotifications();
   return (
-    <div className="dark mx-auto min-h-full max-w-[480px] bg-background text-foreground">
+    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground pb-36">
       <ConsumerHeader />
-      <main className="px-5" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(10rem + env(safe-area-inset-bottom, 0px))' }}>
+      <main className="px-5" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <PushPermissionBanner />
         <OfflineBanner />
         <Outlet />
