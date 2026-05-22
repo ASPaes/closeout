@@ -36,12 +36,16 @@ function ConsumerTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.04]"
-      style={{ background: "#000000" }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06]"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        background: "rgba(10, 10, 10, 0.85)",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }}
     >
       <div
         className="mx-auto flex max-w-[480px] items-center justify-around px-2"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {tabs.map((tab) => {
           const active = isActive(tab.path);
