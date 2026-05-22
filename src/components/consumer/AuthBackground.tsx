@@ -93,7 +93,7 @@ const AuthBackground = ({ children }: AuthBackgroundProps) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
+    <div className="fixed inset-0 overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Fixed background - bleeds into safe areas */}
       <div
         className="fixed pointer-events-none z-0"
@@ -143,7 +143,7 @@ const AuthBackground = ({ children }: AuthBackgroundProps) => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 h-full overflow-hidden">{children}</div>
+      <div className="relative z-10 h-full">{children}</div>
     </div>
   );
 };

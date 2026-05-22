@@ -233,9 +233,9 @@ export default function ConsumerCompletarCadastro() {
 
   return (
     <AuthBackground>
-      <div className="relative z-10 flex h-full max-w-[430px] mx-auto flex-col px-6 overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', overscrollBehavior: 'none' }}>
+      <div className="relative z-10 flex h-full max-w-[430px] mx-auto flex-col px-6" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Header */}
-        <div className="flex items-center justify-end pt-4 pb-2">
+        <div className="flex items-center justify-end pt-1 pb-2">
           <button
             onClick={handleLogout}
             className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground active:text-foreground transition-colors"
