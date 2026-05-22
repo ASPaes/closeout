@@ -128,13 +128,13 @@ const AuthBackground = ({ children }: AuthBackgroundProps) => {
 
         {/* Layer 3: Grid lines */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.015]"
           style={{
             backgroundImage: `
-              linear-gradient(hsla(24,100%,50%,0.5) 1px, transparent 1px),
-              linear-gradient(90deg, hsla(24,100%,50%,0.5) 1px, transparent 1px)
+              linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)
             `,
-            backgroundSize: "60px 60px",
+            backgroundSize: "80px 80px",
           }}
         />
 
