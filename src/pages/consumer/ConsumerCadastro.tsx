@@ -3,11 +3,11 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
+import AuthBackground from "@/components/consumer/AuthBackground";
 
 function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
@@ -38,13 +38,19 @@ interface CepData {
   erro?: boolean;
 }
 
+const inputBase =
+  "peer h-14 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] px-4 pt-6 pb-2 text-[15px] text-[#f5f0eb] placeholder-transparent outline-none transition-all duration-300 focus:bg-white/[0.07] focus:border-[hsla(24,100%,50%,0.4)] focus:shadow-[0_0_0_3px_hsla(24,100%,50%,0.08),0_0_20px_hsla(24,100%,50%,0.05)] disabled:opacity-50";
+const labelBase =
+  "absolute left-4 top-2 text-[11px] uppercase tracking-wider text-muted-foreground/60 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-[15px] peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground/50 peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-[11px] peer-focus:uppercase peer-focus:tracking-wider peer-focus:text-primary";
+const caret = { caretColor: "hsl(24,100%,50%)" } as const;
+
 export default function ConsumerCadastro() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Step 1
+  // Personal
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState("");
@@ -52,20 +58,20 @@ export default function ConsumerCadastro() {
   const [cpfTaken, setCpfTaken] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+
+  // Address
   const [cep, setCep] = useState("");
   const [cepError, setCepError] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
   const [cepAddress, setCepAddress] = useState<CepData | null>(null);
   const [addressNumber, setAddressNumber] = useState("");
 
-  // Step 2
+  // Access
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pwFocused, setPwFocused] = useState(false);
-
-  // Step 3
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const isIOSPWA =
@@ -74,7 +80,7 @@ export default function ConsumerCadastro() {
     (window.navigator as any).standalone === true;
 
   const pwValidation = validatePassword(password);
-  const showPwReqs = step === 2;
+  const showPwReqs = step === 3;
 
   // CPF handlers
   const handleCpfChange = (val: string) => {
@@ -149,7 +155,7 @@ export default function ConsumerCadastro() {
     }
   };
 
-  // Step 1 validity
+  // Validity
   const isStep1Valid =
     name.trim().length > 0 &&
     cpf.length === 11 &&
@@ -158,11 +164,17 @@ export default function ConsumerCadastro() {
     !cpfTaken &&
     !cpfError &&
     isValidPhone(phone) &&
-    !phoneError &&
-    cep.length === 8 &&
-    !!cepAddress &&
-    !cepError &&
-    addressNumber.trim().length > 0;
+    !phoneError;
+
+  const isStep2Valid =
+    cep.length === 8 && !!cepAddress && !cepError && addressNumber.trim().length > 0;
+
+  const isStep3Valid =
+    email.includes("@") &&
+    pwValidation.isValid &&
+    password === confirmPassword &&
+    confirmPassword.length > 0 &&
+    termsAccepted;
 
   const validateStep1 = async () => {
     if (!name.trim()) { toast.error(t("consumer_name_required")); return false; }
@@ -171,7 +183,6 @@ export default function ConsumerCadastro() {
       return false;
     }
     if (cpfError) return false;
-    // Re-check CPF availability
     const { data: existing } = await supabase
       .from("profiles")
       .select("id")
@@ -187,6 +198,10 @@ export default function ConsumerCadastro() {
       setPhoneError("Telefone inválido. Digite DDD + 9 + número");
       return false;
     }
+    return true;
+  };
+
+  const validateStep2 = () => {
     if (cep.length !== 8 || !cepAddress) {
       setCepError("CEP não encontrado");
       return false;
@@ -198,14 +213,12 @@ export default function ConsumerCadastro() {
     return true;
   };
 
-  const validateStep2 = () => {
+  const validateStep3 = () => {
     if (!email.includes("@")) { toast.error(t("consumer_email_invalid")); return false; }
     if (!pwValidation.isValid) { toast.error("A senha não atende todos os requisitos."); return false; }
     if (password !== confirmPassword) { toast.error(t("consumer_passwords_mismatch")); return false; }
     return true;
   };
-
-  const isStep2Valid = pwValidation.isValid && email.includes("@") && password === confirmPassword && confirmPassword.length > 0;
 
   const handleNext = async () => {
     if (step === 1) {
@@ -225,9 +238,9 @@ export default function ConsumerCadastro() {
 
   const handleSignup = async () => {
     if (!termsAccepted) { toast.error(t("consumer_accept_terms")); return; }
+    if (!validateStep3()) return;
     setLoading(true);
 
-    // Verificação final de CPF duplicado antes de criar conta
     const { data: cpfCheck } = await supabase
       .from("profiles")
       .select("id")
@@ -272,7 +285,7 @@ export default function ConsumerCadastro() {
         setStep(1);
       } else if (msg.includes("already registered") || msg.includes("already been registered")) {
         toast.error("Este e-mail já está cadastrado. Faça login ou use 'Esqueci minha senha'.");
-        setStep(2);
+        setStep(3);
       } else {
         toast.error(msg);
       }
@@ -293,302 +306,334 @@ export default function ConsumerCadastro() {
     if (error) toast.error(error.message);
   };
 
-  const inputClass = "peer h-14 rounded-xl border-border/60 bg-card pt-5 text-base placeholder:text-muted-foreground focus-visible:ring-primary/50 focus-visible:shadow-[0_0_0_3px_hsla(24,100%,50%,0.08)]";
-  const labelClass = "absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200 pointer-events-none peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs";
+  const stepTitle = step === 1 ? "Dados Pessoais" : step === 2 ? "Endereço" : "Acesso";
+  const stepDesc =
+    step === 1
+      ? "Precisamos de algumas informações básicas para sua segurança"
+      : step === 2
+      ? "Informe seu CEP para preenchermos automaticamente"
+      : "Crie suas credenciais de login";
 
   return (
-    <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col bg-background text-foreground overflow-hidden">
-      {/* Background glow */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: [
-            "radial-gradient(ellipse 80% 35% at 50% -5%, hsla(24,90%,18%,0.9), transparent 70%)",
-            "radial-gradient(ellipse 60% 50% at 50% 0%, hsla(24,80%,12%,0.8), transparent 70%)",
-          ].join(", "),
-        }}
-      />
-
-      {/* Header */}
-      <div className="relative z-10 flex items-center px-4 pt-4">
-        <button
-          onClick={handleBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border/30 bg-white/[0.03] text-muted-foreground active:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="flex-1" />
-      </div>
-
-      {/* Stepper */}
-      <div className="relative z-10 flex items-center justify-center gap-2 px-6 py-4">
-        {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className={`flex-1 rounded-full transition-all duration-[400ms] ${
-              s === step
-                ? "h-1.5 bg-primary shadow-[0_0_12px_hsla(24,100%,50%,0.4)]"
-                : s < step
-                ? "h-1 bg-primary/30"
-                : "h-1 bg-border/30"
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col px-6 overflow-y-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {step === 1 ? t("consumer_step1_title") : step === 2 ? t("consumer_step2_title") : t("consumer_step3_title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {step === 1 ? t("consumer_step1_desc") : step === 2 ? t("consumer_step2_desc") : t("consumer_step3_desc")}
-          </p>
+    <AuthBackground>
+      <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col text-foreground">
+        {/* Header */}
+        <div className="flex items-center px-4 pt-4">
+          <button
+            onClick={handleBack}
+            className="h-10 w-10 rounded-full border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         </div>
 
-        {step === 1 && (
-          <div className="flex flex-col gap-4">
-            {/* Nome */}
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder=" "
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-                required
-              />
-              <label className={labelClass}>{t("full_name")}</label>
-            </div>
+        {/* Stepper */}
+        <div className="flex items-center justify-center gap-2 px-6 py-4">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`flex-1 rounded-full transition-all duration-[400ms] ${
+                s === step
+                  ? "h-1.5 bg-primary shadow-[0_0_12px_hsla(24,100%,50%,0.4)]"
+                  : s < step
+                  ? "h-1 bg-primary/30"
+                  : "h-1 bg-border/30"
+              }`}
+            />
+          ))}
+        </div>
 
-            {/* CPF */}
-            <div>
-              <div className="relative">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder=" "
-                  value={cpf}
-                  onChange={(e) => handleCpfChange(e.target.value)}
-                  onBlur={handleCpfBlur}
-                  maxLength={11}
-                  className={`${inputClass} ${cpfError ? "border-destructive" : ""}`}
-                  required
-                />
-                <label className={labelClass}>Seu CPF (apenas números)</label>
-              </div>
-              {cpfError && <p className="mt-1 text-xs text-destructive">{cpfError}</p>}
-            </div>
-
-            {/* Telefone */}
-            <div>
-              <div className="relative">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder=" "
-                  value={phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  onBlur={handlePhoneBlur}
-                  maxLength={11}
-                  className={`${inputClass} ${phoneError ? "border-destructive" : ""}`}
-                  required
-                />
-                <label className={labelClass}>Celular com DDD (apenas números)</label>
-              </div>
-              {phoneError && <p className="mt-1 text-xs text-destructive">{phoneError}</p>}
-            </div>
-
-            {/* CEP */}
-            <div>
-              <div className="relative">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder=" "
-                  value={cep}
-                  onChange={(e) => handleCepChange(e.target.value)}
-                  maxLength={8}
-                  className={`${inputClass} ${cepError ? "border-destructive" : ""}`}
-                  required
-                />
-                <label className={labelClass}>CEP (apenas números)</label>
-              </div>
-              {cepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
-              {cepError && <p className="mt-1 text-xs text-destructive">{cepError}</p>}
-              {cepAddress && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {cepAddress.logradouro}, {cepAddress.bairro} - {cepAddress.localidade}/{cepAddress.uf}
-                </p>
-              )}
-            </div>
-
-            {/* Número */}
-            <div className="relative w-32">
-              <Input
-                type="text"
-                placeholder=" "
-                value={addressNumber}
-                onChange={(e) => setAddressNumber(e.target.value)}
-                className={`${inputClass} w-32`}
-                required
-              />
-              <label className={labelClass}>Nº</label>
-            </div>
+        {/* Content */}
+        <div className="flex flex-1 flex-col px-6 overflow-y-auto">
+          <div className="mb-8">
+            <h1
+              className="text-[28px] font-bold leading-tight mb-1.5"
+              style={{ fontFamily: "'Outfit', sans-serif" }}
+            >
+              {stepTitle}
+            </h1>
+            <p className="text-sm text-muted-foreground/50">{stepDesc}</p>
           </div>
-        )}
 
-        {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <div className="relative">
-              <Input
-                type="email"
-                placeholder=" "
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                required
-              />
-              <label className={labelClass}>{t("email")}</label>
-            </div>
-            <div>
+          {step === 1 && (
+            <div className="flex flex-col gap-4">
+              {/* Nome */}
               <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                   placeholder=" "
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setPwFocused(true)}
-                  onBlur={() => setPwFocused(false)}
-                  className={`${inputClass} pr-12 ${
-                    password.length > 0 ? (pwValidation.isValid ? "border-success" : "border-destructive") : ""
-                  }`}
+                  className={inputBase}
+                  style={caret}
+                />
+                <label className={labelBase}>{t("full_name")}</label>
+              </div>
+
+              {/* CPF */}
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={cpf}
+                    onChange={(e) => handleCpfChange(e.target.value)}
+                    onBlur={handleCpfBlur}
+                    maxLength={11}
+                    required
+                    placeholder=" "
+                    className={`${inputBase} ${cpfError ? "border-red-500/60" : ""}`}
+                    style={caret}
+                  />
+                  <label className={labelBase}>CPF (apenas números)</label>
+                </div>
+                {cpfError && <p className="mt-1 text-xs text-red-500">{cpfError}</p>}
+              </div>
+
+              {/* Telefone */}
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onBlur={handlePhoneBlur}
+                    maxLength={11}
+                    required
+                    placeholder=" "
+                    className={`${inputBase} ${phoneError ? "border-red-500/60" : ""}`}
+                    style={caret}
+                  />
+                  <label className={labelBase}>Celular com DDD</label>
+                </div>
+                {phoneError && <p className="mt-1 text-xs text-red-500">{phoneError}</p>}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="flex flex-col gap-4">
+              {/* CEP */}
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    maxLength={8}
+                    required
+                    placeholder=" "
+                    className={`${inputBase} ${cepError ? "border-red-500/60" : ""}`}
+                    style={caret}
+                  />
+                  <label className={labelBase}>CEP</label>
+                </div>
+                {cepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
+                {cepError && <p className="mt-1 text-xs text-red-500">{cepError}</p>}
+              </div>
+
+              {/* Rua */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={cepAddress?.logradouro || ""}
+                  onChange={() => {}}
+                  disabled={!cepAddress}
+                  placeholder=" "
+                  className={`${inputBase} ${!cepAddress ? "opacity-50" : ""}`}
+                  style={caret}
+                />
+                <label className={labelBase}>Rua</label>
+              </div>
+
+              {/* Bairro + Nº */}
+              <div className="flex gap-3">
+                <div className="relative flex-[2]">
+                  <input
+                    type="text"
+                    value={cepAddress?.bairro || ""}
+                    onChange={() => {}}
+                    disabled={!cepAddress}
+                    placeholder=" "
+                    className={`${inputBase} ${!cepAddress ? "opacity-50" : ""}`}
+                    style={caret}
+                  />
+                  <label className={labelBase}>Bairro</label>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={addressNumber}
+                    onChange={(e) => setAddressNumber(e.target.value)}
+                    required
+                    placeholder=" "
+                    className={inputBase}
+                    style={caret}
+                  />
+                  <label className={labelBase}>Nº</label>
+                </div>
+              </div>
+
+              {/* Cidade/UF */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={cepAddress ? `${cepAddress.localidade}/${cepAddress.uf}` : ""}
+                  onChange={() => {}}
+                  disabled
+                  placeholder=" "
+                  className={`${inputBase} opacity-50`}
+                  style={caret}
+                />
+                <label className={labelBase}>Cidade / UF</label>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="flex flex-col gap-4">
+              {/* Email */}
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder=" "
+                  className={inputBase}
+                  style={caret}
+                />
+                <label className={labelBase}>Email</label>
+              </div>
+
+              {/* Senha */}
+              <div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setPwFocused(true)}
+                    onBlur={() => setPwFocused(false)}
+                    minLength={6}
+                    required
+                    placeholder=" "
+                    className={`${inputBase} pr-12 ${
+                      password.length > 0 && !pwValidation.isValid ? "border-red-500/60" : ""
+                    }`}
+                    style={caret}
+                  />
+                  <label className={labelBase}>Senha</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                <PasswordRequirements password={password} show={showPwReqs} />
+              </div>
+
+              {/* Confirmar senha */}
+              <div className="relative">
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   minLength={6}
                   required
+                  placeholder=" "
+                  className={inputBase}
+                  style={caret}
                 />
-                <label className={labelClass}>{t("password")}</label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                <label className={labelBase}>Confirmar senha</label>
               </div>
-              <PasswordRequirements password={password} show={showPwReqs} />
-            </div>
-            <div className="relative">
-              <Input
-                type="password"
-                placeholder=" "
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={inputClass}
-                minLength={6}
-                required
-              />
-              <label className={labelClass}>{t("consumer_confirm_password")}</label>
-            </div>
-          </div>
-        )}
 
-        {step === 3 && (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-border/40 bg-white/[0.03] backdrop-blur-sm p-4 space-y-3">
-              <div className="flex justify-between border-b border-border/20 pb-3">
-                <span className="text-xs text-muted-foreground">{t("full_name")}</span>
-                <span className="text-sm font-medium text-foreground">{name}</span>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-3">
-                <span className="text-xs text-muted-foreground">CPF</span>
-                <span className="text-sm font-medium text-foreground">{cpf}</span>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-3">
-                <span className="text-xs text-muted-foreground">Celular</span>
-                <span className="text-sm font-medium text-foreground">{phone}</span>
-              </div>
-              <div className="flex justify-between border-b border-border/20 pb-3">
-                <span className="text-xs text-muted-foreground">Endereço</span>
-                <span className="text-sm font-medium text-foreground text-right max-w-[60%]">
-                  {cepAddress ? `${cepAddress.logradouro}, ${addressNumber} - ${cepAddress.bairro}, ${cepAddress.localidade}/${cepAddress.uf}` : ""}
+              {/* Termos */}
+              <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
+                <Checkbox
+                  checked={termsAccepted}
+                  onCheckedChange={(v) => setTermsAccepted(v === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm text-muted-foreground leading-snug">
+                  {t("consumer_terms_label")}
                 </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">{t("email")}</span>
-                <span className="text-sm font-medium text-foreground">{email}</span>
-              </div>
+              </label>
             </div>
+          )}
 
-            <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
-              <Checkbox
-                checked={termsAccepted}
-                onCheckedChange={(v) => setTermsAccepted(v === true)}
-                className="mt-0.5"
-              />
-              <span className="text-sm text-muted-foreground leading-snug">
-                {t("consumer_terms_label")}
-              </span>
-            </label>
+          {/* Actions */}
+          <div className="mt-auto pb-6 pt-6 flex flex-col gap-3">
+            {step < 3 ? (
+              <Button
+                onClick={handleNext}
+                disabled={loading || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
+                className="h-14 w-full rounded-xl font-semibold text-base tracking-wide text-white border-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(24,100%,50%) 0%, hsl(18,100%,45%) 100%)",
+                  boxShadow:
+                    "0 4px 24px hsla(24,100%,50%,0.3), inset 0 1px 0 hsla(0,0%,100%,0.15)",
+                }}
+              >
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_next")}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSignup}
+                disabled={loading || !isStep3Valid}
+                className="h-14 w-full rounded-xl font-semibold text-base tracking-wide text-white border-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(24,100%,50%) 0%, hsl(18,100%,45%) 100%)",
+                  boxShadow:
+                    "0 4px 24px hsla(24,100%,50%,0.3), inset 0 1px 0 hsla(0,0%,100%,0.15)",
+                }}
+              >
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Criar minha conta"}
+              </Button>
+            )}
+
+            {step === 1 && !isIOSPWA && (
+              <>
+                <div className="flex items-center gap-3 my-2">
+                  <div className="h-px flex-1 bg-border/40" />
+                  <span className="text-xs text-muted-foreground">ou cadastre com</span>
+                  <div className="h-px flex-1 bg-border/40" />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm font-medium text-sm text-foreground"
+                  onClick={() => handleOAuth("google")}
+                >
+                  {t("consumer_signup_google")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm font-medium text-sm text-foreground"
+                  onClick={() => handleOAuth("apple")}
+                >
+                  {t("consumer_signup_apple")}
+                </Button>
+              </>
+            )}
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="mt-auto pb-6 pt-6 flex flex-col gap-3">
-          {step < 3 ? (
-            <Button
-              onClick={handleNext}
-              disabled={loading || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
-              className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98] transition-transform"
-              style={{ boxShadow: "0 4px 24px hsl(24 100% 50% / 0.35)" }}
-            >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_next")}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSignup}
-              disabled={loading || !termsAccepted}
-              className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98] transition-transform"
-              style={{ boxShadow: "0 4px 24px hsl(24 100% 50% / 0.35)" }}
-            >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("consumer_create_account")}
-            </Button>
-          )}
-
-          {step === 1 && !isIOSPWA && (
-            <>
-              <div className="flex items-center gap-3 my-2">
-                <div className="h-px flex-1 bg-border/40" />
-                <span className="text-xs text-muted-foreground">{t("consumer_or")}</span>
-                <div className="h-px flex-1 bg-border/40" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-[50px] w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
-                onClick={() => handleOAuth("google")}
-              >
-                {t("consumer_signup_google")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-[50px] w-full rounded-xl border-border/40 bg-white/[0.07] text-sm font-medium text-foreground active:scale-[0.98] transition-transform"
-                onClick={() => handleOAuth("apple")}
-              >
-                {t("consumer_signup_apple")}
-              </Button>
-            </>
-          )}
+          <button
+            onClick={() => navigate("/app/login")}
+            className="mb-6 min-h-[44px] text-sm font-medium text-primary text-center"
+          >
+            {t("consumer_has_account")}
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate("/app/login")}
-          className="mb-6 min-h-[44px] text-sm font-medium text-primary active:text-primary/70 transition-colors text-center"
-        >
-          {t("consumer_has_account")}
-        </button>
       </div>
-    </div>
+    </AuthBackground>
   );
 }
