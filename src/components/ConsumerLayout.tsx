@@ -37,7 +37,7 @@ function ConsumerTabBar() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.85) 20%, #0a0a0a 45%)" }}
     >
       <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-5">
         {/* Floating pill */}
@@ -86,7 +86,7 @@ function ConsumerHeader() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-white/[0.06]"
+      className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06]"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
         background: "rgba(10, 10, 10, 0.75)",
@@ -130,11 +130,11 @@ function ConsumerHeader() {
 function ConsumerContent() {
   useConsumerNotifications();
   return (
-    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
+    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground" style={{ overscrollBehavior: 'contain' }}>
       <ConsumerHeader />
-      <PushPermissionBanner />
-      <OfflineBanner />
-      <main className="px-5 pb-36 pt-4" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
+      <main className="px-5 pb-36" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
+        <PushPermissionBanner />
+        <OfflineBanner />
         <Outlet />
       </main>
       <ChamarGarcomFAB />
