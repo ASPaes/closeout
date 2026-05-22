@@ -163,6 +163,13 @@ input[type="number"] {
   .text-glow {
     text-shadow: 0 0 12px hsl(var(--primary-glow) / 0.5);
   }
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Party ticket styles — hidden on screen */

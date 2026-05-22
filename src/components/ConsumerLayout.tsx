@@ -134,7 +134,7 @@ function ConsumerContent() {
       <ConsumerHeader />
       <PushPermissionBanner />
       <OfflineBanner />
-      <main className="px-5 pb-24 pt-4">
+      <main className="px-5 pb-36 pt-4" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <Outlet />
       </main>
       <ChamarGarcomFAB />
