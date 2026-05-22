@@ -36,43 +36,45 @@ function ConsumerTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ 
-        paddingBottom: "env(safe-area-inset-bottom, 0px)", 
-        background: "#0A0A0A" 
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.04]"
+      style={{ background: "#000000" }}
     >
-      <div className="mx-auto flex max-w-[480px] items-center justify-center px-5 py-2">
-        <div
-          className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.06] px-2 py-2"
-          style={{ background: "#111111" }}
-        >
-          {tabs.map((tab) => {
-            const active = isActive(tab.path);
-            const isQr = tab.path === "/app/qr";
-            return (
-              <button
-                key={tab.path}
-                onClick={() => navigate(tab.path)}
+      <div
+        className="mx-auto flex max-w-[480px] items-center justify-around px-2"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        {tabs.map((tab) => {
+          const active = isActive(tab.path);
+          const isQr = tab.path === "/app/qr";
+          return (
+            <button
+              key={tab.path}
+              onClick={() => navigate(tab.path)}
+              className={cn(
+                "relative flex min-h-[52px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-2 transition-all",
+                "active:scale-95 active:opacity-80",
+                active ? "text-primary" : "text-white/40"
+              )}
+            >
+              <tab.icon
                 className={cn(
-                  "relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 transition-all",
-                  "active:scale-95 active:opacity-80",
-                  active ? "text-primary" : "text-white/40"
+                  "h-[22px] w-[22px]",
+                  active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]"
                 )}
-              >
-                <tab.icon className={cn("h-[22px] w-[22px]", active && "drop-shadow-[0_0_8px_hsl(24,100%,50%,0.6)]")} />
-                {active && (
-                  <span className="text-[10px] font-semibold tracking-wide">{t(tab.labelKey)}</span>
-                )}
-                {isQr && orderReady && (
-                  <span className="absolute right-1 top-0.5 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+              />
+              {active && (
+                <span className="text-[10px] font-semibold tracking-wide">
+                  {t(tab.labelKey)}
+                </span>
+              )}
+              {isQr && orderReady && (
+                <span className="absolute right-1 top-1 z-20 h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_8px_hsl(145,100%,39%,0.6)]">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

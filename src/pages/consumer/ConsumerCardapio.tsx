@@ -589,8 +589,8 @@ export default function ConsumerCardapio() {
 
       {/* Checkout bar */}
       {cartCount > 0 && (
-        <div className="fixed left-0 right-0 z-40 px-5" style={{ bottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
-          <div className="mx-auto max-w-[480px]">
+        <div className="fixed left-0 right-0 z-40 px-5" style={{ bottom: "calc(60px + env(safe-area-inset-bottom, 0px))" }}>
+          <div className="mx-auto max-w-[480px] pr-[68px]">
             <button
               onClick={() => navigate("/app/carrinho")}
               className="flex h-14 w-full items-center justify-between rounded-2xl bg-primary px-5 shadow-xl active:scale-[0.98] transition-transform"
