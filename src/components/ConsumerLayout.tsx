@@ -37,17 +37,15 @@ function ConsumerTabBar() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)", background: "#0A0A0A" }}
+      style={{ 
+        paddingBottom: "env(safe-area-inset-bottom, 0px)", 
+        background: "#0A0A0A" 
+      }}
     >
-      <div className="pointer-events-none absolute left-0 right-0 bottom-full h-10" style={{ background: 'linear-gradient(to top, #0a0a0a 0%, transparent 100%)' }} />
-      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-center px-6 pb-5">
-        {/* Floating pill */}
+      <div className="mx-auto flex max-w-[480px] items-center justify-center px-5 py-2">
         <div
           className="flex w-full max-w-[420px] items-center justify-around rounded-2xl border border-white/[0.06] px-2 py-2"
-          style={{
-            background: "#0A0A0A",
-            boxShadow: "0 -2px 20px rgba(0,0,0,0.6)",
-          }}
+          style={{ background: "#111111" }}
         >
           {tabs.map((tab) => {
             const active = isActive(tab.path);
@@ -76,15 +74,6 @@ function ConsumerTabBar() {
           })}
         </div>
       </div>
-      <div
-        aria-hidden="true"
-        className="absolute left-0 right-0 bottom-0 -z-10"
-        style={{
-          height: '100px',
-          transform: 'translateY(100%)',
-          background: '#0A0A0A'
-        }}
-      />
     </nav>
   );
 }
