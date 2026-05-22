@@ -124,7 +124,11 @@
 /* Touch-friendly global rules */
 html, body {
   touch-action: manipulation;
-  overscroll-behavior-y: none;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 button, [role="button"], a {
   touch-action: manipulation;
