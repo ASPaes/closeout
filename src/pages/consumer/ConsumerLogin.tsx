@@ -234,7 +234,7 @@ export default function ConsumerLogin() {
 
   return (
     <AuthBackground>
-      <div className="dark relative mx-auto flex h-full max-w-[430px] flex-col text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-[430px] flex-col text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {showSplash ? renderSplash() : renderLogin()}
       </div>
     </AuthBackground>

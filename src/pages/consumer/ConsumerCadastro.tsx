@@ -316,9 +316,9 @@ export default function ConsumerCadastro() {
 
   return (
     <AuthBackground>
-      <div className="dark relative mx-auto flex h-full max-w-[430px] flex-col text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-[430px] flex-col text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Header */}
-        <div className="flex items-center px-4 pt-1">
+        <div className="flex items-center px-5 pt-1">
           <button
             onClick={handleBack}
             className="h-10 w-10 rounded-full border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-foreground"
@@ -344,7 +344,7 @@ export default function ConsumerCadastro() {
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col px-6 overflow-y-auto">
+        <div className="flex flex-1 flex-col px-6 overflow-visible">
           <div className="mb-8">
             <h1
               className="text-[28px] font-bold leading-tight mb-1.5"

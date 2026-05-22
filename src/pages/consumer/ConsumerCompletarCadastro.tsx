@@ -233,7 +233,7 @@ export default function ConsumerCompletarCadastro() {
 
   return (
     <AuthBackground>
-      <div className="relative z-10 flex h-full max-w-[430px] mx-auto flex-col px-6" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[430px] flex-col px-6 text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Header */}
         <div className="flex items-center justify-end pt-1 pb-2">
           <button
