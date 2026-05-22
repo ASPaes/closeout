@@ -316,7 +316,7 @@ export default function ConsumerCadastro() {
 
   return (
     <AuthBackground>
-      <div className="dark relative mx-auto flex h-[100dvh] max-w-[480px] flex-col text-foreground overflow-hidden">
+      <div className="dark relative mx-auto flex h-[100dvh] max-w-[480px] flex-col text-foreground overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button

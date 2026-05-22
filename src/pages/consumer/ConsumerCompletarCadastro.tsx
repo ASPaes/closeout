@@ -233,7 +233,7 @@ export default function ConsumerCompletarCadastro() {
 
   return (
     <AuthBackground>
-      <div className="relative z-10 flex min-h-[100dvh] max-w-[480px] mx-auto flex-col px-6 overflow-hidden">
+      <div className="relative z-10 flex h-[100dvh] max-w-[480px] mx-auto flex-col px-6 overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Header */}
         <div className="flex items-center justify-end pt-4 pb-2">
           <button
