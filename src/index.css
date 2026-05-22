@@ -124,8 +124,6 @@
 /* Touch-friendly global rules */
 html, body {
   touch-action: manipulation;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 button, [role="button"], a {
   touch-action: manipulation;

@@ -88,6 +88,7 @@ function ConsumerHeader() {
     <header
       className="sticky top-0 z-40 border-b border-white/[0.06]"
       style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
         background: "rgba(10, 10, 10, 0.75)",
         backdropFilter: "blur(20px) saturate(180%)",
         WebkitBackdropFilter: "blur(20px) saturate(180%)",
@@ -104,7 +105,7 @@ function ConsumerHeader() {
           <div className="flex flex-col">
             <span
               className="text-xs font-bold tracking-wider text-foreground"
-              style={{ fontFamily: "'Mustica Pro', sans-serif" }}
+              style={{ fontFamily: "'Outfit', sans-serif" }}
             >
               CLOSE OUT
             </span>
