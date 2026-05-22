@@ -589,7 +589,7 @@ export default function ConsumerCardapio() {
 
       {/* Checkout bar */}
       {cartCount > 0 && (
-        <div className="fixed bottom-[76px] left-0 right-0 z-40 px-5">
+        <div className="fixed left-0 right-0 z-40 px-5" style={{ bottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
           <div className="mx-auto max-w-[480px]">
             <button
               onClick={() => navigate("/app/carrinho")}
