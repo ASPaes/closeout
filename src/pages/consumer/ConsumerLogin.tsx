@@ -234,7 +234,7 @@ export default function ConsumerLogin() {
 
   return (
     <AuthBackground>
-      <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col text-foreground">
+      <div className="dark relative mx-auto flex h-[100dvh] max-w-[480px] flex-col text-foreground overflow-hidden">
         {showSplash ? renderSplash() : renderLogin()}
       </div>
     </AuthBackground>
