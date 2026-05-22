@@ -2,10 +2,9 @@ import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, User } from "lucide-react";
+import AuthBackground from "@/components/consumer/AuthBackground";
 
 function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
@@ -226,90 +225,115 @@ export default function ConsumerCompletarCadastro() {
     navigate("/app/login", { replace: true });
   };
 
-  const inputClass = "h-12 rounded-xl border-border/60 bg-card text-base placeholder:text-muted-foreground focus-visible:ring-primary/50";
+  const inputBase =
+    "peer h-14 w-full rounded-xl border border-white/[0.06] bg-white/[0.04] px-4 pt-6 pb-2 text-[15px] text-[#f5f0eb] placeholder-transparent outline-none transition-all duration-300 focus:bg-white/[0.07] focus:border-[hsla(24,100%,50%,0.4)] focus:shadow-[0_0_0_3px_hsla(24,100%,50%,0.08),0_0_20px_hsla(24,100%,50%,0.05)] disabled:opacity-50";
+  const labelBase =
+    "absolute left-4 top-2 text-[11px] uppercase tracking-wider text-muted-foreground/60 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-[15px] peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground/50 peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-[11px] peer-focus:uppercase peer-focus:tracking-wider peer-focus:text-primary";
+  const caret = { caretColor: "hsl(24,100%,50%)" } as const;
 
   return (
-    <div className="dark relative mx-auto flex min-h-[100dvh] max-w-[480px] flex-col bg-background text-foreground overflow-hidden">
-      {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/15 blur-[100px]" />
-      </div>
+    <AuthBackground>
+      <div className="relative z-10 flex min-h-[100dvh] max-w-[480px] mx-auto flex-col px-6 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-end pt-4 pb-2">
+          <button
+            onClick={handleLogout}
+            className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground active:text-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
 
-      {/* Header with logout */}
-      <div className="relative z-10 flex items-center justify-end px-4 pt-4">
-        <button
-          onClick={handleLogout}
-          className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground active:text-foreground transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Sair
-        </button>
-      </div>
+        {/* Avatar */}
+        <div className="flex justify-center mb-6">
+          {name ? (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-glow text-2xl font-bold text-white shadow-[0_0_24px_hsla(24,100%,50%,0.3)]">
+              {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/[0.05] border border-white/[0.08] text-primary/50">
+              <User className="h-8 w-8" />
+            </div>
+          )}
+        </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-1 flex-col px-6 overflow-y-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight">Complete seu cadastro</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Precisamos de algumas informações para continuar
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 style={{ fontFamily: "'Outfit', sans-serif" }} className="text-3xl font-bold text-white tracking-tight">
+            {name ? `Quase lá, ${name.split(' ')[0]}!` : "Complete seu cadastro"}
+          </h1>
+          <p className="mt-2 text-base text-muted-foreground font-light">
+            Complete seu cadastro para começar a pedir
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* Form fields */}
+        <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
           {/* Nome */}
-          <Input
-            type="text"
-            placeholder="Nome completo"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-            required
-          />
+          <div className="relative">
+            <input
+              type="text"
+              placeholder=" "
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputBase}
+              style={caret}
+              required
+            />
+            <label className={labelBase}>Nome completo</label>
+          </div>
 
           {/* CPF */}
-          <div>
-            <Input
+          <div className="relative">
+            <input
               type="text"
               inputMode="numeric"
-              placeholder="Seu CPF (apenas números)"
+              placeholder=" "
               value={cpf}
               onChange={(e) => handleCpfChange(e.target.value)}
               onBlur={handleCpfBlur}
               maxLength={11}
-              className={`${inputClass} ${cpfError ? "border-destructive" : ""}`}
+              className={`${inputBase} ${cpfError ? "border-destructive" : ""}`}
+              style={caret}
               required
             />
+            <label className={labelBase}>CPF</label>
             {cpfError && <p className="mt-1 text-xs text-destructive">{cpfError}</p>}
           </div>
 
-          {/* Telefone */}
-          <div>
-            <Input
+          {/* Phone */}
+          <div className="relative">
+            <input
               type="text"
               inputMode="numeric"
-              placeholder="Celular com DDD (apenas números)"
+              placeholder=" "
               value={phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               onBlur={handlePhoneBlur}
               maxLength={11}
-              className={`${inputClass} ${phoneError ? "border-destructive" : ""}`}
+              className={`${inputBase} ${phoneError ? "border-destructive" : ""}`}
+              style={caret}
               required
             />
+            <label className={labelBase}>Celular com DDD</label>
             {phoneError && <p className="mt-1 text-xs text-destructive">{phoneError}</p>}
           </div>
 
           {/* CEP */}
-          <div>
-            <Input
+          <div className="relative">
+            <input
               type="text"
               inputMode="numeric"
-              placeholder="CEP (apenas números)"
+              placeholder=" "
               value={cep}
               onChange={(e) => handleCepChange(e.target.value)}
               maxLength={8}
-              className={`${inputClass} ${cepError ? "border-destructive" : ""}`}
+              className={`${inputBase} ${cepError ? "border-destructive" : ""}`}
+              style={caret}
               required
             />
+            <label className={labelBase}>CEP</label>
             {cepLoading && <p className="mt-1 text-xs text-muted-foreground">Buscando CEP...</p>}
             {cepError && <p className="mt-1 text-xs text-destructive">{cepError}</p>}
             {cepAddress && (
@@ -319,65 +343,84 @@ export default function ConsumerCompletarCadastro() {
             )}
           </div>
 
-          {/* Número */}
-          <Input
-            type="text"
-            placeholder="Número"
-            value={addressNumber}
-            onChange={(e) => setAddressNumber(e.target.value)}
-            className={`${inputClass} w-32`}
-            required
-          />
+          {/* Address row: Rua + Número */}
+          <div className="flex gap-3">
+            <div className="relative flex-[2]">
+              <input
+                type="text"
+                placeholder=" "
+                value={cepAddress?.logradouro || ""}
+                disabled={!cepAddress}
+                className={`${inputBase} disabled:opacity-50`}
+                style={caret}
+              />
+              <label className={labelBase}>Rua</label>
+            </div>
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder=" "
+                value={addressNumber}
+                onChange={(e) => setAddressNumber(e.target.value)}
+                className={inputBase}
+                style={caret}
+                required
+              />
+              <label className={labelBase}>Nº</label>
+            </div>
+          </div>
 
-          {/* Senha — apenas para Google users */}
+          {/* Password section for Google users */}
           {isGoogleUser && (
-            <>
-              <div className="mt-2 pt-3 border-t border-border/30">
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Defina uma senha para acessar sua conta sem o Google
-                </p>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <Input
-                      type="password"
-                      placeholder="Criar senha (mín. 6 caracteres)"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
-                      onBlur={handlePasswordBlur}
-                      className={`${inputClass} ${passwordError ? "border-destructive" : ""}`}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      type="password"
-                      placeholder="Confirmar senha"
-                      value={passwordConfirm}
-                      onChange={(e) => { setPasswordConfirm(e.target.value); setPasswordError(""); }}
-                      onBlur={handlePasswordBlur}
-                      className={`${inputClass} ${passwordError ? "border-destructive" : ""}`}
-                      required
-                    />
-                    {passwordError && <p className="mt-1 text-xs text-destructive">{passwordError}</p>}
-                  </div>
+            <div className="mt-2 pt-4 border-t border-white/[0.06]">
+              <p className="mb-3 text-xs text-muted-foreground">
+                Defina uma senha para acessar sua conta sem o Google
+              </p>
+              <div className="flex flex-col gap-4">
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder=" "
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
+                    onBlur={handlePasswordBlur}
+                    className={`${inputBase} ${passwordError ? "border-destructive" : ""}`}
+                    style={caret}
+                    required
+                  />
+                  <label className={labelBase}>Criar senha (mín. 6 caracteres)</label>
+                </div>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder=" "
+                    value={passwordConfirm}
+                    onChange={(e) => { setPasswordConfirm(e.target.value); setPasswordError(""); }}
+                    onBlur={handlePasswordBlur}
+                    className={`${inputBase} ${passwordError ? "border-destructive" : ""}`}
+                    style={caret}
+                    required
+                  />
+                  <label className={labelBase}>Confirmar senha</label>
+                  {passwordError && <p className="mt-1 text-xs text-destructive">{passwordError}</p>}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
 
-        {/* Action */}
+        {/* Button */}
         <div className="mt-auto pb-6 pt-6">
-          <Button
+          <button
             onClick={handleSubmit}
             disabled={loading || !isFormValid}
-            className="h-14 w-full rounded-xl bg-gradient-to-r from-primary to-primary-glow text-base font-semibold text-primary-foreground shadow-lg active:scale-[0.98] transition-transform"
-            style={{ boxShadow: "0 4px 24px hsl(24 100% 50% / 0.35)" }}
+            className="h-14 w-full rounded-xl font-semibold text-base tracking-wide text-white border-0 active:scale-[0.98] transition-transform"
+            style={{ background: 'linear-gradient(135deg, hsl(24,100%,50%) 0%, hsl(18,100%,45%) 100%)', boxShadow: '0 4px 24px hsla(24,100%,50%,0.3), inset 0 1px 0 hsla(0,0%,100%,0.15)' }}
           >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Concluir cadastro"}
-          </Button>
+            {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Concluir cadastro"}
+          </button>
         </div>
       </div>
-    </div>
+    </AuthBackground>
   );
 }
