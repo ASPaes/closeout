@@ -106,8 +106,8 @@ export function ChamarGarcomFAB() {
       <button
         onClick={handleOpen}
         aria-label="Chamar garçom"
-        className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_hsl(24,100%,50%,0.5)] active:scale-95 transition-transform"
-        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_hsl(24,100%,50%,0.5)] active:scale-95 transition-transform"
+        style={{ bottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}
       >
         <BellRing className="h-6 w-6" />
         {hasPending && (
