@@ -237,11 +237,11 @@ export default function ConsumerEventos() {
   };
   const onTouchMove = (e: React.TouchEvent) => {
     if (!pulling.current) return;
-    const dy = Math.max(0, Math.min(e.touches[0].clientY - startY.current, 80));
+    const dy = Math.max(0, Math.min((e.touches[0].clientY - startY.current) * 0.5, 60));
     setPullY(dy);
   };
   const onTouchEnd = () => {
-    if (pullY > 50) handleRefresh();
+    if (pullY > 70) handleRefresh();
     else setPullY(0);
     pulling.current = false;
   };
