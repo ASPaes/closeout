@@ -130,7 +130,7 @@ function ConsumerHeader() {
 function ConsumerContent() {
   useConsumerNotifications();
   return (
-    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground" style={{ overscrollBehavior: 'contain' }}>
+    <div className="dark mx-auto min-h-[100dvh] max-w-[480px] bg-background text-foreground">
       <ConsumerHeader />
       <main className="px-5 pb-36" style={{ paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <PushPermissionBanner />
