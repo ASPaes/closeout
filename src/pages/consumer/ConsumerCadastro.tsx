@@ -9,6 +9,8 @@ import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
 import AuthBackground from "@/components/consumer/AuthBackground";
 
+const APPLE_SIGNIN_ENABLED = false; // TODO: trocar pra true quando Apple Developer estiver configurado
+
 function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
@@ -619,14 +621,16 @@ export default function ConsumerCadastro() {
                 >
                   {t("consumer_signup_google")}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm font-medium text-sm text-foreground"
-                  onClick={() => handleOAuth("apple")}
-                >
-                  {t("consumer_signup_apple")}
-                </Button>
+                {APPLE_SIGNIN_ENABLED && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-[50px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm font-medium text-sm text-foreground"
+                    onClick={() => handleOAuth("apple")}
+                  >
+                    {t("consumer_signup_apple")}
+                  </Button>
+                )}
               </>
             )}
           </div>
