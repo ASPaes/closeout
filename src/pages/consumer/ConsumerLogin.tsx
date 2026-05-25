@@ -48,7 +48,12 @@ export default function ConsumerLogin() {
   const handleOAuth = async (provider: "google") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin + "/app" },
+      options: {
+        redirectTo: window.location.origin + "/app",
+        queryParams: {
+          prompt: "select_account",
+        },
+      },
     });
     if (error) toast.error(error.message);
   };
