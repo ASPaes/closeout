@@ -9,12 +9,15 @@ interface RegistrationGuardProps {
 }
 
 export function RegistrationGuard({ children }: RegistrationGuardProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
+    // Aguarda useAuth terminar de processar (importante pro OAuth callback)
+    if (authLoading) return;
+
     if (!user) {
       setChecking(false);
       return;
@@ -36,9 +39,9 @@ export function RegistrationGuard({ children }: RegistrationGuardProps) {
     };
 
     check();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
-  if (checking) {
+  if (authLoading || checking) {
     return (
       <div className="dark flex min-h-[100dvh] items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
