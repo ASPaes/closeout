@@ -9,6 +9,8 @@ import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { validatePassword, PasswordRequirements } from "@/components/PasswordRequirements";
 import AuthBackground from "@/components/consumer/AuthBackground";
 
+const APPLE_SIGNIN_ENABLED = false; // TODO: trocar pra true quando Apple Developer estiver configurado
+
 function onlyDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
