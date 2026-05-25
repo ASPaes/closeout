@@ -301,7 +301,12 @@ export default function ConsumerCadastro() {
   const handleOAuth = async (provider: "google" | "apple") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin + "/app/login" },
+      options: {
+        redirectTo: window.location.origin + "/app",
+        queryParams: {
+          prompt: "select_account",
+        },
+      },
     });
     if (error) toast.error(error.message);
   };
