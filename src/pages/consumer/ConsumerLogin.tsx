@@ -1,6 +1,7 @@
 import { useTranslation } from "@/i18n/use-translation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,19 @@ import AuthBackground from "@/components/consumer/AuthBackground";
 export default function ConsumerLogin() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Auto-redirect se já tem sessão (cobre OAuth callback + acesso manual com sessão ativa)
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/app", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const isIOSPWA =
     typeof navigator !== "undefined" &&
@@ -231,6 +240,15 @@ export default function ConsumerLogin() {
       </button>
     </div>
   );
+
+  // Loader durante auth processing (previne flash do form na volta do OAuth)
+  if (authLoading) {
+    return (
+      <div className="dark flex min-h-[100dvh] items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthBackground>
