@@ -85,10 +85,12 @@ export default function ConsumerComandaComprovante() {
         return;
       }
 
-      const { data: detail, error: detailError } = await supabase.rpc(
+      const { data: detailRaw, error: detailError } = await supabase.rpc(
         "get_comanda_detail",
         { p_comanda_id: order.comanda_id },
       );
+
+      const detail = detailRaw as unknown as ComandaDetail | null;
 
       if (detailError || !detail || detail.status !== "paid") {
         setError(true);
