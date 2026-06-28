@@ -27,6 +27,27 @@ const statusVariant = (s: string): "draft" | "active" | "completed" | "cancelled
   return "inactive";
 };
 
+type ComandaSummary = {
+  comanda_app_total: number;
+  comanda_caixa_total: number;
+  comanda_caixa_breakdown: {
+    dinheiro?: number;
+    pix?: number;
+    credit_card?: number;
+    debit_card?: number;
+  };
+  unsettled: Array<{
+    comanda_id: string;
+    card_number: string;
+    consumer_name: string;
+    consumer_cpf: string;
+    consumer_phone: string;
+    total: number;
+  }>;
+  open_count: number;
+};
+
+
 function MetricCard({ title, value, icon: Icon, loading }: { title: string; value: string | number; icon: any; loading: boolean }) {
   return (
     <Card>
