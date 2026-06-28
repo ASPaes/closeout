@@ -444,6 +444,12 @@ function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
             <OriginIcon className="h-3 w-3" />
             {originLabels[order.origin] || order.origin}
           </Badge>
+          {order.comandas?.card_number && (
+            <Badge className="bg-indigo-600 text-white border-0 text-sm font-bold gap-1">
+              <ScrollText className="h-3 w-3" />
+              Comanda #{order.comandas.card_number}
+            </Badge>
+          )}
           {(order.table_number || order.is_external_area) && (
             <Badge className="bg-orange-600 text-white border-0 text-sm font-bold">
               {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
