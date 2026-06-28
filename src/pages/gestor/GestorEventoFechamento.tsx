@@ -1,14 +1,17 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/use-translation";
 import { useEventClosingReport } from "@/hooks/useEventClosingReport";
+import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Download, DollarSign, BarChart3, Receipt, XCircle, Wallet, CreditCard, Smartphone, Banknote, FileText } from "lucide-react";
+import { ArrowLeft, Download, DollarSign, BarChart3, Receipt, XCircle, Wallet, CreditCard, Smartphone, Banknote, ChevronDown, AlertTriangle, ScrollText } from "lucide-react";
 
 const fmt = (v: number | null | undefined) =>
   `R$ ${(Number(v) || 0).toFixed(2).replace(".", ",")}`;
@@ -24,7 +27,28 @@ const statusVariant = (s: string): "draft" | "active" | "completed" | "cancelled
   return "inactive";
 };
 
-function MetricCard({ title, value, icon: Icon, loading }: { title: string; value: string | number; icon: any; loading: boolean }) {
+type ComandaSummary = {
+  comanda_app_total: number;
+  comanda_caixa_total: number;
+  comanda_caixa_breakdown: {
+    dinheiro?: number;
+    pix?: number;
+    credit_card?: number;
+    debit_card?: number;
+  };
+  unsettled: Array<{
+    comanda_id: string;
+    card_number: string;
+    consumer_name: string;
+    consumer_cpf: string;
+    consumer_phone: string;
+    total: number;
+  }>;
+  open_count: number;
+};
+
+
+function MetricCard({ title, value, sublabel, icon: Icon, loading }: { title: string; value: string | number; sublabel?: string; icon: any; loading: boolean }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -33,6 +57,7 @@ function MetricCard({ title, value, icon: Icon, loading }: { title: string; valu
       </CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold text-primary">{value}</div>}
+        {sublabel && !loading && <div className="text-xs text-muted-foreground mt-1">{sublabel}</div>}
       </CardContent>
     </Card>
   );
@@ -44,12 +69,57 @@ export default function GestorEventoFechamento() {
   const { t } = useTranslation();
   const { summary, cashRegisters, cancellations, isLoading } = useEventClosingReport(eventId ?? "");
 
+  const [comandaSummary, setComandaSummary] = useState<ComandaSummary | null>(null);
+  const [comandaLoading, setComandaLoading] = useState(false);
+  const [comandaExpanded, setComandaExpanded] = useState(false);
+
   const s = summary as any;
+
+  useEffect(() => {
+    if (!eventId) return;
+    let cancelled = false;
+    setComandaLoading(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_event_comanda_summary", { p_event_id: eventId } as any);
+        if (cancelled) return;
+        if (error) {
+          console.error("[get_event_comanda_summary]", error);
+        } else {
+          setComandaSummary(data as ComandaSummary | null);
+        }
+      } catch (err) {
+        if (!cancelled) console.error("[get_event_comanda_summary]", err);
+      } finally {
+        if (!cancelled) setComandaLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
 
   const statusLabel = (st: string) => {
     const map: Record<string, string> = { draft: t("draft"), active: t("active"), completed: t("completed"), cancelled: t("cancelled") };
     return map[st] ?? st;
   };
+
+  const hasComandaData =
+    !!comandaSummary &&
+    (comandaSummary.comanda_app_total > 0 ||
+      comandaSummary.comanda_caixa_total > 0 ||
+      comandaSummary.unsettled.length > 0 ||
+      comandaSummary.open_count > 0);
+
+  const caixaBreakdown = comandaSummary?.comanda_caixa_breakdown;
+  const breakdownItems = caixaBreakdown
+    ? [
+        [t("gef_comanda_caixa_dinheiro"), caixaBreakdown.dinheiro],
+        [t("gef_comanda_caixa_pix"), caixaBreakdown.pix],
+        [t("gef_comanda_caixa_credit"), caixaBreakdown.credit_card],
+        [t("gef_comanda_caixa_debit"), caixaBreakdown.debit_card],
+      ].filter(([, value]) => Number(value) > 0)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -117,7 +187,104 @@ export default function GestorEventoFechamento() {
         </div>
       </div>
 
-      {/* Section 4: Caixas do Evento */}
+      {/* Section 4: Comandas */}
+      {hasComandaData && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">{t("gef_comandas_section")}</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MetricCard
+              title={t("gef_comanda_app")}
+              value={fmt(comandaSummary?.comanda_app_total)}
+              sublabel={t("gef_comanda_app_sublabel")}
+              icon={Smartphone}
+              loading={comandaLoading}
+            />
+            <Collapsible open={comandaExpanded} onOpenChange={setComandaExpanded}>
+              <Card className="cursor-pointer transition-colors hover:bg-accent/50">
+                <CollapsibleTrigger asChild>
+                  <div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <div className="flex items-center gap-1">
+                        <CardTitle className="text-sm font-medium">{t("gef_comanda_caixa")}</CardTitle>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${comandaExpanded ? "rotate-180" : ""}`} />
+                      </div>
+                      <Banknote className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {comandaLoading ? (
+                        <Skeleton className="h-8 w-24" />
+                      ) : (
+                        <div className="text-2xl font-bold text-primary">{fmt(comandaSummary?.comanda_caixa_total)}</div>
+                      )}
+                      {!comandaLoading && (
+                        <div className="text-xs text-muted-foreground mt-1">{t("gef_comanda_caixa_sublabel")}</div>
+                      )}
+                    </CardContent>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    {breakdownItems.length > 0 ? (
+                      <div className="border-t border-border pt-3 space-y-2">
+                        {breakdownItems.map(([label, value]) => (
+                          <div key={label} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className="font-medium">{fmt(value as number)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-t border-border pt-3 text-sm text-muted-foreground">{t("gef_no_comanda_caixa_breakdown")}</div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
+
+          {(comandaSummary?.unsettled?.length ?? 0) > 0 && (
+            <Card className="mt-4 border-destructive/30 bg-destructive/5">
+              <CardHeader className="flex flex-row items-center gap-2 pb-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-base font-semibold text-destructive">{t("gef_unsettled_comandas")}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("gef_unsettled_card_number")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_name")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_phone")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_cpf")}</TableHead>
+                      <TableHead className="text-right">{t("gef_unsettled_value")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {comandaSummary!.unsettled.map((u) => (
+                      <TableRow key={u.comanda_id} className="text-destructive/90">
+                        <TableCell className="font-medium">#{u.card_number}</TableCell>
+                        <TableCell>{u.consumer_name}</TableCell>
+                        <TableCell>{u.consumer_phone}</TableCell>
+                        <TableCell>{u.consumer_cpf}</TableCell>
+                        <TableCell className="text-right font-medium">{fmt(u.total)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {(comandaSummary?.open_count ?? 0) > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <ScrollText className="h-4 w-4" />
+              <span>{t("gef_open_comandas_warning").replace("{count}", String(comandaSummary?.open_count))}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Section 5: Caixas do Evento */}
       <div>
         <h2 className="text-lg font-semibold mb-3">{t("gef_cash_registers")}</h2>
         <Card>
