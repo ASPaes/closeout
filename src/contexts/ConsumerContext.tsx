@@ -65,7 +65,7 @@ type ConsumerContextType = {
       client_id: string;
       table_service_enabled: boolean;
       table_count: number | null;
-      comanda_enabled: boolean;
+      comanda_enabled?: boolean;
     } | null,
   ) => void;
   setActiveOrder: (order: ActiveOrder | null) => void;
