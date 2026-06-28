@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ClipboardList, Clock, Smartphone, User, Monitor, ChefHat,
-  PackageCheck, Truck, Loader2, Package, Check, QrCode,
+  PackageCheck, Truck, Loader2, Package, Check, QrCode, ScrollText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,6 +46,8 @@ interface OrderWithItems {
   table_number: number | null;
   is_external_area: boolean;
   customer_name: string | null;
+  comanda_id: string | null;
+  comandas?: { card_number: number } | null;
   order_items: OrderItemWithDelivery[];
 }
 
@@ -77,7 +79,7 @@ export default function BarFilaPedidos() {
     if (!eventId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, table_number, is_external_area, customer_name, order_items(id, name, quantity, delivered_quantity)")
+      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, table_number, is_external_area, customer_name, comanda_id, comandas(card_number), order_items(id, name, quantity, delivered_quantity)")
       .eq("event_id", eventId)
       .in("status", ACTIVE_STATUSES)
       .order("created_at", { ascending: true });
@@ -442,6 +444,12 @@ function OrderCard({ order, isNew, isUpdating, onUpdateStatus, t }: {
             <OriginIcon className="h-3 w-3" />
             {originLabels[order.origin] || order.origin}
           </Badge>
+          {order.comandas?.card_number && (
+            <Badge className="bg-indigo-600 text-white border-0 text-sm font-bold gap-1">
+              <ScrollText className="h-3 w-3" />
+              Comanda #{order.comandas.card_number}
+            </Badge>
+          )}
           {(order.table_number || order.is_external_area) && (
             <Badge className="bg-orange-600 text-white border-0 text-sm font-bold">
               {order.is_external_area ? "Área externa" : `Mesa ${order.table_number}`}
