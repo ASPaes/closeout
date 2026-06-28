@@ -57,6 +57,7 @@ import CaixaDevolucoes from "@/pages/caixa/CaixaDevolucoes";
 import CaixaTrocas from "@/pages/caixa/CaixaTrocas";
 import CaixaFechamento from "@/pages/caixa/CaixaFechamento";
 import CaixaComandas from "@/pages/caixa/CaixaComandas";
+import CaixaComandaDetalhe from "@/pages/caixa/CaixaComandaDetalhe";
 import BarFilaPedidos from "@/pages/bar/BarFilaPedidos";
 import BarProntos from "@/pages/bar/BarProntos";
 import BarLeitorQR from "@/pages/bar/BarLeitorQR";
@@ -163,6 +164,7 @@ const App = () => (
               <Route path="movimentacoes" element={<CaixaMovimentacoes />} />
               <Route path="devolucoes" element={<CaixaDevolucoes />} />
               <Route path="comandas" element={<CaixaComandas />} />
+              <Route path="comandas/:comandaId" element={<CaixaComandaDetalhe />} />
               <Route path="trocas" element={<CaixaTrocas />} />
               <Route path="fechamento" element={<CaixaFechamento />} />
             </Route>
