@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input";
 import { useConsumer } from "@/contexts/ConsumerContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ConsumerMesa() {
   const navigate = useNavigate();
   const {
     activeEvent,
+    activeComanda,
+    cart,
+    clearCart,
     lastTableNumber,
     lastIsExternalArea,
     setLastTableNumber,
@@ -23,6 +27,7 @@ export default function ConsumerMesa() {
   const [tableInput, setTableInput] = useState<string>(
     lastTableNumber != null ? String(lastTableNumber) : "",
   );
+  const [submitting, setSubmitting] = useState(false);
 
   const maxTables = activeEvent?.table_count ?? null;
   const parsed = tableInput ? parseInt(tableInput, 10) : NaN;
@@ -31,7 +36,7 @@ export default function ConsumerMesa() {
       ? `Mesa não existe (máximo: ${maxTables})`
       : "";
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (mode === "table") {
       if (!tableInput || isNaN(parsed) || parsed < 1) {
         toast.error("Informe o número da mesa");
@@ -47,6 +52,33 @@ export default function ConsumerMesa() {
       setLastTableNumber(null);
       setLastIsExternalArea(true);
     }
+
+    if (activeComanda) {
+      setSubmitting(true);
+      const items = cart.items.map((i) =>
+        i.type === "product"
+          ? { product_id: i.id, quantity: i.quantity }
+          : { combo_id: i.id, quantity: i.quantity },
+      );
+      const { data, error } = await supabase.rpc("create_comanda_order", {
+        params: {
+          comanda_id: activeComanda.id,
+          items,
+          table_number: mode === "table" ? parsed : null,
+          is_external_area: mode === "external",
+        } as any,
+      });
+      setSubmitting(false);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`Pedido #${(data as any)?.order_number} enviado para o bar`);
+      clearCart();
+      navigate("/app/cardapio");
+      return;
+    }
+
     navigate("/app/pagamento");
   };
 
@@ -122,10 +154,11 @@ export default function ConsumerMesa() {
 
       <Button
         onClick={handleContinue}
+        disabled={submitting}
         className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full mt-2"
         style={{ boxShadow: "0 8px 32px hsl(24 100% 50% / 0.35)" }}
       >
-        Continuar para pagamento
+        {activeComanda ? "Adicionar à comanda" : "Continuar para pagamento"}
       </Button>
     </div>
   );
