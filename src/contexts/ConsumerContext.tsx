@@ -304,6 +304,33 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     };
   }, [activeEvent?.id]);
 
+  // Fetch active comanda (open physical card) for current event
+  useEffect(() => {
+    if (!user || !activeEvent?.id) {
+      setActiveComanda(null);
+      return;
+    }
+    supabase
+      .from("comandas")
+      .select("id, card_number, status")
+      .eq("consumer_id", user.id)
+      .eq("event_id", activeEvent.id)
+      .eq("status", "open")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setActiveComanda({
+            id: data.id,
+            card_number: data.card_number,
+            status: data.status,
+          });
+        } else {
+          setActiveComanda(null);
+        }
+      });
+  }, [user, activeEvent?.id]);
+
   // Fetch active order on mount
   useEffect(() => {
     refreshActiveOrder();
