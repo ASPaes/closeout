@@ -56,9 +56,18 @@ type ClosingData = {
   notes?: string;
 };
 
+type ComandaData = {
+  cardNumber: number;
+  consumerName: string;
+  eventName: string;
+  total: number;
+  paidMethod: string;
+  paidAt: string;
+};
+
 type ReceiptProps = {
-  type: "sale" | "return" | "exchange" | "movement" | "closing";
-  data: SaleData | ReturnData | ExchangeData | MovementData | ClosingData;
+  type: "sale" | "return" | "exchange" | "movement" | "closing" | "comanda";
+  data: SaleData | ReturnData | ExchangeData | MovementData | ClosingData | ComandaData;
   eventName?: string;
   operatorName?: string;
   venueName?: string;
@@ -81,6 +90,61 @@ const DIRECTION_LABELS: Record<string, string> = {
   in: "ENTRADA",
   out: "SAÍDA",
 };
+
+const PAID_METHOD_LABELS: Record<string, string> = {
+  dinheiro: "Dinheiro",
+  pix: "PIX",
+  credit_card: "Crédito",
+  debit_card: "Débito",
+};
+
+function formatPaidAt(iso: string) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function ComandaTicket({
+  data,
+  operatorName,
+  venueName,
+}: {
+  data: ComandaData;
+  operatorName?: string;
+  venueName?: string;
+}) {
+  return (
+    <div className="party-ticket">
+      <p className="ticket-venue">{venueName || "CLOSE OUT"}</p>
+      {data.eventName && <p className="ticket-meta">{data.eventName}</p>}
+      <p className="ticket-product-name">COMPROVANTE DE COMANDA</p>
+      <p className="ticket-price">** PAGO **</p>
+      <p className="ticket-product-name">COMANDA Nº {data.cardNumber}</p>
+      <p className="ticket-meta">Cliente: {data.consumerName}</p>
+      <p className="ticket-meta">Pago em: {formatPaidAt(data.paidAt)}</p>
+      <p className="ticket-meta">
+        Forma: {PAID_METHOD_LABELS[data.paidMethod] || data.paidMethod}
+      </p>
+      <p className="ticket-price">TOTAL: {fmt(data.total)}</p>
+      <div className="ticket-info">
+        {operatorName && <p>{operatorName}</p>}
+        <p>Apresente este comprovante na saída</p>
+      </div>
+      <div className="ticket-cta">
+        <p className="ticket-brand">CLOSE OUT</p>
+      </div>
+    </div>
+  );
+}
 
 function SingleTicket({
   itemName,
@@ -200,6 +264,10 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ReceiptProps>(
 
       if (type === "closing") {
         return <ClosingTicket data={data as ClosingData} operatorName={operatorName} venueName={venueName} />;
+      }
+
+      if (type === "comanda") {
+        return <ComandaTicket data={data as ComandaData} operatorName={operatorName} venueName={venueName} />;
       }
 
       // sale, return, exchange — print one ticket per item per quantity
