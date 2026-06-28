@@ -201,6 +201,7 @@ const App = () => (
               <Route path="cardapio" element={<ConsumerCardapio />} />
               <Route path="comanda" element={<ConsumerComanda />} />
               <Route path="comanda/finalizar" element={<ConsumerComandaFinalizar />} />
+              <Route path="comanda/comprovante" element={<ConsumerComandaComprovante />} />
               <Route path="carrinho" element={<ConsumerCarrinho />} />
               <Route path="mesa" element={<ConsumerMesa />} />
               <Route path="pagamento" element={<ConsumerPagamento />} />
