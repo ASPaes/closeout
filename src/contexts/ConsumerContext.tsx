@@ -304,7 +304,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "events", filter: `id=eq.${activeEvent.id}` },
         (payload: any) => {
-          setActiveEvent((prev) =>
+          _setActiveEvent((prev) =>
             prev
               ? {
                   ...prev,
