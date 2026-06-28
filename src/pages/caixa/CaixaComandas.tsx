@@ -132,21 +132,20 @@ function ComandasContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <PageHeader
-          title={`${t("caixa_comandas")} (${filteredComandas.length} abertas)`}
-          className="mb-0"
-        />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => loadComandas()}
-          disabled={refreshing}
-          className="shrink-0"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-        </Button>
-      </div>
+      <PageHeader
+        title={`${t("caixa_comandas")} (${filteredComandas.length} abertas)`}
+        actions={
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => loadComandas()}
+            disabled={refreshing}
+            className="shrink-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
+        }
+      />
 
       <form onSubmit={handleSearchSubmit} className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
