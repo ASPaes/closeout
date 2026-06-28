@@ -162,6 +162,7 @@ const App = () => (
               <Route path="venda" element={<CaixaVenda />} />
               <Route path="movimentacoes" element={<CaixaMovimentacoes />} />
               <Route path="devolucoes" element={<CaixaDevolucoes />} />
+              <Route path="comandas" element={<CaixaComandas />} />
               <Route path="trocas" element={<CaixaTrocas />} />
               <Route path="fechamento" element={<CaixaFechamento />} />
             </Route>
