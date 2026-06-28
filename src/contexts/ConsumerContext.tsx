@@ -292,6 +292,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
                   ...prev,
                   table_service_enabled: payload.new.table_service_enabled ?? false,
                   table_count: payload.new.table_count ?? null,
+                  comanda_enabled: payload.new.comanda_enabled ?? false,
                 }
               : null,
           );
