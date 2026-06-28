@@ -48,7 +48,7 @@ type ComandaSummary = {
 };
 
 
-function MetricCard({ title, value, icon: Icon, loading }: { title: string; value: string | number; icon: any; loading: boolean }) {
+function MetricCard({ title, value, sublabel, icon: Icon, loading }: { title: string; value: string | number; sublabel?: string; icon: any; loading: boolean }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -57,6 +57,7 @@ function MetricCard({ title, value, icon: Icon, loading }: { title: string; valu
       </CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold text-primary">{value}</div>}
+        {sublabel && !loading && <div className="text-xs text-muted-foreground mt-1">{sublabel}</div>}
       </CardContent>
     </Card>
   );
