@@ -94,6 +94,7 @@ import ConsumerMeusEventos from "@/pages/consumer/ConsumerMeusEventos";
 import ConsumerComandaScan from "@/pages/consumer/ConsumerComandaScan";
 import ConsumerComanda from "@/pages/consumer/ConsumerComanda";
 import ConsumerComandaFinalizar from "@/pages/consumer/ConsumerComandaFinalizar";
+import ConsumerComandaComprovante from "@/pages/consumer/ConsumerComandaComprovante";
 
 const queryClient = new QueryClient();
 
