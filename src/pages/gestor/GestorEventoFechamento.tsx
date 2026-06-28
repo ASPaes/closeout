@@ -187,7 +187,104 @@ export default function GestorEventoFechamento() {
         </div>
       </div>
 
-      {/* Section 4: Caixas do Evento */}
+      {/* Section 4: Comandas */}
+      {hasComandaData && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">{t("gef_comandas_section")}</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MetricCard
+              title={t("gef_comanda_app")}
+              value={fmt(comandaSummary?.comanda_app_total)}
+              sublabel={t("gef_comanda_app_sublabel")}
+              icon={Smartphone}
+              loading={comandaLoading}
+            />
+            <Collapsible open={comandaExpanded} onOpenChange={setComandaExpanded}>
+              <Card className="cursor-pointer transition-colors hover:bg-accent/50">
+                <CollapsibleTrigger asChild>
+                  <div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <div className="flex items-center gap-1">
+                        <CardTitle className="text-sm font-medium">{t("gef_comanda_caixa")}</CardTitle>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${comandaExpanded ? "rotate-180" : ""}`} />
+                      </div>
+                      <Banknote className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {comandaLoading ? (
+                        <Skeleton className="h-8 w-24" />
+                      ) : (
+                        <div className="text-2xl font-bold text-primary">{fmt(comandaSummary?.comanda_caixa_total)}</div>
+                      )}
+                      {!comandaLoading && (
+                        <div className="text-xs text-muted-foreground mt-1">{t("gef_comanda_caixa_sublabel")}</div>
+                      )}
+                    </CardContent>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    {breakdownItems.length > 0 ? (
+                      <div className="border-t border-border pt-3 space-y-2">
+                        {breakdownItems.map(([label, value]) => (
+                          <div key={label} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className="font-medium">{fmt(value as number)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-t border-border pt-3 text-sm text-muted-foreground">{t("gef_no_comanda_caixa_breakdown")}</div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </div>
+
+          {(comandaSummary?.unsettled?.length ?? 0) > 0 && (
+            <Card className="mt-4 border-destructive/30 bg-destructive/5">
+              <CardHeader className="flex flex-row items-center gap-2 pb-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-base font-semibold text-destructive">{t("gef_unsettled_comandas")}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("gef_unsettled_card_number")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_name")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_phone")}</TableHead>
+                      <TableHead>{t("gef_unsettled_consumer_cpf")}</TableHead>
+                      <TableHead className="text-right">{t("gef_unsettled_value")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {comandaSummary!.unsettled.map((u) => (
+                      <TableRow key={u.comanda_id} className="text-destructive/90">
+                        <TableCell className="font-medium">#{u.card_number}</TableCell>
+                        <TableCell>{u.consumer_name}</TableCell>
+                        <TableCell>{u.consumer_phone}</TableCell>
+                        <TableCell>{u.consumer_cpf}</TableCell>
+                        <TableCell className="text-right font-medium">{fmt(u.total)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {(comandaSummary?.open_count ?? 0) > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <ScrollText className="h-4 w-4" />
+              <span>{t("gef_open_comandas_warning").replace("{count}", String(comandaSummary?.open_count))}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Section 5: Caixas do Evento */}
       <div>
         <h2 className="text-lg font-semibold mb-3">{t("gef_cash_registers")}</h2>
         <Card>
