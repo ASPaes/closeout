@@ -190,3 +190,26 @@ Generic reusable types used across multiple features:
 - `DateRange` — date range `{ from, to }`
 
 See `docs/specs/technical/CODEBASE_GUIDE.md` for detailed usage guide.
+
+---
+
+## Gestor Event Closing Report
+
+The event closing report (`src/pages/gestor/GestorEventoFechamento.tsx`) is a read-only consolidated dashboard displayed after an event reaches `completed` status. It is built from the `v_event_closing_report`, `v_event_cash_movements`, and `v_event_cancellations` views.
+
+### Sections
+
+1. **Resumo Geral** — total revenue, transactions, average ticket, and cancellations.
+2. **Receita por Origem** — orders from waiter/app vs. orders from the physical POS.
+3. **Receita por Forma de Pagamento** — cash, PIX, credit, and debit totals.
+4. **Comandas** — only shown when the event has physical comanda data:
+   - `comanda_app_total` — amount paid by consumers through the app (Asaas gateway).
+   - `comanda_caixa_total` — amount received at the POS, outside the gateway; drill-down by payment method (`dinheiro`, `pix`, `credit_card`, `debit_card`).
+   - `unsettled` — list of non-received comandas with consumer name, phone, CPF, and outstanding value for billing/record purposes.
+   - `open_count` — warning when comandas are still open before event closure.
+5. **Caixas do Evento** — per-register opening/closing balances and movements.
+6. **Cancelamentos** — cancelled orders with reason and value.
+
+### Comanda Settlement
+
+When an event is closed, the RPC `settle_event_comandas` marks any remaining open comandas as `unsettled` and adds the consumer CPF to the client's blocklist. The closing report surfaces this data so the gestor can manage follow-up and collection.
