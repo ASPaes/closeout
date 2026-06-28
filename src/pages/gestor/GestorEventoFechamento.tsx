@@ -104,6 +104,23 @@ export default function GestorEventoFechamento() {
     return map[st] ?? st;
   };
 
+  const hasComandaData =
+    !!comandaSummary &&
+    (comandaSummary.comanda_app_total > 0 ||
+      comandaSummary.comanda_caixa_total > 0 ||
+      comandaSummary.unsettled.length > 0 ||
+      comandaSummary.open_count > 0);
+
+  const caixaBreakdown = comandaSummary?.comanda_caixa_breakdown;
+  const breakdownItems = caixaBreakdown
+    ? [
+        [t("gef_comanda_caixa_dinheiro"), caixaBreakdown.dinheiro],
+        [t("gef_comanda_caixa_pix"), caixaBreakdown.pix],
+        [t("gef_comanda_caixa_credit"), caixaBreakdown.credit_card],
+        [t("gef_comanda_caixa_debit"), caixaBreakdown.debit_card],
+      ].filter(([, value]) => Number(value) > 0)
+    : [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
