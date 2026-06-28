@@ -79,19 +79,21 @@ export default function GestorEventoFechamento() {
     if (!eventId) return;
     let cancelled = false;
     setComandaLoading(true);
-    supabase
-      .rpc("get_event_comanda_summary", { p_event_id: eventId } as any)
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_event_comanda_summary", { p_event_id: eventId } as any);
         if (cancelled) return;
         if (error) {
           console.error("[get_event_comanda_summary]", error);
         } else {
           setComandaSummary(data as ComandaSummary | null);
         }
-      })
-      .finally(() => {
+      } catch (err) {
+        if (!cancelled) console.error("[get_event_comanda_summary]", err);
+      } finally {
         if (!cancelled) setComandaLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
