@@ -88,7 +88,7 @@ const ConsumerContext = createContext<ConsumerContextType | null>(null);
 
 export function ConsumerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [activeEvent, setActiveEvent] = useState<{
+  const [activeEvent, _setActiveEvent] = useState<{
     id: string;
     name: string;
     client_id: string;
@@ -96,6 +96,24 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     table_count: number | null;
     comanda_enabled: boolean;
   } | null>(null);
+  const setActiveEvent = useCallback(
+    (
+      event: {
+        id: string;
+        name: string;
+        client_id: string;
+        table_service_enabled: boolean;
+        table_count: number | null;
+        comanda_enabled?: boolean;
+      } | null,
+    ) => {
+      if (event && typeof event.comanda_enabled !== "boolean") {
+        event = { ...event, comanda_enabled: false };
+      }
+      _setActiveEvent(event as typeof activeEvent);
+    },
+    [],
+  );
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
   const [activeComanda, setActiveComanda] = useState<{
     id: string;
