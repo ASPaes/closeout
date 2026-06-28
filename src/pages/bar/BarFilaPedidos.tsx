@@ -79,7 +79,7 @@ export default function BarFilaPedidos() {
     if (!eventId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, table_number, is_external_area, customer_name, order_items(id, name, quantity, delivered_quantity)")
+      .select("id, order_number, status, origin, created_at, preparing_at, ready_at, event_id, client_id, consumer_id, table_number, is_external_area, customer_name, comanda_id, comandas(card_number), order_items(id, name, quantity, delivered_quantity)")
       .eq("event_id", eventId)
       .in("status", ACTIVE_STATUSES)
       .order("created_at", { ascending: true });
