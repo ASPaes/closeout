@@ -1236,6 +1236,164 @@ export type Database = {
         }
         Relationships: []
       }
+      comanda_blocklist: {
+        Row: {
+          client_id: string
+          comanda_id_origin: string | null
+          consumer_name: string | null
+          cpf: string
+          created_at: string
+          event_id_origin: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          client_id: string
+          comanda_id_origin?: string | null
+          consumer_name?: string | null
+          cpf: string
+          created_at?: string
+          event_id_origin?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          client_id?: string
+          comanda_id_origin?: string | null
+          consumer_name?: string | null
+          cpf?: string
+          created_at?: string
+          event_id_origin?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comanda_blocklist_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comanda_blocklist_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comanda_blocklist_comanda_id_origin_fkey"
+            columns: ["comanda_id_origin"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comanda_blocklist_event_id_origin_fkey"
+            columns: ["event_id_origin"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comanda_blocklist_event_id_origin_fkey"
+            columns: ["event_id_origin"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      comandas: {
+        Row: {
+          card_number: number
+          client_id: string
+          consumer_cpf: string | null
+          consumer_id: string | null
+          consumer_name: string | null
+          consumer_phone: string | null
+          created_at: string
+          event_id: string
+          id: string
+          opened_at: string | null
+          paid_at: string | null
+          paid_method: string | null
+          paid_via: string | null
+          qr_token: string
+          status: string
+          unsettled_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          card_number: number
+          client_id: string
+          consumer_cpf?: string | null
+          consumer_id?: string | null
+          consumer_name?: string | null
+          consumer_phone?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          opened_at?: string | null
+          paid_at?: string | null
+          paid_method?: string | null
+          paid_via?: string | null
+          qr_token: string
+          status?: string
+          unsettled_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          card_number?: number
+          client_id?: string
+          consumer_cpf?: string | null
+          consumer_id?: string | null
+          consumer_name?: string | null
+          consumer_phone?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          opened_at?: string | null
+          paid_at?: string | null
+          paid_method?: string | null
+          paid_via?: string | null
+          qr_token?: string
+          status?: string
+          unsettled_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comandas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comandas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comandas_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comandas_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_closing_report"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       combo_items: {
         Row: {
           combo_id: string
@@ -1705,6 +1863,7 @@ export type Database = {
       event_settings: {
         Row: {
           client_id: string
+          comanda_enabled: boolean
           created_at: string
           event_id: string
           geo_radius_meters: number
@@ -1716,6 +1875,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          comanda_enabled?: boolean
           created_at?: string
           event_id: string
           geo_radius_meters?: number
@@ -1727,6 +1887,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          comanda_enabled?: boolean
           created_at?: string
           event_id?: string
           geo_radius_meters?: number
@@ -1770,6 +1931,7 @@ export type Database = {
       events: {
         Row: {
           client_id: string | null
+          comanda_enabled: boolean
           created_at: string
           description: string | null
           end_at: string | null
@@ -1790,6 +1952,7 @@ export type Database = {
         }
         Insert: {
           client_id?: string | null
+          comanda_enabled?: boolean
           created_at?: string
           description?: string | null
           end_at?: string | null
@@ -1810,6 +1973,7 @@ export type Database = {
         }
         Update: {
           client_id?: string | null
+          comanda_enabled?: boolean
           created_at?: string
           description?: string | null
           end_at?: string | null
@@ -2086,6 +2250,7 @@ export type Database = {
           cancelled_at: string | null
           cancelled_by: string | null
           client_id: string
+          comanda_id: string | null
           consumer_id: string | null
           created_at: string
           customer_name: string | null
@@ -2094,6 +2259,7 @@ export type Database = {
           delivered_by_station_id: string | null
           event_id: string
           id: string
+          is_comanda_closeout: boolean
           is_external_area: boolean
           is_split_payment: boolean
           notes: string | null
@@ -2116,6 +2282,7 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           client_id: string
+          comanda_id?: string | null
           consumer_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -2124,6 +2291,7 @@ export type Database = {
           delivered_by_station_id?: string | null
           event_id: string
           id?: string
+          is_comanda_closeout?: boolean
           is_external_area?: boolean
           is_split_payment?: boolean
           notes?: string | null
@@ -2146,6 +2314,7 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           client_id?: string
+          comanda_id?: string | null
           consumer_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -2154,6 +2323,7 @@ export type Database = {
           delivered_by_station_id?: string | null
           event_id?: string
           id?: string
+          is_comanda_closeout?: boolean
           is_external_area?: boolean
           is_split_payment?: boolean
           notes?: string | null
@@ -2184,6 +2354,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients_limited"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
             referencedColumns: ["id"]
           },
           {
@@ -4024,6 +4201,10 @@ export type Database = {
         Args: { p_client_id?: string; p_event_id?: string }
         Returns: Json
       }
+      cancel_comanda_order: {
+        Args: { p_order_id: string; p_reason?: string }
+        Returns: Json
+      }
       cancel_consumer_order: { Args: { p_order_id: string }; Returns: Json }
       check_order_rate_limit: {
         Args: { p_consumer_id: string }
@@ -4035,6 +4216,14 @@ export type Database = {
       }
       close_cash_register: {
         Args: { p_closing_balance: number; p_register_id: string }
+        Returns: Json
+      }
+      close_comanda_app: {
+        Args: { p_comanda_id: string; p_payment_method: string }
+        Returns: Json
+      }
+      close_comanda_caixa: {
+        Args: { p_comanda_id: string; p_method: string }
         Returns: Json
       }
       close_event_cancel_unpaid: { Args: { p_event_id: string }; Returns: Json }
@@ -4066,6 +4255,7 @@ export type Database = {
         Returns: Json
       }
       consumer_checkout: { Args: { p_event_id: string }; Returns: Json }
+      create_comanda_order: { Args: { params: Json }; Returns: Json }
       create_consumer_split_order: { Args: { params: Json }; Returns: Json }
       create_consumer_waiter_call: {
         Args: {
@@ -4165,6 +4355,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string[]
       }
+      get_comanda_detail: { Args: { p_comanda_id: string }; Returns: Json }
       get_consumer_profile_stats: { Args: never; Returns: Json }
       get_event_checkin_counts: {
         Args: { p_event_ids: string[] }
@@ -4173,6 +4364,7 @@ export type Database = {
           event_id: string
         }[]
       }
+      get_event_comanda_summary: { Args: { p_event_id: string }; Returns: Json }
       get_events_analytics: {
         Args: {
           p_client_id?: string
@@ -4327,6 +4519,10 @@ export type Database = {
       is_owner_or_super_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_waiter_for_event: { Args: { p_event_id: string }; Returns: boolean }
+      list_open_comandas: {
+        Args: { p_card_number?: number; p_event_id: string }
+        Returns: Json
+      }
       log_audit: {
         Args: {
           p_action: string
@@ -4346,6 +4542,7 @@ export type Database = {
       next_cash_order_number: { Args: { p_event_id: string }; Returns: number }
       next_order_number: { Args: { p_event_id: string }; Returns: number }
       normalize_product_name: { Args: { input: string }; Returns: string }
+      open_comanda: { Args: { p_qr_token: string }; Returns: Json }
       release_stock_for_order: { Args: { p_order_id: string }; Returns: Json }
       request_waiter_cancellation: {
         Args: { p_order_id: string; p_reason: string }
@@ -4368,6 +4565,7 @@ export type Database = {
         Args: { p_visible: boolean }
         Returns: undefined
       }
+      settle_event_comandas: { Args: { p_event_id: string }; Returns: Json }
       start_waiter_session: {
         Args: {
           p_assignment_type?: string
@@ -4400,6 +4598,7 @@ export type Database = {
         }
         Returns: string
       }
+      user_belongs_to_client: { Args: { _client_id: string }; Returns: boolean }
       validate_qr: {
         Args: { p_staff_id: string; p_token: string }
         Returns: Json

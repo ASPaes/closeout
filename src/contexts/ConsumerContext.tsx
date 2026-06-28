@@ -47,8 +47,14 @@ type ConsumerContextType = {
     client_id: string;
     table_service_enabled: boolean;
     table_count: number | null;
+    comanda_enabled: boolean;
   } | null;
   activeOrder: ActiveOrder | null;
+  activeComanda: {
+    id: string;
+    card_number: number;
+    status: string;
+  } | null;
   cart: Cart;
   consumptionLimits: ConsumptionLimits | null;
   location: { lat: number; lng: number } | null;
@@ -59,9 +65,11 @@ type ConsumerContextType = {
       client_id: string;
       table_service_enabled: boolean;
       table_count: number | null;
+      comanda_enabled?: boolean;
     } | null,
   ) => void;
   setActiveOrder: (order: ActiveOrder | null) => void;
+  setActiveComanda: (comanda: { id: string; card_number: number; status: string } | null) => void;
   setLocation: (loc: { lat: number; lng: number } | null) => void;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
   removeFromCart: (itemId: string) => void;
@@ -80,14 +88,38 @@ const ConsumerContext = createContext<ConsumerContextType | null>(null);
 
 export function ConsumerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [activeEvent, setActiveEvent] = useState<{
+  const [activeEvent, _setActiveEvent] = useState<{
     id: string;
     name: string;
     client_id: string;
     table_service_enabled: boolean;
     table_count: number | null;
+    comanda_enabled: boolean;
   } | null>(null);
+  const setActiveEvent = useCallback(
+    (
+      event: {
+        id: string;
+        name: string;
+        client_id: string;
+        table_service_enabled: boolean;
+        table_count: number | null;
+        comanda_enabled?: boolean;
+      } | null,
+    ) => {
+      if (event && typeof event.comanda_enabled !== "boolean") {
+        event = { ...event, comanda_enabled: false };
+      }
+      _setActiveEvent(event as typeof activeEvent);
+    },
+    [],
+  );
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
+  const [activeComanda, setActiveComanda] = useState<{
+    id: string;
+    card_number: number;
+    status: string;
+  } | null>(null);
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 });
   const [consumptionLimits, setConsumptionLimits] = useState<ConsumptionLimits | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -242,7 +274,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     setLoadingEvent(true);
     supabase
       .from("event_checkins")
-      .select("event_id, events!inner(id, name, client_id, table_service_enabled, table_count)")
+      .select("event_id, events!inner(id, name, client_id, table_service_enabled, table_count, comanda_enabled)")
       .eq("user_id", user.id)
       .is("checked_out_at", null)
       .limit(1)
@@ -256,6 +288,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
             client_id: ev.client_id || "",
             table_service_enabled: ev.table_service_enabled ?? false,
             table_count: ev.table_count ?? null,
+            comanda_enabled: ev.comanda_enabled ?? false,
           });
         }
         setLoadingEvent(false);
@@ -271,12 +304,13 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "events", filter: `id=eq.${activeEvent.id}` },
         (payload: any) => {
-          setActiveEvent((prev) =>
+          _setActiveEvent((prev) =>
             prev
               ? {
                   ...prev,
                   table_service_enabled: payload.new.table_service_enabled ?? false,
                   table_count: payload.new.table_count ?? null,
+                  comanda_enabled: payload.new.comanda_enabled ?? false,
                 }
               : null,
           );
@@ -288,6 +322,33 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     };
   }, [activeEvent?.id]);
 
+  // Fetch active comanda (open physical card) for current event
+  useEffect(() => {
+    if (!user || !activeEvent?.id) {
+      setActiveComanda(null);
+      return;
+    }
+    supabase
+      .from("comandas")
+      .select("id, card_number, status")
+      .eq("consumer_id", user.id)
+      .eq("event_id", activeEvent.id)
+      .eq("status", "open")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setActiveComanda({
+            id: data.id,
+            card_number: data.card_number,
+            status: data.status,
+          });
+        } else {
+          setActiveComanda(null);
+        }
+      });
+  }, [user, activeEvent?.id]);
+
   // Fetch active order on mount
   useEffect(() => {
     refreshActiveOrder();
@@ -298,11 +359,13 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
       value={{
         activeEvent,
         activeOrder,
+        activeComanda,
         cart,
         consumptionLimits,
         location,
         setActiveEvent,
         setActiveOrder,
+        setActiveComanda,
         setLocation,
         addToCart,
         removeFromCart,
