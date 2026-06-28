@@ -92,6 +92,7 @@ import ConsumerEventoCardapio from "@/pages/consumer/ConsumerEventoCardapio";
 import ConsumerMesa from "@/pages/consumer/ConsumerMesa";
 import ConsumerMeusEventos from "@/pages/consumer/ConsumerMeusEventos";
 import ConsumerComandaScan from "@/pages/consumer/ConsumerComandaScan";
+import ConsumerComanda from "@/pages/consumer/ConsumerComanda";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +197,7 @@ const App = () => (
               <Route path="evento/:eventId" element={<ConsumerEventoCardapio />} />
               <Route path="evento/:eventId/comanda/scan" element={<ConsumerComandaScan />} />
               <Route path="cardapio" element={<ConsumerCardapio />} />
+              <Route path="comanda" element={<ConsumerComanda />} />
               <Route path="carrinho" element={<ConsumerCarrinho />} />
               <Route path="mesa" element={<ConsumerMesa />} />
               <Route path="pagamento" element={<ConsumerPagamento />} />
