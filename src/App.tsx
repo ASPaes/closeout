@@ -91,6 +91,7 @@ import ConsumerPresentes from "@/pages/consumer/ConsumerPresentes";
 import ConsumerEventoCardapio from "@/pages/consumer/ConsumerEventoCardapio";
 import ConsumerMesa from "@/pages/consumer/ConsumerMesa";
 import ConsumerMeusEventos from "@/pages/consumer/ConsumerMeusEventos";
+import ConsumerComandaScan from "@/pages/consumer/ConsumerComandaScan";
 
 const queryClient = new QueryClient();
 
