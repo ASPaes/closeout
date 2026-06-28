@@ -426,7 +426,30 @@ export default function GestorEventos() {
           }
         }
       } catch (e) {
-        console.error("close_event_cancel_unpaid error:", e);
+      console.error("close_event_cancel_unpaid error:", e);
+      }
+
+      try {
+        const { data: settleResult, error: settleErr } = await supabase.rpc("settle_event_comandas", {
+          p_event_id: ev.id,
+        });
+        if (settleErr) {
+          console.error("settle_event_comandas error:", settleErr);
+        } else {
+          const sres = settleResult as any;
+          const ucount = sres?.unsettled_count ?? 0;
+          if (ucount > 0) {
+            toast.info(`${ucount} comanda(s) não recebida(s) registrada(s)`);
+            await logAudit({
+              action: AUDIT_ACTION.EVENT_UPDATED,
+              entityType: "event",
+              entityId: ev.id,
+              metadata: { unsettled_comandas: ucount },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("settle_event_comandas error:", e);
       }
     }
 
