@@ -314,11 +314,13 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
       value={{
         activeEvent,
         activeOrder,
+        activeComanda,
         cart,
         consumptionLimits,
         location,
         setActiveEvent,
         setActiveOrder,
+        setActiveComanda,
         setLocation,
         addToCart,
         removeFromCart,
