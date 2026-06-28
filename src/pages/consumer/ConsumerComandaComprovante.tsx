@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Receipt } from "lucide-react";
-import { toast } from "sonner";
 
 type ComandaDetail = {
   card_number: string;
