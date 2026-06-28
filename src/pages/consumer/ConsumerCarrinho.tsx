@@ -7,17 +7,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n/use-translation";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function ConsumerCarrinho() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, activeEvent, consumptionLimits, updateQuantity, removeFromCart, clearCart } = useConsumer();
+  const { cart, activeEvent, activeComanda, consumptionLimits, updateQuantity, removeFromCart, clearCart } = useConsumer();
 
   const [eventSpent, setEventSpent] = useState(0);
   const [eventOrderCount, setEventOrderCount] = useState(0);
   const [eventMaxOrder, setEventMaxOrder] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Fetch event spending and limits
   useEffect(() => {
@@ -73,6 +75,47 @@ export default function ConsumerCarrinho() {
 
   const hasWarning = exceedsConsumerMaxValue || exceedsEventMaxValue || exceedsMaxOrders;
   const isBlocked = hasWarning && behavior === "block";
+
+  const hasComanda = !!activeComanda;
+  const tableServiceEnabled = !!activeEvent?.table_service_enabled;
+
+  const submitComandaOrder = async () => {
+    if (!activeComanda) return;
+    setSubmitting(true);
+    const items = cart.items.map((i) =>
+      i.type === "product"
+        ? { product_id: i.id, quantity: i.quantity }
+        : { combo_id: i.id, quantity: i.quantity },
+    );
+    const { data, error } = await supabase.rpc("create_comanda_order", {
+      params: {
+        comanda_id: activeComanda.id,
+        items,
+        table_number: null,
+        is_external_area: false,
+      } as any,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Pedido #${(data as any)?.order_number} enviado para o bar`);
+    clearCart();
+    navigate("/app/cardapio");
+  };
+
+  const handlePrimary = () => {
+    if (hasComanda) {
+      if (tableServiceEnabled) {
+        navigate("/app/mesa");
+      } else {
+        submitComandaOrder();
+      }
+      return;
+    }
+    navigate(tableServiceEnabled ? "/app/mesa" : "/app/pagamento");
+  };
 
   if (cart.items.length === 0) {
     return (
@@ -275,12 +318,14 @@ export default function ConsumerCarrinho() {
 
       {/* Pay button */}
       <Button
-        onClick={() => navigate(activeEvent?.table_service_enabled ? "/app/mesa" : "/app/pagamento")}
-        disabled={isBlocked || cart.items.length === 0}
+        onClick={handlePrimary}
+        disabled={isBlocked || cart.items.length === 0 || submitting}
         className="h-14 rounded-2xl text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl active:scale-[0.98] transition-transform w-full"
         style={{ boxShadow: isBlocked ? "none" : "0 8px 32px hsl(24 100% 50% / 0.35)" }}
       >
-        {t("consumer_pay")} R$ {cart.total.toFixed(2)}
+        {hasComanda
+          ? `Adicionar à comanda · R$ ${cart.total.toFixed(2)}`
+          : `${t("consumer_pay")} R$ ${cart.total.toFixed(2)}`}
       </Button>
     </div>
   );
