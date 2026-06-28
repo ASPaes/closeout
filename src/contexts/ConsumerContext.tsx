@@ -47,8 +47,14 @@ type ConsumerContextType = {
     client_id: string;
     table_service_enabled: boolean;
     table_count: number | null;
+    comanda_enabled: boolean;
   } | null;
   activeOrder: ActiveOrder | null;
+  activeComanda: {
+    id: string;
+    card_number: number;
+    status: string;
+  } | null;
   cart: Cart;
   consumptionLimits: ConsumptionLimits | null;
   location: { lat: number; lng: number } | null;
@@ -59,9 +65,11 @@ type ConsumerContextType = {
       client_id: string;
       table_service_enabled: boolean;
       table_count: number | null;
+      comanda_enabled: boolean;
     } | null,
   ) => void;
   setActiveOrder: (order: ActiveOrder | null) => void;
+  setActiveComanda: (comanda: { id: string; card_number: number; status: string } | null) => void;
   setLocation: (loc: { lat: number; lng: number } | null) => void;
   addToCart: (item: Omit<CartItem, "quantity">) => void;
   removeFromCart: (itemId: string) => void;
