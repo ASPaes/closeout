@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ArrowUpDown, RotateCcw, ArrowLeftRight, Lock, LogOut, ArrowRightLeft } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ScrollText, ArrowUpDown, RotateCcw, ArrowLeftRight, Lock, LogOut, ArrowRightLeft } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
