@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2, ArrowLeft } from "lucide-react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2, ArrowLeft, ScanLine, QrCode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ type Campaign = {
 export default function ConsumerCardapio() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeEvent, cart, addToCart, updateQuantity, removeFromCart, loadingEvent } = useConsumer();
+  const { activeEvent, activeComanda, cart, addToCart, updateQuantity, removeFromCart, loadingEvent } = useConsumer();
   const { user } = useAuth();
 
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -300,6 +300,30 @@ export default function ConsumerCardapio() {
         <p className="text-muted-foreground text-sm">{t("consumer_no_event_selected")}</p>
         <Button variant="outline" onClick={() => navigate("/app")} className="rounded-xl">
           {t("consumer_tab_events")}
+        </Button>
+      </div>
+    );
+  }
+
+  // Gate: event requires an open comanda before showing menu
+  if (activeEvent?.comanda_enabled && !activeComanda) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center gap-5">
+        <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
+          <ScanLine className="h-10 w-10 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-extrabold text-foreground">Leia o QR da sua comanda</h2>
+          <p className="text-sm text-muted-foreground text-center">
+            Escaneie o cartão que você recebeu na entrada para abrir sua comanda e ver o cardápio
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate(`/app/evento/${activeEvent.id}/comanda/scan`)}
+          className="h-14 rounded-2xl w-full max-w-xs text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_32px_hsl(24_100%_50%_/_0.35)]"
+        >
+          <ScanLine className="h-5 w-5 mr-2" />
+          Ler QR da comanda
         </Button>
       </div>
     );
