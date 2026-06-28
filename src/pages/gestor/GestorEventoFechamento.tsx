@@ -1,14 +1,17 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n/use-translation";
 import { useEventClosingReport } from "@/hooks/useEventClosingReport";
+import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Download, DollarSign, BarChart3, Receipt, XCircle, Wallet, CreditCard, Smartphone, Banknote, FileText } from "lucide-react";
+import { ArrowLeft, Download, DollarSign, BarChart3, Receipt, XCircle, Wallet, CreditCard, Smartphone, Banknote, ChevronDown, AlertTriangle, ScrollText } from "lucide-react";
 
 const fmt = (v: number | null | undefined) =>
   `R$ ${(Number(v) || 0).toFixed(2).replace(".", ",")}`;
