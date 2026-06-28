@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
+type ComandaDetail = {
+  card_number: string;
+  consumer_name: string;
+  status: string;
+  paid_at: string;
+  paid_via: string;
+  paid_method: string;
+  total: number;
+};
+
 type ComprovanteData = {
   card_number: string;
   consumer_name: string;
