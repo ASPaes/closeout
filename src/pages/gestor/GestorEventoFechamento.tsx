@@ -69,7 +69,33 @@ export default function GestorEventoFechamento() {
   const { t } = useTranslation();
   const { summary, cashRegisters, cancellations, isLoading } = useEventClosingReport(eventId ?? "");
 
+  const [comandaSummary, setComandaSummary] = useState<ComandaSummary | null>(null);
+  const [comandaLoading, setComandaLoading] = useState(false);
+  const [comandaExpanded, setComandaExpanded] = useState(false);
+
   const s = summary as any;
+
+  useEffect(() => {
+    if (!eventId) return;
+    let cancelled = false;
+    setComandaLoading(true);
+    supabase
+      .rpc("get_event_comanda_summary", { p_event_id: eventId } as any)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("[get_event_comanda_summary]", error);
+        } else {
+          setComandaSummary(data as ComandaSummary | null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setComandaLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
 
   const statusLabel = (st: string) => {
     const map: Record<string, string> = { draft: t("draft"), active: t("active"), completed: t("completed"), cancelled: t("cancelled") };
