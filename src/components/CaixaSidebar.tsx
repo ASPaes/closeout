@@ -15,6 +15,7 @@ import logoMark from "@/assets/brand/logo-mark.png";
 const caixaItems: { titleKey: TranslationKey; url: string; icon: any }[] = [
   { titleKey: "caixa_dashboard", url: "/caixa", icon: LayoutDashboard },
   { titleKey: "caixa_quick_sale", url: "/caixa/venda", icon: ShoppingCart },
+  { titleKey: "caixa_comandas", url: "/caixa/comandas", icon: ScrollText },
   { titleKey: "caixa_movements", url: "/caixa/movimentacoes", icon: ArrowUpDown },
   { titleKey: "caixa_returns", url: "/caixa/devolucoes", icon: RotateCcw },
   { titleKey: "caixa_exchanges", url: "/caixa/trocas", icon: ArrowLeftRight },
