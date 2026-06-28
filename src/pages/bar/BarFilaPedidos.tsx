@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ClipboardList, Clock, Smartphone, User, Monitor, ChefHat,
-  PackageCheck, Truck, Loader2, Package, Check, QrCode,
+  PackageCheck, Truck, Loader2, Package, Check, QrCode, ScrollText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,6 +46,8 @@ interface OrderWithItems {
   table_number: number | null;
   is_external_area: boolean;
   customer_name: string | null;
+  comanda_id: string | null;
+  comandas?: { card_number: number } | null;
   order_items: OrderItemWithDelivery[];
 }
 
