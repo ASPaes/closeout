@@ -651,6 +651,7 @@ const ptBR = {
   caixa_panel: "Painel do Caixa",
   caixa_dashboard: "Dashboard",
   caixa_quick_sale: "Venda Rápida",
+  caixa_comandas: "Comandas",
   caixa_movements: "Movimentações",
   caixa_returns: "Devoluções",
   caixa_exchanges: "Trocas",

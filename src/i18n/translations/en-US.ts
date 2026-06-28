@@ -653,6 +653,7 @@ const enUS: Record<TranslationKey, string> = {
   caixa_panel: "Cash Register Panel",
   caixa_dashboard: "Dashboard",
   caixa_quick_sale: "Quick Sale",
+  caixa_comandas: "Comandas",
   caixa_movements: "Movements",
   caixa_returns: "Returns",
   caixa_exchanges: "Exchanges",
