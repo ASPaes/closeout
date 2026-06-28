@@ -256,7 +256,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     setLoadingEvent(true);
     supabase
       .from("event_checkins")
-      .select("event_id, events!inner(id, name, client_id, table_service_enabled, table_count)")
+      .select("event_id, events!inner(id, name, client_id, table_service_enabled, table_count, comanda_enabled)")
       .eq("user_id", user.id)
       .is("checked_out_at", null)
       .limit(1)
@@ -270,6 +270,7 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
             client_id: ev.client_id || "",
             table_service_enabled: ev.table_service_enabled ?? false,
             table_count: ev.table_count ?? null,
+            comanda_enabled: ev.comanda_enabled ?? false,
           });
         }
         setLoadingEvent(false);
