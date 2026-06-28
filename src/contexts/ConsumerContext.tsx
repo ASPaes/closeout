@@ -94,8 +94,14 @@ export function ConsumerProvider({ children }: { children: ReactNode }) {
     client_id: string;
     table_service_enabled: boolean;
     table_count: number | null;
+    comanda_enabled: boolean;
   } | null>(null);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
+  const [activeComanda, setActiveComanda] = useState<{
+    id: string;
+    card_number: number;
+    status: string;
+  } | null>(null);
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 });
   const [consumptionLimits, setConsumptionLimits] = useState<ConsumptionLimits | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
