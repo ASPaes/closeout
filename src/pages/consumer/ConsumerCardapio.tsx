@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2, ArrowLeft, ScanLine, QrCode } from "lucide-react";
+import { Search, Plus, Minus, ArrowRight, Flame, AlertTriangle, Loader2, ArrowLeft, ScanLine, QrCode, Receipt, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -338,6 +338,25 @@ export default function ConsumerCardapio() {
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">{activeEvent.name}</p>
       </div>
+
+      {/* Comanda quick access */}
+      {activeComanda && (
+        <button
+          onClick={() => navigate("/app/comanda")}
+          className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3.5 active:scale-[0.98] transition-transform w-full text-left"
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <Receipt className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">Minha comanda</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Comanda #{activeComanda.card_number}
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        </button>
+      )}
 
       {/* Campaigns carousel */}
       {campaigns.length > 0 && (
